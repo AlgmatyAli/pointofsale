@@ -1,0 +1,49 @@
+#invoice-template {
+    padding: 4rem; }
+#w0-togdata-page{
+  display: none !important;
+}  
+
+#attribute-switch{
+  height: 3rem;
+}
+.w0{
+  width: 100px;
+}
+
+@media print
+{    
+    .btn, .btn * ,.glyphicon,.control-label,.filters,.breadcrumb,.summary,.h1
+    {
+        display: none !important;
+    }
+    a[href]:after {
+    content: none !important;
+  }
+  .h1, .h1{
+    font-size: 16px !important;
+   }
+
+.wrap {
+    min-height: 90%;
+    height: 90%;
+    margin: 0 auto -60px;
+    padding: 0 0 60px;
+}
+
+.wrap > .container {
+    padding: 70px 15px 20px;
+}
+.popover-footer{
+display: none !important;
+}
+
+.login-box-msg{
+    color: white !important;
+    font-size: 24px !important;
+}
+.tbl {
+    border: 1px solid black !important;;
+  }
+}
+

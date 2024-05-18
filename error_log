@@ -1,0 +1,26 @@
+[17-Nov-2020 17:22:39 UTC] PHP Notice:  Undefined variable: emulatePrepare in /home/alwakee1/public_html/pointofsale/config/db.php on line 20
+[17-Nov-2020 17:31:53 UTC] PHP Notice:  Undefined variable: emulatePrepare in /home/alwakee1/public_html/pointofsale/config/db.php on line 20
+[17-Nov-2020 17:36:26 UTC] PHP Notice:  Undefined variable: emulatePrepare in /home/alwakee1/public_html/pointofsale/config/db.php on line 20
+[17-Nov-2020 17:45:23 UTC] PHP Notice:  Undefined variable: emulatePrepare in /home/alwakee1/public_html/pointofsale/config/db.php on line 20
+[17-Nov-2020 17:46:43 UTC] PHP Notice:  Undefined variable: emulatePrepare in /home/alwakee1/public_html/pointofsale/config/db.php on line 20
+[17-Nov-2020 17:48:25 UTC] PHP Notice:  Undefined variable: emulatePrepare in /home/alwakee1/public_html/pointofsale/config/db.php on line 20
+[17-Nov-2020 18:00:00 UTC] PHP Notice:  Undefined variable: emulatePrepare in /home/alwakee1/public_html/pointofsale/config/db.php on line 20
+[17-Nov-2020 18:00:42 UTC] PHP Notice:  Undefined variable: emulatePrepare in /home/alwakee1/public_html/pointofsale/config/db.php on line 20
+[17-Nov-2020 18:06:03 UTC] PHP Notice:  Undefined variable: emulatePrepare in /home/alwakee1/public_html/pointofsale/config/db.php on line 20
+[17-Nov-2020 18:10:20 UTC] PHP Notice:  Undefined variable: emulatePrepare in /home/alwakee1/public_html/pointofsale/config/db.php on line 20
+[17-Nov-2020 18:17:16 UTC] PHP Notice:  Undefined variable: emulatePrepare in /home/alwakee1/public_html/pointofsale/config/db.php on line 20
+[17-Nov-2020 18:19:27 UTC] PHP Notice:  Undefined variable: emulatePrepare in /home/alwakee1/public_html/pointofsale/config/db.php on line 20
+[17-Nov-2020 18:20:53 UTC] PHP Notice:  Undefined variable: emulatePrepare in /home/alwakee1/public_html/pointofsale/config/db.php on line 20
+[17-Nov-2020 18:23:06 UTC] PHP Notice:  Undefined variable: emulatePrepare in /home/alwakee1/public_html/pointofsale/config/db.php on line 20
+[17-Nov-2020 18:27:14 UTC] PHP Notice:  Undefined variable: emulatePrepare in /home/alwakee1/public_html/pointofsale/config/db.php on line 20
+[17-Nov-2020 18:29:08 UTC] PHP Notice:  Undefined variable: emulatePrepare in /home/alwakee1/public_html/pointofsale/config/db.php on line 20
+[17-Nov-2020 18:30:27 UTC] PHP Notice:  Undefined variable: emulatePrepare in /home/alwakee1/public_html/pointofsale/config/db.php on line 20
+[19-Nov-2020 07:34:02 UTC] PHP Notice:  Undefined variable: emulatePrepare in /home/alwakee1/public_html/pointofsale/config/db.php on line 20
+[07-May-2021 13:03:57 UTC] PHP Warning:  require(/home/dmly12/public_html/pos/vendor/autoload.php): failed to open stream: No such file or directory in /home/dmly12/public_html/pos/yii on line 14
+[07-May-2021 13:03:57 UTC] PHP Fatal error:  require(): Failed opening required '/home/dmly12/public_html/pos/vendor/autoload.php' (include_path='.:/opt/alt/php70/usr/share/pear') in /home/dmly12/public_html/pos/yii on line 14
+[07-May-2021 13:04:01 UTC] PHP Warning:  require(/home/dmly12/public_html/pos/vendor/autoload.php): failed to open stream: No such file or directory in /home/dmly12/public_html/pos/yii on line 14
+[07-May-2021 13:04:01 UTC] PHP Fatal error:  require(): Failed opening required '/home/dmly12/public_html/pos/vendor/autoload.php' (include_path='.:/opt/alt/php70/usr/share/pear') in /home/dmly12/public_html/pos/yii on line 14
+[07-May-2021 14:08:00 UTC] PHP Warning:  require(/home/dmly12/public_html/pos/vendor/autoload.php): failed to open stream: No such file or directory in /home/dmly12/public_html/pos/yii on line 14
+[07-May-2021 14:08:00 UTC] PHP Fatal error:  require(): Failed opening required '/home/dmly12/public_html/pos/vendor/autoload.php' (include_path='.:/opt/alt/php70/usr/share/pear') in /home/dmly12/public_html/pos/yii on line 14
+[07-May-2021 14:11:20 UTC] PHP Warning:  require(/home/dmly12/public_html/pos/vendor/autoload.php): failed to open stream: No such file or directory in /home/dmly12/public_html/pos/yii on line 14
+[07-May-2021 14:11:20 UTC] PHP Fatal error:  require(): Failed opening required '/home/dmly12/public_html/pos/vendor/autoload.php' (include_path='.:/opt/alt/php70/usr/share/pear') in /home/dmly12/public_html/pos/yii on line 14
