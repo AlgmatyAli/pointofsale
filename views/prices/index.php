@@ -44,6 +44,10 @@ $this->registerJs($search);
             ],
             'filterInputOptions' => ['placeholder' => 'Category', 'id' => 'grid-prices-search-category']
         ],
+
+        'category0.company',
+
+        'category0.serialNo',
         
         [
             'class' => 'kartik\grid\EditableColumn',
