@@ -77,7 +77,7 @@ class PricesSearch extends Prices
         $query->andFilterWhere(['=', 'minPrice2', $this->minPrice2]);
         $query->andFilterWhere(['=', 'minPrice3', $this->minPrice3]);
         $query->andFilterWhere(['=', 'axPrice', $this->maxPrice]);
-        $query->andFilterWhere(['=', 'category', $this->category]);
+        $query->andFilterWhere(['=', 'prices.category', $this->category]);
         $query->andFilterWhere(['<>', 'stocks.quantity', 0]);
         if (!empty($this->lowPrice) && !empty($this->bigPrice) !== false) {
             $query->andFilterWhere(['between', 'maxPrice', $this->lowPrice, $this->bigPrice]);
