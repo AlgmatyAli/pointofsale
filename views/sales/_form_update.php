@@ -9,6 +9,8 @@ use yii\helpers\Url;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
 use yii\web\JsExpression;
+use yii\widgets\Pjax;
+
 /* @var $this yii\web\View */
 /* @var $model app\models\Sales */
 /* @var $form yii\widgets\ActiveForm */
@@ -42,15 +44,92 @@ use yii\web\JsExpression;
             ?>
         </div>
     </div>
-    <br>
+    <div class="row">
+        <?php Pjax::begin(['id' => 'pjax-grid-view']); ?>
+        <?php //if ($dataProvider->getCount() == 0) { 
+        ?>
+        <div class="col-md-2 col-sm-6 col-xs-12">
+            <div class="info-box">
+                <span class="info-box-icon bg-aqua"><i class="fa fa-fw fa-dollar"></i></span>
+
+                <div class="info-box-content">
+                    <span class="info-box-text"><?= Yii::t('app', 'Items Count') ?></span>
+                    <span class="info-box-number"><?php echo $dataProvider->getCount() ?><small></small></span>
+                </div>
+                <!-- /.info-box-content -->
+            </div>
+            <!-- /.info-box -->
+        </div>
+        <?php  //} 
+        ?>
+
+
+        <?php $count = 0;
+        foreach ($dataProvider->getModels() as $dataP) {
+            $count = $dataP->quantity + $count;
+        }
+
+        //if ($count != 0) { 
+        ?>
+
+        <div class="col-md-2 col-sm-6 col-xs-12">
+            <div class="info-box">
+                <span class="info-box-icon bg-green"><i class="fa fa-fw fa-dollar"></i></span>
+
+                <div class="info-box-content">
+                    <span class="info-box-text"><?= Yii::t('app', 'items quantity') ?></span>
+                    <span class="info-box-number"><?= $count ?><small></small></span>
+                </div>
+            </div>
+        </div>
+        <?php //} 
+        ?>
+
+
+        <?php $count = 0;
+        $total = 0;
+        $profit = 0;
+        foreach ($dataProvider->getModels() as $sum) {
+
+            $count = $sum->quantity * $sum->salePrice;
+            $countProfit = ($sum->quantity * $sum->salePrice) - ($sum->quantity * $sum->costPrice);
+            $total = $total + $count;
+            $profit = $profit + $countProfit;
+        }
+
+        //if ($count != 0) { 
+        ?>
+        <div class="col-md-4 col-sm-6 col-xs-12">
+            <div class="info-box">
+                <span class="info-box-icon bg-yellow"><i class="fa fa-fw fa-dollar"></i></span>
+
+                <div class="info-box-content">
+                    <span class="info-box-text"><?= Yii::t('app', 'Total Invoice') ?></span>
+                    <span class="info-box-number"><?= @number_format($total, 3) ?>
+                        <br>
+                        <?php if (Yii::$app->user->identity->seeCostPrice == 1) { ?>
+                            <small><?= @number_format($profit, 3) ?></small>
+                        <?php } ?>
+                    </span>
+                </div>
+                <!-- /.info-box-content -->
+            </div>
+            <!-- /.info-box -->
+        </div>
+        <hr>
+        <?php //} 
+        ?>
+    </div>
+    <?php Pjax::end(); ?>
+    <hr>
     <?= $form->errorSummary($model); ?>
     <div class="row">
         <div class="col-md-4">
             <?= $form->field($model, 'type')->dropDownList(['2' => 'مسترجع مبيعات', '1' => 'فاتورة نهائية', '3' => 'فاتورة حجز', '4' => 'فاتورة مبدئية'])->label(yii::t('app', 'Invoice Type')) ?>
             <?php
             if (Yii::$app->user->identity->client <> null) {
-                echo $form->field($model, 'clinet')->widget(\kartik\widgets\Select2::classname(), [
-                    'data' => \yii\helpers\ArrayHelper::map(\app\models\Client::find()
+                echo $form->field($model, 'clinet')->widget(\kartik\widgets\Select2::class, [
+                    'data' =>  ArrayHelper::map(\app\models\Client::find()
                         ->where(['in', 'type', [0, 2]])
                         //->andWhere(['branch' => Yii::$app->user->identity->branch])
                         ->andWhere(['in', 'id', explode(',', Yii::$app->user->identity->client)])
@@ -61,8 +140,8 @@ use yii\web\JsExpression;
                     ],
                 ]);
             } else {
-                echo $form->field($model, 'clinet')->widget(\kartik\widgets\Select2::classname(), [
-                    'data' => \yii\helpers\ArrayHelper::map(\app\models\Client::find()
+                echo $form->field($model, 'clinet')->widget(\kartik\widgets\Select2::class, [
+                    'data' =>  ArrayHelper::map(\app\models\Client::find()
                         ->where(['in', 'type', [0, 2]])
                         //->andWhere(['branch' => Yii::$app->user->identity->branch])                       
                         ->orderBy('id')->asArray()->all(), 'id', 'name'),
@@ -74,7 +153,7 @@ use yii\web\JsExpression;
             ?>
             <?= $form->field($model, 'notes')->textInput(['maxlength' => true, 'placeholder' => 'Notes']) ?>
             <?php
-            echo $form->field($model, 'currancy')->widget(Select2::classname(), [
+            echo $form->field($model, 'currancy')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Currancy::find()->all(), 'id', 'name'),
                 'language' => 'ar',
                 'pluginOptions' => [
@@ -83,19 +162,11 @@ use yii\web\JsExpression;
                 ],
             ]);
             ?>
-            <br>
-            <?php
-            if ($model->type != 2) {
-                echo $form->field($model, 'deleviried')->checkbox(['id' => "todayis"]);
-            } else {
-                echo $form->field($model, 'deleviried')->checkbox(['checked' => true, 'id' => "todayis"]);
-            }
-            ?>
         </div>
         <div class="col-md-4">
             <?=
             $form->field($model, 'at')->widget(
-                DatePicker::className(),
+                DatePicker::class,
                 [
                     'value' => '02-16-2012',
                     'language' => 'ar',
@@ -118,7 +189,7 @@ use yii\web\JsExpression;
             ?>
             <?=
             $form->field($model, 'deserving')->widget(
-                DatePicker::className(),
+                DatePicker::class,
                 [
                     'value' => '02-16-2012',
                     'language' => 'ar',
@@ -132,7 +203,7 @@ use yii\web\JsExpression;
             ) ?>
             <?=
             $form->field($model, 'deleviryAt')->widget(
-                DatePicker::className(),
+                DatePicker::class,
                 [
                     'value' => '02-16-2012',
                     //'id' => 'deleviryAt',
@@ -161,6 +232,13 @@ use yii\web\JsExpression;
             ?>
             <br>
             <?php echo $form->field($model, 'wholesale')->checkbox(); ?>
+            <?php
+            if ($model->type != 2) {
+                echo $form->field($model, 'deleviried')->checkbox(['id' => "todayis"]);
+            } else {
+                echo $form->field($model, 'deleviried')->checkbox(['checked' => true, 'id' => "todayis"]);
+            }
+            ?>
         </div>
         <?= $form->field($model, 'id')->hiddenInput()->label(false) ?>
     </div>

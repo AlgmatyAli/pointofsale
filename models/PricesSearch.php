@@ -42,7 +42,9 @@ class PricesSearch extends Prices
     public function search($params)
     {
         $query = Prices::find()
-            ->joinwith(['category0']);
+            ->joinwith(['category0'])
+            ->joinwith(['stocks0']);
+
         //->where('costPrice<>0');
 
         // add conditions that should always apply here
@@ -76,6 +78,7 @@ class PricesSearch extends Prices
         $query->andFilterWhere(['=', 'minPrice3', $this->minPrice3]);
         $query->andFilterWhere(['=', 'axPrice', $this->maxPrice]);
         $query->andFilterWhere(['=', 'category', $this->category]);
+        $query->andFilterWhere(['<>', 'stocks.quantity', 0]);
         if (!empty($this->lowPrice) && !empty($this->bigPrice) !== false) {
             $query->andFilterWhere(['between', 'maxPrice', $this->lowPrice, $this->bigPrice]);
         }
