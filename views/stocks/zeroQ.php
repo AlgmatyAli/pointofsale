@@ -2,6 +2,7 @@
 
 use kartik\grid\GridView;
 use yii\helpers\Html;
+use yii\helpers\Url;
 use yii\widgets\Pjax;
 /* @var $this yii\web\View */
 /* @var $searchModel app\models\StocksSearch */
@@ -20,7 +21,16 @@ $this->params['breadcrumbs'][] = $this->title;
     <?php
     $gridColumn = [
         [
+            'label' => Yii::t('app', 'ID'),
+            'headerOptions' => ['style' => 'width:10%'],
+            'value' => function ($data) {
+                return $data->id;
+            },
+
+        ],
+        [
             'label' => Yii::t('app', 'Name'),
+            'headerOptions' => ['style' => 'width:20%'],
             'value' => function ($data) {
                 return $data->name;
             },
@@ -29,7 +39,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
         [
             'label' => Yii::t('app', 'Serial No'),
-            'headerOptions' => ['style' => 'width:5px'],
+            'headerOptions' => ['style' => 'width:15%'],
             'value' => function ($data) {
                 return $data->serialNo;
             }
@@ -61,6 +71,17 @@ $this->params['breadcrumbs'][] = $this->title;
                 return $data->branchName;
             }
 
+        ],
+
+        [
+            'class' => 'yii\grid\ActionColumn',
+            'template' => '{transfer}',
+            'buttons' => [
+                'transfer' => function ($url, $model, $key) {
+                    $url = Url::to(['stocks/transfer', 'id' => $model['id']]);
+                    return Html::a('<i class="glyphicon glyphicon-open"></i>', $url, ['class' => 'btn btn-default']);
+                }
+            ],
         ],
     ];
     ?>

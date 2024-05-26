@@ -5,6 +5,9 @@ namespace app\controllers;
 use Yii;
 use app\models\Stocks;
 use app\models\StocksSearch;
+use app\models\TempTransferItems;
+use app\models\TransferItems;
+use app\models\TransferItemsDetails;
 use yii\data\ActiveDataProvider;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
@@ -17,7 +20,7 @@ class StocksController extends Controller
 {
     /**
      * {@inheritdoc}
-     */ 
+     */
     public function behaviors()
     {
         return [
@@ -32,7 +35,7 @@ class StocksController extends Controller
                 'rules' => [
                     [
                         'allow' => true,
-                        'actions' => ['index', 'list', 'price-list', 'stock-taking', 'zero-q'],
+                        'actions' => ['index', 'list', 'price-list', 'stock-taking', 'zero-q', 'transfer'],
                         'roles' => ['inventory']
                     ],
                     [
@@ -56,8 +59,8 @@ class StocksController extends Controller
             'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
             'quantity' => 0,
-            'costPrice'=> 0,
-            'salePrice' =>0,
+            'costPrice' => 0,
+            'salePrice' => 0,
         ]);
     }
 
@@ -146,20 +149,50 @@ class StocksController extends Controller
     {
         $dataProvider = new ActiveDataProvider([
             'query' => Stocks::find()
-           ->select('category.id, max(category.name) name, max(category.serialNo) serialNo,  max(category.company) company, 
+                ->select('category.id, max(category.name) name, max(category.serialNo) serialNo,  max(category.company) company, 
                      sum(stocks.quantity) quantity, max(branches.name) branchName')
-           ->leftJoin('category', 'category.id = stocks.category')
-           ->leftJoin('branches','branches.id = stocks.branch')
-           ->groupBy('category.id, stocks.branch')
-           ->having('sum(stocks.quantity) < 0')
-           ->orderBy('category.id'),
-                 
-        'pagination' => [
-            'pageSize' => 70],
-      ]);
+                ->leftJoin('category', 'category.id = stocks.category')
+                ->leftJoin('branches', 'branches.id = stocks.branch')
+                ->groupBy('category.id, stocks.branch')
+                ->having('sum(stocks.quantity) < 0')
+                ->orderBy('category.id'),
+
+            'pagination' => [
+                'pageSize' => 70
+            ],
+        ]);
 
         return $this->render('zeroQ', [
             'dataProvider' => $dataProvider,
         ]);
+    }
+
+    public function actionTransfer($id)
+    {
+
+        $item = Stocks::find()->where(['=', 'category', $id])
+            ->andWhere(['<', 'quantity', 0])->one();
+
+        $maxId = TempTransferItems::find()->max('id') + 1;
+
+        $exist = TempTransferItems::find()->where(['=', 'category', $id])->one();
+        if ($exist) {
+            Yii::$app->session->setFlash('warning', Yii::t('app', "عفوا هذا الصنف تم ترحيله مسبقا، الرجاء مراجعة قائمة ترحيل الاصناف بين الفروع"));
+            return $this->redirect(['/stocks/zero-q']);
+        } else {
+
+            $command = Yii::$app->db->createCommand("INSERT INTO temptransferitems 
+        ( id ,  category ,  quantity ,  created_by ,  created_at )
+        VALUES 
+        (:id, :category, :quantity, :created_by, :created_at)");
+            $command->bindValue(':id', $maxId);
+            $command->bindValue(':category', $id);
+            $command->bindValue(':quantity', abs($item['quantity']));
+            $command->bindValue(':created_by', Yii::$app->user->identity->id);
+            $command->bindValue(':created_at', date('Y-m-d'));
+            $command->execute();
+
+            return $this->redirect(['/temp-transfer-items/create']);
+        }
     }
 }

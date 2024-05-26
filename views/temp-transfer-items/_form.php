@@ -4,7 +4,6 @@ use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use kartik\grid\GridView;
 use yii\helpers\Url;
-use app\models\TempTransferItems;
 use kartik\select2\Select2;
 use yii\web\JsExpression;
 /* @var $this yii\web\View */
@@ -126,13 +125,21 @@ JS;
     <?php ActiveForm::end(); ?>
     <?php
     $gridColumn = [
-        ['class' => 'yii\grid\SerialColumn'],
-
         ['attribute' => 'id', 'visible' => false],
+
+        [
+            'label' => Yii::t('app', 'ID'),
+            'headerOptions' => ['style' => 'width:10%'],
+            'value' => function ($data) {
+                return $data->category;
+            },
+
+        ],
+
         [
             'attribute' => 'category',
             'label' => Yii::t('app', 'Category'),
-            'contentOptions' => ['style' => 'font-size:14px;'],
+            'headerOptions' => ['style' => 'width:20%'],
             'value' => function ($model) {
                 return $model->category0->name;
             },
@@ -145,9 +152,27 @@ JS;
         ],
 
         [
+            'label' => Yii::t('app', 'Serial No'),
+            'headerOptions' => ['style' => 'width:20%'],
+            'value' => function ($data) {
+                return $data->category0->serialNo;
+            },
+
+        ],
+
+        [
+            'label' => Yii::t('app', 'Company'),
+            'headerOptions' => ['style' => 'width:10%'],
+            'value' => function ($data) {
+                return $data->category0->company;
+            },
+
+        ],
+
+        [
             'class' => 'kartik\grid\EditableColumn',
             'attribute' => 'quantity',
-            'contentOptions' => ['style' => 'font-size:14px;'],
+            'headerOptions' => ['style' => 'width:10%'],
             'label' => Yii::t('app', 'quantity'),
             'editableOptions' => [
                 'asPopover' => true,
@@ -166,11 +191,11 @@ JS;
                 },
             ],
         ],
+
     ];
     ?>
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
-        'options' => ['style' => 'font-size:10px;'],
         'containerOptions' => ['style' => 'overflow: auto'],
         'layout' => '{items}{pager}',
         'summary' => true,
@@ -181,7 +206,6 @@ JS;
             'options' => [
                 'id' => 'w1',
             ]
-
         ],
         'pjaxSettings' => ['options' => ['id' => 'kv-pjax-container-temp-transfer-items']],
         'showPageSummary' => true,
