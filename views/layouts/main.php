@@ -7,7 +7,7 @@ use app\models\CompanyInfo;
 /* @var $content string */
 
         yii\bootstrap\Modal::begin([
-            'header' => '<b>' . Yii::t('app', 'Zain') . '<hr></b>',
+            'header' => '<b>' . Yii::t('app', 'Jupiter') . '<hr></b>',
             'headerOptions' => ['id' => 'modalHeader'],
             'id' => 'modal',
             'size' => 'modal-lg',

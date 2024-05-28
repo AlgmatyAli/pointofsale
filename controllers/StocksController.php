@@ -181,7 +181,7 @@ class StocksController extends Controller
             return $this->redirect(['/stocks/zero-q']);
         } else {
 
-            $command = Yii::$app->db->createCommand("INSERT INTO temptransferitems 
+            $command = Yii::$app->db->createCommand("INSERT INTO tempTransferItems 
         ( id ,  category ,  quantity ,  created_by ,  created_at )
         VALUES 
         (:id, :category, :quantity, :created_by, :created_at)");

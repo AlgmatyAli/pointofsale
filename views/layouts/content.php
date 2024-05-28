@@ -40,7 +40,7 @@ use dmstr\widgets\Alert;
     <div class="pull-right hidden-xs">
         <b>Version</b> 1.0
     </div>
-    <strong>Copyright &copy;<?=date('Y')?> <a href="http://Zain.ly" target=”_blank”>Zain</a>.</strong> All rights
+    <strong>Copyright &copy;<?=date('Y')?> <a href="#" target=”_blank”>Jupiter</a>.</strong> All rights
     reserved.
    
 </footer>

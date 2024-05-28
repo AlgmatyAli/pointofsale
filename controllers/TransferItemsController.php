@@ -13,7 +13,7 @@ use app\models\base\TempTransferItems;
 use app\models\Stocks;
 use yii\data\ActiveDataProvider;
 use yii\filters\AccessControl;
-
+use yii\helpers\Json;
 
 /**
  * TransferItemsController implements the CRUD actions for TransferItems model.
@@ -190,7 +190,52 @@ class TransferItemsController extends Controller
             'pagination' => false,
         ]);
 
+        if (yii::$app->request->post('hasEditable')) {
+            $id = Yii::$app->request->post('editableKey');
+            $result = TransferItemsDetails::findOne($id);
+            $out = Json::encode(['output' => '', 'message' => '']);
+            $post = [];
+            $posted = current($_POST['TransferItemsDetails']);
+            $post['TransferItemsDetails'] = $posted;
+            if ($result->load($post)) {
+                $result->save(false);
+                if (isset($posted['quantity'])) {
+                    $outMessage = $result->quantity;
+                }
+
+                $output = $outMessage;
+
+                $out = Json::encode(['output' => $output]);
+
+                return $out;
+            }
+        }
         if ($model->load(Yii::$app->request->post())) {
+
+            if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
+                $branch = Yii::$app->user->identity->branch;
+            } else {
+                $branch = [1, 2, 3];
+            }
+
+            $item = Stocks::find()
+                ->select([
+                    'stocks.category as id', 'stocks.quantity as quantity',
+                    'prices.costPrice', 'prices.minPrice', 'prices.maxPrice'
+                ])
+                ->leftJoin('prices', 'stocks.category = prices.category')
+                ->where(['stocks.category' => $model->category])
+                ->andWhere(['<>', 'stocks.quantity', 0])
+                ->andwhere(['in', 'stocks.type', 1])
+                ->andWhere(['in', 'stocks.branch', $branch])
+                ->one();
+
+            if ($item != null) {
+                if ($model->quantity > $item->quantity) {
+                    $model->quantity = abs($item->quantity);
+                }
+            }
+
             $model->update_at = date('Y-m-d H:i:s');
             $model->user_update = Yii::$app->user->identity->id;
             $model->save();

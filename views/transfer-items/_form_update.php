@@ -174,6 +174,7 @@ JS;
         ?>
       
         <?php ActiveForm::end(); ?>
+        <br>
         <?php
         $gridColumn = [
             ['class' => 'yii\grid\SerialColumn'],

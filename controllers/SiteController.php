@@ -10,6 +10,7 @@ use yii\filters\VerbFilter;
 use app\models\LoginForm;
 use app\models\Sales;
 use app\models\base\TempInvoicePurchase;
+use app\models\CompanyInfo;
 use app\models\TempInvoice;
 use app\models\InventorySearch;
 use app\models\Prices;
@@ -75,7 +76,9 @@ class SiteController extends Controller
     {
         if (Yii::$app->user->isGuest){
             return $this->redirect(Yii::$app->urlManager->createUrl(["site/login"]));
-        }
+        }else{
+
+        
         $count = 0;
         $counter = 0;
         $tempPurchase = 0;
@@ -171,6 +174,8 @@ class SiteController extends Controller
 
         $zeroQ = Stocks::find()->select('id')->where(['<', 'quantity', 0])->count();
 
+        $model = new TempInvoice();
+        $company = CompanyInfo::find()->one();
         return $this->render('index',[
             'reorder'=>$count,
             'tempPurchase' => $tempPurchase,
@@ -189,7 +194,10 @@ class SiteController extends Controller
             'dateOfArrival' => $dateOfArrival,
             'compare' => $compare,
             'zeroQ' => $zeroQ,
+            'model' => $model,
+            'company' => $company
         ]);
+    }
     }
 
     /**

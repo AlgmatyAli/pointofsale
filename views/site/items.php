@@ -7,7 +7,7 @@ use kartik\grid\GridView;
 /* @var $form yii\bootstrap\ActiveForm */
 /* @var $model \common\models\LoginForm */
 app\assets\SaleAsset::register($this);
-$this->title = 'Zain - Point of sale';
+$this->title = 'Jupiter - Point of sale';
  
 ?>
 
