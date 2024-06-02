@@ -25,3 +25,6 @@
 /vendors/*
 /vendor/
 /runtime/
+/web/img/
+/config/db.php
+/app/config/db.php

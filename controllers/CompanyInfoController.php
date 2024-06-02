@@ -162,6 +162,7 @@ class CompanyInfoController extends Controller
             }
             if($model->file != null){
             $model->file = UploadedFile::getInstance($model,'file');
+            if ($model->file != null) {
             $ext = substr(strrchr($model->file,'.'),1);
            if($ext != null)
             {        
@@ -170,6 +171,7 @@ class CompanyInfoController extends Controller
               $model->path=$path.'/'.$uniqid.'.'.$model->file->extension;
             } 
         }
+    }
             $model->save();
             return $this->redirect(['view', 'id' => $model->id]);
         } else {

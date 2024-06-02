@@ -36,9 +36,11 @@ class TempInvoiceController extends Controller
                 'rules' => [
                     [
                         'allow' => true,
-                        'actions' => ['create', 'view', 'get-inv', 'delete', 'updatqyt', 'deleteing',
-                        'save', 'delete-all', 'create-ajax', 'createfast', 'hold', 'holded', 'fast',
-                        'unhold', 'add', 'ajax-comment'],
+                        'actions' => [
+                            'create', 'view', 'get-inv', 'delete', 'updatqyt', 'deleteing',
+                            'save', 'delete-all', 'create-ajax', 'createfast', 'hold', 'holded', 'fast',
+                            'unhold', 'add', 'ajax-comment'
+                        ],
                         'roles' => ['createSales'],
                     ],
                 ],
@@ -105,12 +107,13 @@ class TempInvoiceController extends Controller
     {
         $company = CompanyInfo::find()->one();
         $model = new TempInvoice();
+
         if (Yii::$app->user->can('saleOnHoldItems')) {
             $type = [1, 2, 3];
         } else {
             $type = [1, 2, 3];
         }
-       
+
         $searchModel = new TempInvoiceSearch();
         $searchModel->created_by = Yii::$app->user->identity->id;
         $searchModel->state = 1;
@@ -126,24 +129,38 @@ class TempInvoiceController extends Controller
 
             $post['TempInvoice'] = $posted;
             if ($result->load($post)) {
-                if(Yii::$app->user->identity->seeOtherBranchQ == 0){
+                if (Yii::$app->user->identity->seeOtherBranchQ == '0') {
                     $branch = Yii::$app->user->identity->branch;
-                }else{
+                } else {
                     $branch = [1, 2, 3];
                 }
                 $data = Stocks::find()
-                ->select(['stocks.category', 'stocks.quantity as quantity', 'prices.costPrice',
-                          'prices.minPrice', 'prices.maxPrice'])
-                ->leftJoin('prices', 'stocks.category = prices.category')
-                    ->Where(['stocks.branch' => Yii::$app->user->identity->branch])
+                    ->select([
+                        'max(stocks.category) as category', 'sum(stocks.quantity) as quantity', 'max(prices.costPrice) as costPrice',
+                        'max(prices.minPrice) as minPrice', 'max(prices.maxPrice) as maxPrice'
+                    ])
+                    ->leftJoin('prices', 'stocks.category = prices.category')
+                    ->Where(['stocks.branch' => $branch])
                     ->andwhere(['stocks.category' => $result->category])
                     ->andwhere(['in', 'stocks.type', $type])
                     ->one();
 
+                $sumQnty = TempInvoice::find()
+                    ->where(['category' => $result->category, 'created_by' => Yii::$app->user->identity->id,])
+                    ->andWhere(['!=', 'id', $result->id])
+                    ->andWhere(['=', 'state', 1])
+                    ->sum('quantity');
+
+                $balance = $data->quantity - $sumQnty;
+
+                if ($posted['quantity'] >= $balance) {
+                    $remaining = $balance;
+                } else {
+                    $remaining = $posted['quantity'];
+                }
+
                 if (isset($posted['quantity'])) {
-                    if ($data->quantity < $result->quantity) {
-                        $result->quantity = $data->quantity;
-                    }
+                    $result->quantity = $remaining;
                     $outMessage = $result->quantity;
                     $result->save(false);
                 } elseif (isset($posted['serial_number'])) {
@@ -173,88 +190,105 @@ class TempInvoiceController extends Controller
          * في حالة محاولة تعديل سعر البيع، يتم النظر اذا كان السعر اصغر من اقل سعر بيع تقوم المنضومه بتغيير السعر
          * الي اقل سعر بيع ولا يمكن البيع باقل منه
          */
-         //else {
-            // Code to handle non-Ajax request
+        //else {
+        // Code to handle non-Ajax request
         //}
-         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
-             if(Yii::$app->user->identity->seeOtherBranchQ == 0){
-                 $branch = Yii::$app->user->identity->branch;
-             }else{
-                 $branch = [1, 2, 3];
-             }
-        $item = Stocks::find()
-        ->select(['stocks.category as id', 'stocks.quantity as quantity',
-                  'prices.costPrice', 'prices.minPrice', 'prices.maxPrice'])
-            ->leftJoin('prices', 'stocks.category = prices.category')
-            ->where(['stocks.category' => $model->category])
-            ->andWhere(['<>', 'stocks.quantity', 0])
-            ->andwhere(['in', 'stocks.type', $type])
-            ->andWhere(['in', 'stocks.branch', $branch])
-            ->one();
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
+                $branch = Yii::$app->user->identity->branch;
+            } else {
+                $branch = [1, 2, 3];
+            }
+            $item = Stocks::find()
+                ->select([
+                    'max(stocks.category) as id', 'sum(stocks.quantity) as quantity',
+                    'max(prices.costPrice) as costPrice', 'max(prices.minPrice) as minPrice', 'max(prices.maxPrice) as maxPrice'
+                ])
+                ->leftJoin('prices', 'stocks.category = prices.category')
+                ->where(['stocks.category' => $model->category])
+                ->andWhere(['<>', 'stocks.quantity', 0])
+                ->andwhere(['in', 'stocks.type', $type])
+                ->andWhere(['in', 'stocks.branch', $branch])
+                ->one();
 
-        if ($company->repeatCategory == 0) {
-            
-            $exist = TempInvoice::find()
+            $sumQnty = TempInvoice::find()
                 ->where(['category' => $model->category, 'created_by' => Yii::$app->user->identity->id,])
                 ->andWhere(['=', 'state', 1])
-                ->one();
-            if ($exist) {
-                
-                Yii::$app->response->format = Response::FORMAT_JSON;
-                return ['error' => true, 'message' =>  Yii::t('app', "Sorry The Item You Insert already exists")];
+                ->sum('quantity');
+
+
+            $balance = $item->quantity - $sumQnty;
+
+            if ($model->quantity > $balance) {
+                $remaining = $balance;
+            } else {
+                $remaining = $model->quantity;
             }
-        }
-        
-        if ($model->quantity <= 0) {
-           Yii::$app->response->format = Response::FORMAT_JSON;
-           return ['error' => true, 'message' => Yii::t('app', "Sorry You Enter Zero Value As Quantity")];
-        }
-        
-        if ($model->salePrice <= 0) {
-            Yii::$app->response->format = Response::FORMAT_JSON;
-           return ['error' => true, 'message' => Yii::t('app', "Sorry You Enter Zero Value As Sale Price")];
-        }
-        
-        if ($model->quantity > $item->quantity) {
-            $model->quantity = $item->quantity;
-        }
-       
-        if ($model->salePrice <= 0) {
-            Yii::$app->response->format = Response::FORMAT_JSON;
-            return ['error' => true, 'message' => Yii::t('app', "Sorry The SalePrice
-            You Enter Less Than The MinPrice")];
-        }
-        if ($model->salePrice < $item->costPrice) {
-            echo '<script type="text/javascript">
+            $model->quantity = $remaining;
+
+            if ($sumQnty >= $item->quantity) {
+                Yii::$app->response->format = Response::FORMAT_JSON;
+                return ['error' => true, 'message' => Yii::t('app', "عفوا لقد تجاوزت الكمية الموجودة لايمكنك الاستمرار")];
+            }
+
+            if ($company->repeatCategory == 0) {
+
+                $exist = TempInvoice::find()
+                    ->where(['category' => $model->category, 'created_by' => Yii::$app->user->identity->id,])
+                    ->andWhere(['=', 'state', 1])
+                    ->one();
+                if ($exist) {
+
+                    Yii::$app->response->format = Response::FORMAT_JSON;
+                    return ['error' => true, 'message' =>  Yii::t('app', "Sorry The Item You Insert already exists")];
+                }
+            }
+
+            if ($model->quantity <= 0) {
+                Yii::$app->response->format = Response::FORMAT_JSON;
+                return ['error' => true, 'message' => Yii::t('app', "Sorry You Enter Zero Value As Quantity")];
+            }
+
+            if ($model->salePrice <= 0) {
+                Yii::$app->response->format = Response::FORMAT_JSON;
+                return ['error' => true, 'message' => Yii::t('app', "Sorry You Enter Zero Value As Sale Price")];
+            }
+
+            if ($model->salePrice <= 0) {
+                Yii::$app->response->format = Response::FORMAT_JSON;
+                return ['error' => true, 'message' => Yii::t('app', "Sorry The SalePrice You Enter Less Than The MinPrice")];
+            }
+            if ($model->salePrice < $item->costPrice) {
+                echo '<script type="text/javascript">
             alert("عفوا سعر البيع الذي ادخلته اقل من سعر التكلفة");
            </script>';
-           exit;
+                exit;
+            } else {
+                $model->category = $item->id;
+                $model->costPrice = $item->costPrice;
+                $model->box = 1;
+                $model->state = 1;
+                $model->created_by = Yii::$app->user->identity->id;
+                $model->created_at =
+                    $model->saveAll();
+            }
+            // increment the counter
+            $counter = TempInvoice::find()
+                ->where(['=', 'created_by', Yii::$app->user->identity->id])
+                ->andWhere(['=', 'state', 1])
+                ->count();
+            Yii::$app->session->set('submitCounter', $counter);
+            // return the response
+            Yii::$app->response->format = Response::FORMAT_JSON;
+            return ['success' => true, 'counter' => $counter];
         } else {
-            $model->category = $item->id;
-            $model->costPrice = $item->costPrice;
-            $model->box = 1;
-            $model->state = 1;
-            $model->created_by = Yii::$app->user->identity->id;
-            $model->created_at = 
-            $model->saveAll();
-        }
-        // increment the counter
-         $counter = TempInvoice::find()
-         ->where(['=','created_by', Yii::$app->user->identity->id])
-         ->andWhere(['=','state', 1])
-         ->count();
-         Yii::$app->session->set('submitCounter', $counter);
-         // return the response
-         Yii::$app->response->format = Response::FORMAT_JSON;
-         return ['success' => true, 'counter' => $counter];
-         }else {
             return $this->render('create', [
                 'model' => $model,
                 'searchModel' => $searchModel,
                 'dataProvider' => $dataProvider,
                 'company' => $company,
             ]);
-         }
+        }
     }
 
     public function actionCreatefast()
@@ -512,19 +546,19 @@ class TempInvoiceController extends Controller
         return $this->redirect(['create']);
     }
 
-//     public function actionDeleteAll()
-// {
-//     Yii::$app->response->format = Response::FORMAT_JSON;
+    //     public function actionDeleteAll()
+    // {
+    //     Yii::$app->response->format = Response::FORMAT_JSON;
 
-//     if (Yii::$app->request->isAjax) {
-//         // perform delete operation
-//         // ...
-//         TempInvoice::deleteAll(['state' => 1, 'created_by' => Yii::$app->user->identity->id]);
-//         return ['success' => true];
-//     } else {
-//         return ['success' => false];
-//     }
-// }
+    //     if (Yii::$app->request->isAjax) {
+    //         // perform delete operation
+    //         // ...
+    //         TempInvoice::deleteAll(['state' => 1, 'created_by' => Yii::$app->user->identity->id]);
+    //         return ['success' => true];
+    //     } else {
+    //         return ['success' => false];
+    //     }
+    // }
 
     public function actionDeleteAll()
     {
@@ -749,19 +783,20 @@ class TempInvoiceController extends Controller
     {
         $model = new TempInvoice();
         $dataProvider = new ActiveDataProvider([
-           // 'query' => Totalinventory::find()
+            // 'query' => Totalinventory::find()
             'query' => Stocks::find()
-                        ->select(' category.id, max(category.name) as name, sum(stocks.quantity) as quantity, max(category.unit) as unit, max(category.company) as company,
+                ->select(
+                    ' category.id, max(category.name) as name, sum(stocks.quantity) as quantity, max(category.unit) as unit, max(category.company) as company,
                         max(category.box) as box, max(category.class) as class, max(category.serialNo) as serialNo, branch, max(category.commCode) as commCode
                         ,max(maxPrice) as maxPrice, max(costPrice) as costPrice, max(minPrice) as minPrice'
-                        )
-                        ->leftJoin('category', 'category.id = stocks.category')
-                        ->leftJoin('prices', 'category.id = prices.category')
-                        ->groupBy('stocks.category, stocks.branch')
-                        ->having('sum(stocks.quantity) <>0')
+                )
+                ->leftJoin('category', 'category.id = stocks.category')
+                ->leftJoin('prices', 'category.id = prices.category')
+                ->groupBy('stocks.category, stocks.branch')
+                ->having('sum(stocks.quantity) <>0')
                 //->Where(['branch' => Yii::$app->user->identity->branch,]),
                 ->Where(['category.id' => 23]),
-                //->andWhere(['<>', 'quantity', 0]),
+            //->andWhere(['<>', 'quantity', 0]),
             'sort' => [
                 'defaultOrder' => [
                     'id' => SORT_DESC
@@ -864,5 +899,4 @@ class TempInvoiceController extends Controller
         } else
             return false;
     }
-
 }

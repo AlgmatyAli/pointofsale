@@ -197,8 +197,8 @@ class SalesController extends Controller
                         ->one();
                     /** get if valeu larger than to requsetd val  */
                     if ($model->type != 2) {
-                        if ($quantity >= $stockQ->quantity) {
-                            $result->quantity = $stockQ->quantity;
+                        if ($quantity >= abs($stockQ->quantity)) {
+                            $result->quantity = abs($stockQ->quantity);
                         } else {
                             $result->quantity = $quantity;
                         }
@@ -456,7 +456,7 @@ class SalesController extends Controller
             if ($debtBalance["debt"] <> 0 && $model->type != 4) {
                 if ((float) $total >= (float) $debtBalance["debt"] && $model->payWay == 1) {
                     if (Yii::$app->user->can('userCansellOverDebt')) {
-                        $model->save();
+                        $model->save(false);
                         $id = $model->id;
 
                         $temp_invoice = new TempInvoice();
@@ -484,7 +484,7 @@ class SalesController extends Controller
                                     $branch = [1, 2, 3];
                                 }
                                 $item = Stocks::find()
-                                    ->select(['stocks.category as id', 'stocks.quantity as quantity'])
+                                    ->select(['max(stocks.category) as id', 'sum(stocks.quantity) as quantity'])
                                     ->leftJoin('prices', 'stocks.category = prices.category')
                                     ->where(['stocks.category' => $data->category])
                                     ->andWhere(['<>', 'stocks.quantity', 0])
@@ -493,11 +493,11 @@ class SalesController extends Controller
                                     ->one();
 
                                 if ($item <> null) {
-                                    if ($data->quantity > $item->quantity) {
-                                        $modelDetails->quantity = $item->quantity;
+                                    if ($data->quantity > abs($item->quantity)) {
+                                        $modelDetails->quantity = abs($item->quantity);
                                         $modelDetails->save(false);
                                     } else {
-                                        $modelDetails->quantity = $data->quantity;
+                                        $modelDetails->quantity = abs($data->quantity);
                                         $modelDetails->save(false);
                                     }
                                 } else {
@@ -551,7 +551,7 @@ class SalesController extends Controller
                         return $this->redirect(['temp-invoice/create', 'id' => 1]);
                     }
                 } else {
-                    $model->save();
+                    $model->save(false);
                     $id = $model->id;
 
                     $temp_invoice = TempInvoice::find()->where([
@@ -588,11 +588,11 @@ class SalesController extends Controller
                                 ->andWhere(['in', 'stocks.branch', $branch])
                                 ->one();
                             if ($item <> null) {
-                                if ($data->quantity > $item->quantity) {
-                                    $modelDetails->quantity = $item->quantity;
+                                if ($data->quantity > abs($item->quantity)) {
+                                    $modelDetails->quantity = abs($item->quantity);
                                     $modelDetails->save(false);
                                 } else {
-                                    $modelDetails->quantity = $data->quantity;
+                                    $modelDetails->quantity = abs($item->quantity);
                                     $modelDetails->save(false);
                                 }
                             } else {
@@ -640,7 +640,7 @@ class SalesController extends Controller
                     return $this->redirect(['print', 'id' => $id]);
                 }
             } else {
-                $model->save();
+                $model->save(false);
                 $id = $model->id;
 
                 $temp_invoice = TempInvoice::find()->where([
@@ -675,10 +675,10 @@ class SalesController extends Controller
                             ->andWhere(['in', 'stocks.branch', $branch])
                             ->one();
                         if ($item <> null) {
-                            if ($data->quantity > $item->quantity) {
-                                $modelDetails->quantity = $item->quantity;
+                            if ($data->quantity > abs($item->quantity)) {
+                                $modelDetails->quantity = abs($item->quantity);
                                 $modelDetails->save(false);
-                            } elseif ($data->quantity <= $item->quantity) {
+                            } elseif ($data->quantity <= abs($item->quantity)) {
                                 $modelDetails->quantity = $data->quantity;
                                 $modelDetails->save(false);
                             } else {

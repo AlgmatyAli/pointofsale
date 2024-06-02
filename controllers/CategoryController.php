@@ -143,6 +143,7 @@ class CategoryController extends Controller
                 $path = "img/category";
             }
             $model->file = UploadedFile::getInstance($model,'file');
+            if ($model->file != null) {
             $ext = substr(strrchr($model->file,'.'),1);
            if($ext != null)
             {        
@@ -150,6 +151,7 @@ class CategoryController extends Controller
               $model->file->saveAs($path.'/'.$uniqid.'.'.$model->file->extension );   
               $model->path=$path.'/'.$uniqid.'.'.$model->file->extension;
             } 
+        }
             //=========
             if($model->quantity == null){
                 $model->quantity = 0;
@@ -200,6 +202,7 @@ class CategoryController extends Controller
                 $path = "img/category";
             }
             $model->file = UploadedFile::getInstance($model,'file');
+            if ($model->file != null) {
             $ext = substr(strrchr($model->file,'.'),1);
            if($ext != null)
             {
@@ -207,6 +210,7 @@ class CategoryController extends Controller
               $model->file->saveAs($path.'/'.$uniqid.'.'.$model->file->extension );
               $model->path=$path.'/'.$uniqid.'.'.$model->file->extension;
             }
+        }
             $model->save();
 
             return $this->redirect(['view', 'id' => $model->id]);
