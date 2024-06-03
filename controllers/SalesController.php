@@ -493,6 +493,7 @@ class SalesController extends Controller
                                     ->one();
 
                                 if ($item <> null) {
+                                   // die(var_dump(' first '.$data->quantity.' - '.abs($item->quantity)));
                                     if ($data->quantity > abs($item->quantity)) {
                                         $modelDetails->quantity = abs($item->quantity);
                                         $modelDetails->save(false);
@@ -580,7 +581,7 @@ class SalesController extends Controller
                             }
 
                             $item = Stocks::find()
-                                ->select(['stocks.category as id', 'stocks.quantity as quantity'])
+                                ->select(['max(stocks.category) as id', 'sum(stocks.quantity) as quantity'])
                                 ->leftJoin('prices', 'stocks.category = prices.category')
                                 ->where(['stocks.category' => $data->category])
                                 ->andWhere(['<>', 'stocks.quantity', 0])
@@ -588,11 +589,12 @@ class SalesController extends Controller
                                 ->andWhere(['in', 'stocks.branch', $branch])
                                 ->one();
                             if ($item <> null) {
+                               // die(var_dump(' second '.$data->quantity.' - '.abs($item->quantity)));
                                 if ($data->quantity > abs($item->quantity)) {
                                     $modelDetails->quantity = abs($item->quantity);
                                     $modelDetails->save(false);
                                 } else {
-                                    $modelDetails->quantity = abs($item->quantity);
+                                    $modelDetails->quantity = abs($data->quantity);
                                     $modelDetails->save(false);
                                 }
                             } else {
@@ -667,7 +669,7 @@ class SalesController extends Controller
                             $branch = [1, 2, 3];
                         }
                         $item = Stocks::find()
-                            ->select(['stocks.category as id', 'stocks.quantity as quantity'])
+                            ->select(['max(stocks.category) as id', 'sum(stocks.quantity) as quantity'])
                             ->leftJoin('prices', 'stocks.category = prices.category')
                             ->where(['stocks.category' => $data->category])
                             ->andWhere(['<>', 'stocks.quantity', 0])
@@ -675,6 +677,7 @@ class SalesController extends Controller
                             ->andWhere(['in', 'stocks.branch', $branch])
                             ->one();
                         if ($item <> null) {
+                           // die(var_dump(' third '.$data->quantity.' - '.abs($item->quantity)));
                             if ($data->quantity > abs($item->quantity)) {
                                 $modelDetails->quantity = abs($item->quantity);
                                 $modelDetails->save(false);
