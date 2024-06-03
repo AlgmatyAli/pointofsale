@@ -18,7 +18,7 @@ class PricesSearch extends Prices
     {
         return [
             [['id', 'category'], 'integer'],
-            [['serialNo', 'minPrice', 'maxPrice', 'lowPrice', 'bigPrice'], 'safe'],
+            [['serialNo', 'minPrice', 'maxPrice', 'lowPrice', 'bigPrice', 'zeroQnty'], 'safe'],
             [['costPrice', 'minPrice', 'minPrice2', 'minPrice3', 'maxPrice'], 'number'],
         ];
     }
@@ -78,10 +78,15 @@ class PricesSearch extends Prices
         $query->andFilterWhere(['=', 'minPrice3', $this->minPrice3]);
         $query->andFilterWhere(['=', 'axPrice', $this->maxPrice]);
         $query->andFilterWhere(['=', 'prices.category', $this->category]);
-        $query->andFilterWhere(['<>', 'stocks.quantity', 0]);
+        
         if (!empty($this->lowPrice) && !empty($this->bigPrice) !== false) {
             $query->andFilterWhere(['between', 'maxPrice', $this->lowPrice, $this->bigPrice]);
         }
+        if ($this->zeroQnty == false) {
+            $query->andFilterWhere(['<>', 'stocks.quantity', 0]);
+        }
+        
+
         return $dataProvider;
     }
 }

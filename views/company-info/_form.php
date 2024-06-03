@@ -110,7 +110,8 @@ use kartik\widgets\SwitchInput;
                     'onColor' => 'success',
                     'offColor' => 'danger',
                 ]
-            ]); ?>
+            ]); 
+            ?>
             <?php
             echo $form->field($model, 'payWayCash')->widget(SwitchInput::class, [
                 'pluginOptions' => [

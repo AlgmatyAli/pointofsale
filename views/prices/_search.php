@@ -1,10 +1,9 @@
 <?php
 
-use kartik\field\FieldRange;
-use kartik\widgets\Spinner;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use kartik\select2\Select2;
+use kartik\switchinput\SwitchInput;
 use yii\helpers\Url;
 use yii\web\JsExpression;
 /* @var $this yii\web\View */
@@ -107,17 +106,6 @@ JS;
         <div class="col-md-6">
             <?= $form->field($model, 'maxPrice') ?>
 
-            <?php
-            // echo FieldRange::widget([
-            //     'form' => $form,
-            //     'model' => $model,
-            //     'label' => 'Enter amount range',
-            //     'attribute1' => 'minPrice',
-            //     'attribute2' => 'maxPrice',
-            //     'type' => FieldRange::INPUT_SPIN,
-            // ]);
-            ?>
-
             <?= $form->field($model, 'minPrice') ?>
 
             <?= $form->field($model, 'minPrice2') ?>
@@ -126,6 +114,16 @@ JS;
         </div>
         <div class="col-md-2"><?= $form->field($model, 'lowPrice') ?></div>
         <div class="col-md-2"><?= $form->field($model, 'bigPrice') ?></div>
+        <div class="col-md-2" style="height: 3%;"><?php
+             echo $form->field($model, 'zeroQnty')->widget(SwitchInput::class, [
+                'pluginOptions' => [
+                    'size' => 'small',
+                    'onColor' => 'success',
+                    'offColor' => 'danger',
+                ]
+            ]); 
+            ?>
+        </div>
     </div>
 
     <?php // echo $form->field($model, 'minPrice3') 

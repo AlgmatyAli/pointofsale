@@ -22,7 +22,7 @@ class Prices extends \yii\db\ActiveRecord
     /**
      * {@inheritdoc}
      */
-    public $serialNo, $quantity, $company, $lowPrice, $bigPrice, $percentage;
+    public $serialNo, $quantity, $company, $lowPrice, $bigPrice, $percentage, $zeroQnty;
     public static function tableName()
     {
         return 'prices';
@@ -37,7 +37,7 @@ class Prices extends \yii\db\ActiveRecord
         return [
             [['category', 'costPrice'], 'required'],
             [['category'], 'integer'],
-            [['serialNo', 'quantity', 'company', 'lowPrice', 'bigPrice', 'percentage'], 'safe'],
+            [['serialNo', 'quantity', 'company', 'lowPrice', 'bigPrice', 'percentage', 'zeroQnty'], 'safe'],
             [['costPrice', 'minPrice', 'minPrice2', 'minPrice3', 'maxPrice'], 'number'],
             [['category'], 'exist', 'skipOnError' => true, 'targetClass' => Category::class, 'targetAttribute' => ['category' => 'id']],
         ];
@@ -60,6 +60,7 @@ class Prices extends \yii\db\ActiveRecord
             'lowPrice' => Yii::t('app', 'Low Price'),
             'bigPrice' => Yii::t('app', 'Big Price'),
             'Percentage' => Yii::t('app', 'Percentage of increase'),
+            'zeroQnty' => Yii::t('app', 'Zero Qnty'),
         ];
     }
 

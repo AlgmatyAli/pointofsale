@@ -35,9 +35,15 @@ class StocksController extends Controller
                 'rules' => [
                     [
                         'allow' => true,
-                        'actions' => ['index', 'list', 'price-list', 'stock-taking', 'zero-q', 'transfer'],
+                        'actions' => ['index', 'list', 'price-list', 'stock-taking', 'transfer'],
                         'roles' => ['inventory']
                     ],
+                    [
+                        'allow' => true,
+                        'actions' => ['zero-q'],
+                        'roles' => ['userCanSeeStockLessThanZero']
+                    ],
+
                     [
                         'allow' => false
                     ]
