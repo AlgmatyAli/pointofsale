@@ -334,7 +334,7 @@ class ClientController extends Controller
             order by histrans_supplier.trandate, histrans_supplier.billId";
         }
 
-            $connection = \Yii::$app->db;
+            $connection = Yii::$app->db;
             $data = $connection->createCommand($sql);
             $info = $data->queryAll();
             

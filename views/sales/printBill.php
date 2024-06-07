@@ -86,6 +86,7 @@ use app\models\CompanyInfo;
         <th><h5>الشركة المصنعة</h5></th>
         <th><h5>الكمية المتبقية</h5></th>
         <th><h5>الكمية المحجوزة</h5></th>
+        <th><h5>مكان الصنف</h5></th>
        </tr>
       </thead>
        
@@ -105,6 +106,7 @@ use app\models\CompanyInfo;
            <td><?= $data["company"] ?></td>
            <td><?= $data["Qtotalinventory"] ?></td>
            <td><?= $data["reservation"] ?></td>
+           <td><?= $data["place"] ?></td>
            <?php $sumquantity++ ?>
           </tr>
        </tbody>

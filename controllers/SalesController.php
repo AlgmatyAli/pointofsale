@@ -276,8 +276,8 @@ class SalesController extends Controller
 
     public function actionDelete($id)
     {
-        $sales = Sales::find()->select(['type'])->where(['id'=> $id])->one();
-        $salesDetails= SalesDetails::find()->where(['salesId'=> $id])->all();
+        $sales = Sales::find()->select(['type'])->where(['id' => $id])->one();
+        $salesDetails = SalesDetails::find()->where(['salesId' => $id])->all();
 
         Yii::$app->db->createCommand("
                 INSERT INTO sales_deleted (
@@ -323,10 +323,10 @@ class SalesController extends Controller
             }
         }
         Yii::$app
-        ->db
-        ->createCommand()
-        ->delete('sales', ['id' => $id])
-        ->execute();
+            ->db
+            ->createCommand()
+            ->delete('sales', ['id' => $id])
+            ->execute();
         return $this->redirect(['index']);
     }
 
@@ -478,9 +478,9 @@ class SalesController extends Controller
                             $modelDetails->serial_number = $data->serial_number;
                             $modelDetails->mac_address = $data->mac_address;
                             if ($model->type != 4) {
-                                if(Yii::$app->user->identity->seeOtherBranchQ == 0){
+                                if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
                                     $branch = Yii::$app->user->identity->branch;
-                                }else{
+                                } else {
                                     $branch = [1, 2, 3];
                                 }
                                 $item = Stocks::find()
@@ -489,11 +489,10 @@ class SalesController extends Controller
                                     ->where(['stocks.category' => $data->category])
                                     ->andWhere(['<>', 'stocks.quantity', 0])
                                     ->andwhere(['in', 'stocks.type', $model->type])
-                                    ->andWhere(['in','stocks.branch', $branch])
+                                    ->andWhere(['in', 'stocks.branch', $branch])
                                     ->one();
 
                                 if ($item <> null) {
-                                   // die(var_dump(' first '.$data->quantity.' - '.abs($item->quantity)));
                                     if ($data->quantity > abs($item->quantity)) {
                                         $modelDetails->quantity = abs($item->quantity);
                                         $modelDetails->save(false);
@@ -574,9 +573,9 @@ class SalesController extends Controller
                         $modelDetails->serial_number = $data->serial_number;
                         $modelDetails->mac_address = $data->mac_address;
                         if ($model->type != 4) {
-                            if(Yii::$app->user->identity->seeOtherBranchQ == 0){
+                            if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
                                 $branch = Yii::$app->user->identity->branch;
-                            }else{
+                            } else {
                                 $branch = [1, 2, 3];
                             }
 
@@ -589,7 +588,6 @@ class SalesController extends Controller
                                 ->andWhere(['in', 'stocks.branch', $branch])
                                 ->one();
                             if ($item <> null) {
-                               // die(var_dump(' second '.$data->quantity.' - '.abs($item->quantity)));
                                 if ($data->quantity > abs($item->quantity)) {
                                     $modelDetails->quantity = abs($item->quantity);
                                     $modelDetails->save(false);
@@ -663,9 +661,9 @@ class SalesController extends Controller
                     $modelDetails->serial_number = $data->serial_number;
                     $modelDetails->mac_address = $data->mac_address;
                     if ($model->type != 4) {
-                        if(Yii::$app->user->identity->seeOtherBranchQ == 0){
+                        if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
                             $branch = Yii::$app->user->identity->branch;
-                        }else{
+                        } else {
                             $branch = [1, 2, 3];
                         }
                         $item = Stocks::find()
@@ -677,7 +675,6 @@ class SalesController extends Controller
                             ->andWhere(['in', 'stocks.branch', $branch])
                             ->one();
                         if ($item <> null) {
-                           // die(var_dump(' third '.$data->quantity.' - '.abs($item->quantity)));
                             if ($data->quantity > abs($item->quantity)) {
                                 $modelDetails->quantity = abs($item->quantity);
                                 $modelDetails->save(false);
@@ -688,10 +685,10 @@ class SalesController extends Controller
                                 $modelDetails->quantity = $data->quantity;
                                 $modelDetails->save(false);
                             }
+                        } else {
+                            $modelDetails->quantity = 0;
+                            $modelDetails->save(false);
                         }
-                    } else {
-                        $modelDetails->quantity = $data->quantity;
-                        $modelDetails->save(false);
                     }
                     if ($model->type == 1) {
                         Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  - $modelDetails->quantity
@@ -784,7 +781,7 @@ class SalesController extends Controller
                 Totalinventory.quantity as Qtotalinventory,
                 client.name as client, client.mobile,
                 category.name as category, category.serialNo, category.company, category.commCode,
-                category_reservation.quantity as reservation
+                category_reservation.quantity as reservation, category.place as place
                 FROM sales
                 JOIN salesDetails on sales.id = salesDetails.salesId
                 JOIN Totalinventory on salesDetails.category = Totalinventory.id
@@ -1016,31 +1013,31 @@ class SalesController extends Controller
     public function actionItemlist($q = null, $id = null)
     {
         $company = CompanyInfo::find()->one();
-        if($company->criteriaـvalue != 0) {
+        if ($company->criteriaـvalue != 0) {
             $criteriaـvalue = $company->criteriaـvalue;
-        }else{
+        } else {
             $criteriaـvalue = 1;
         }
 
-        if($company->rate != 0) {
-            $rate = ($company->rate/100) ;
+        if ($company->rate != 0) {
+            $rate = ($company->rate / 100);
             $maxPrice = 'CASE
-            WHEN maxPrice >= '. $criteriaـvalue .' THEN round(maxPrice * "' . $rate . '" + maxPrice)
+            WHEN maxPrice >= ' . $criteriaـvalue . ' THEN round(maxPrice * "' . $rate . '" + maxPrice)
             ELSE maxPrice
             END  as maxPrice';
-            
+
             $minPrice = 'CASE
-            WHEN maxPrice >= '. $criteriaـvalue .' THEN round(minPrice * "' . $rate . '" + minPrice)
+            WHEN maxPrice >= ' . $criteriaـvalue . ' THEN round(minPrice * "' . $rate . '" + minPrice)
             ELSE minPrice
             END  as minPrice';
-        }else{
+        } else {
             $maxPrice = 'maxPrice';
             $minPrice = 'minPrice';
         }
 
-        if(Yii::$app->user->Identity->seeOtherBranchQ == 0){
-            $whereBranch = 'branch='.Yii::$app->user->Identity->branch;
-        }else{
+        if (Yii::$app->user->Identity->seeOtherBranchQ == 0) {
+            $whereBranch = 'branch=' . Yii::$app->user->Identity->branch;
+        } else {
             $whereBranch = 'branch in (1,2,3,4,5,6,7,8,9)';
         }
 
@@ -1063,7 +1060,7 @@ class SalesController extends Controller
                         WHEN `type` =2
                         THEN "متوفر"
                         ELSE "قريبا" END as type',
-                        'branches.name AS BRNAME',
+                    'branches.name AS BRNAME',
                 ];
             } else {
                 if (Yii::$app->user->identity->seeCostPrice == 1) {
@@ -1091,7 +1088,7 @@ class SalesController extends Controller
                             WHEN `type` =2
                             THEN "متوفر"
                             ELSE "قريبا" END as type',
-                            'branches.name AS BRNAME',
+                        'branches.name AS BRNAME',
                     ];
                 } else {
                     $secript = [
@@ -1136,12 +1133,11 @@ class SalesController extends Controller
                 ->andWhere($whereBranch)
                 ->andWhere(['<>', 'stocks.quantity', 0])
                 ->limit(60)
-                ->orderBy('category.id','asc');
+                ->orderBy('category.id', 'asc');
             $command = $query->createCommand();
             $data = $command->queryAll();
             $out['results'] = array_values($data);
-        } 
-        elseif ($id > 0) {
+        } elseif ($id > 0) {
             $out['results'] = [
                 'id' => $id, 'text' => TotalInventory::find($id)->name,
                 'company' => TotalInventory::find($id)->company, 'quantity' => TotalInventory::find($id)->quantity,
@@ -1421,24 +1417,24 @@ class SalesController extends Controller
     public function actionItemlistid($q = null, $id = null)
     {
         $company = CompanyInfo::find()->one();
-        if($company->criteriaـvalue != 0) {
+        if ($company->criteriaـvalue != 0) {
             $criteriaـvalue = $company->criteriaـvalue;
-        }else{
+        } else {
             $criteriaـvalue = 1;
         }
 
-        if($company->rate != 0) {
-            $rate = ($company->rate/100) ;
+        if ($company->rate != 0) {
+            $rate = ($company->rate / 100);
             $maxPrice = 'CASE
-            WHEN maxPrice >= '. $criteriaـvalue .' THEN round(maxPrice * "' . $rate . '" + maxPrice)
+            WHEN maxPrice >= ' . $criteriaـvalue . ' THEN round(maxPrice * "' . $rate . '" + maxPrice)
             ELSE maxPrice
             END  as maxPrice';
-            
+
             $minPrice = 'CASE
-            WHEN maxPrice >= '. $criteriaـvalue .' THEN round(minPrice * "' . $rate . '" + minPrice)
+            WHEN maxPrice >= ' . $criteriaـvalue . ' THEN round(minPrice * "' . $rate . '" + minPrice)
             ELSE minPrice
             END  as minPrice';
-        }else{
+        } else {
             $maxPrice = 'maxPrice';
             $minPrice = 'minPrice';
         }
@@ -1456,14 +1452,14 @@ class SalesController extends Controller
                     //          ELSE maxPrice
                     //          END  as maxPrice',
                     $maxPrice,
-                     'serialNo AS serialNo', 'place', 'commCode',
+                    'serialNo AS serialNo', 'place', 'commCode',
                     'CASE
                 WHEN `type` =1
                 THEN "متوفر"
                 WHEN `type` =2
                 THEN "متوفر"
                 ELSE "قريبا" END as type',
-                'branches.name as BRNAME',
+                    'branches.name as BRNAME',
                 ];
             } else {
                 if (Yii::$app->user->identity->seeCostPrice == 1) {
@@ -1474,7 +1470,7 @@ class SalesController extends Controller
                         //      ELSE maxPrice
                         //      END  as maxPrice',
                         $maxPrice,
-                        'costPrice as costPrice', 'serialNo AS serialNo', 
+                        'costPrice as costPrice', 'serialNo AS serialNo',
                         // 'CASE
                         //     WHEN minPrice >= '. $criteriaـvalue . ' THEN round(minPrice * "' . $rate . '" + minPrice)
                         //     ELSE minPrice
@@ -1487,7 +1483,7 @@ class SalesController extends Controller
             WHEN `type` =2
             THEN "متوفر"
             ELSE "قريبا" END as type',
-            'branches.name as BRNAME'
+                        'branches.name as BRNAME'
                     ];
                 } else {
                     $secript = [
@@ -1497,7 +1493,7 @@ class SalesController extends Controller
                         //      ELSE maxPrice
                         //      END  as maxPrice',
                         $maxPrice,
-                        'serialNo AS serialNo', 
+                        'serialNo AS serialNo',
                         // 'CASE
                         //     WHEN minPrice >= '. $criteriaـvalue . ' THEN round(minPrice * "' . $rate . '" + minPrice)
                         //     ELSE minPrice
@@ -1510,7 +1506,7 @@ class SalesController extends Controller
             WHEN `type` =2
             THEN "متوفر"
             ELSE "قريبا" END as type',
-            'branches.name as BRNAME'
+                        'branches.name as BRNAME'
                     ];
                 }
             }
@@ -1520,9 +1516,9 @@ class SalesController extends Controller
                 ->leftJoin('category', 'stocks.category = category.id')
                 ->leftJoin('prices', 'prices.category = category.id')
                 ->leftJoin('branches', 'branches.id = stocks.category')
-               // ->andWhere('stocks.branch=' . Yii::$app->user->Identity->branch)
+                // ->andWhere('stocks.branch=' . Yii::$app->user->Identity->branch)
                 ->Where((['=', 'category.id', $q]))
-               // ->andWhere((['=', 'stocks.branch', Yii::$app->user->identity->branch]))
+                // ->andWhere((['=', 'stocks.branch', Yii::$app->user->identity->branch]))
                 ->andWhere(['=',  'category.status', 0])
                 ->andWhere(['!=', 'stocks.quantity', 0])
                 ->limit(60);
@@ -1595,15 +1591,12 @@ class SalesController extends Controller
             $max_date = date('Y-m-d');
         }
 
-
-
         if ($type == 0 || $type == 2) {
-            $type = '0,2';
             $sqlSum = " SELECT 
             sum(histrans_client.dept) as sader, sum(histrans_client.credt) as wared, max(histrans_client.type) as type FROM histrans_client
             where histrans_client.Type in(" . $type . ") and histrans_client.id = " . $client . " 
             and histrans_client.trandate < '" . $min_date . "'  ";
-            $connection = \Yii::$app->db;
+            $connection = Yii::$app->db;
             $data = $connection->createCommand($sqlSum);
             $lastBalance = $data->queryAll();
         }
@@ -1613,7 +1606,7 @@ class SalesController extends Controller
             sum(histrans_client.dept) as sader, sum(histrans_client.credt) as wared, max(histrans_client.type) as type FROM histrans_client
             where histrans_client.Type in(" . $type . ") and histrans_client.id = " . $client . " 
             and histrans_client.trandate < '" . $min_date . "'  ";
-            $connection = \Yii::$app->db;
+            $connection = Yii::$app->db;
             $data = $connection->createCommand($sqlSum);
             $lastBalance = $data->queryAll();
         }
@@ -1628,6 +1621,15 @@ class SalesController extends Controller
             and histrans_client.trandate between '" . $min_date . "' and '" . $max_date . "' 
             and histrans_client.sort <> 1
             order by  histrans_client.trandate, histrans_client.billId";
+            $connection = Yii::$app->db;
+            $data = $connection->createCommand($sql);
+            $info = $data->queryAll();
+            if ($info == null) {
+                echo '<script type="text/javascript"> 
+                    alert("عفوا لايوجد بيانات للعرض");
+                    window.location.href="?r=client/histrans"
+                    </script>';
+            }
         } elseif ($type == 1) {
             $type = '1';
             $sql = " SELECT histrans_supplier.id, histrans_supplier.kind, histrans_supplier.trandate, histrans_supplier.name as name, 
@@ -1638,17 +1640,17 @@ class SalesController extends Controller
             between '" . $min_date . "' and '" . $max_date . "' 
             and histrans_supplier.sort <> 1
             order by histrans_supplier.trandate, histrans_supplier.billId";
+            $connection = Yii::$app->db;
+            $data = $connection->createCommand($sql);
+            $info = $data->queryAll();
+            if ($info == null) {
+                echo '<script type="text/javascript"> 
+                    alert("عفوا لايوجد بيانات للعرض");
+                    window.location.href="?r=client/histrans"
+                    </script>';
+            }
         }
 
-        $connection = \Yii::$app->db;
-        $data = $connection->createCommand($sql);
-        $info = $data->queryAll();
-        if ($info == null) {
-            echo '<script type="text/javascript"> 
-                alert("عفوا لايوجد بيانات للعرض");
-                window.location.href="?r=client/histrans"
-                </script>';
-        }
         return $this->render('/client/histransrep', [
             'models' => $info,
             'min_date' => $min_date,
@@ -1819,7 +1821,7 @@ class SalesController extends Controller
 
     public function actionDelev($id)
     {
-        Sales::updateAll(['deleviried' => 1, 'deleviryAt'=> date('Y-m-d')], ['=', 'id', $id]);
+        Sales::updateAll(['deleviried' => 1, 'deleviryAt' => date('Y-m-d')], ['=', 'id', $id]);
 
         Yii::$app->session->setFlash('success', Yii::t('app', "تمت عملية تغيير حالة الفاتورة بنجاح"));
 
