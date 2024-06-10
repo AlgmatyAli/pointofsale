@@ -55,7 +55,8 @@
         "kartik-v/yii2-mpdf": "dev-master",
         "kartik-v/yii2-dialog": "@dev",
         "kartik-v/yii2-ipinfo": "dev-master",
-        "kartik-v/yii2-field-range": "dev-master"
+        "kartik-v/yii2-field-range": "dev-master",
+        "codemix/yii2-excelexport": "^2.8"
 
     },
     "require-dev": {

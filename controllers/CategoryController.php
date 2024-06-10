@@ -1,7 +1,7 @@
 <?php
 
 namespace app\controllers;
- 
+
 use Yii;
 use app\models\Category;
 use app\models\CategorySearch;
@@ -17,6 +17,8 @@ use yii\filters\AccessControl;
 use app\models\Totalinventory;
 use Exception;
 use yii\helpers\Json;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+
 
 
 /**
@@ -31,20 +33,22 @@ class CategoryController extends Controller
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
                 ],
             ],
 
             'access' => [
-                'class' => AccessControl::className(),
+                'class' => AccessControl::class,
                 'rules' => [
                     [
-                      'allow' => true,
-                      'actions' => ['create', 'view', 'create-category', 'upload', 'state',
-                       'data-table', 'change-place'],
-                      'roles' => ['createCategory'],
+                        'allow' => true,
+                        'actions' => [
+                            'create', 'view', 'create-category', 'upload', 'state',
+                            'data-table', 'change-place', 'export'
+                        ],
+                        'roles' => ['createCategory'],
                     ],
                     [
                         'allow' => true,
@@ -132,39 +136,38 @@ class CategoryController extends Controller
 
         if ($model->load(Yii::$app->request->post())) {
             $model->status = 0;
-           
-            $model->created_at	 = date('Y-m-d H:i:s');
+
+            $model->created_at     = date('Y-m-d H:i:s');
             $model->user_insert = Yii::$app->user->identity->id;
             //=========
             if (!is_dir("img/category")) {
                 mkdir("img/category");
                 $path = "img/category";
-            }else{
+            } else {
                 $path = "img/category";
             }
-            $model->file = UploadedFile::getInstance($model,'file');
+            $model->file = UploadedFile::getInstance($model, 'file');
             if ($model->file != null) {
-            $ext = substr(strrchr($model->file,'.'),1);
-           if($ext != null)
-            {        
-              $uniqid= uniqid(); 
-              $model->file->saveAs($path.'/'.$uniqid.'.'.$model->file->extension );   
-              $model->path=$path.'/'.$uniqid.'.'.$model->file->extension;
-            } 
-        }
+                $ext = substr(strrchr($model->file, '.'), 1);
+                if ($ext != null) {
+                    $uniqid = uniqid();
+                    $model->file->saveAs($path . '/' . $uniqid . '.' . $model->file->extension);
+                    $model->path = $path . '/' . $uniqid . '.' . $model->file->extension;
+                }
+            }
             //=========
-            if($model->quantity == null){
+            if ($model->quantity == null) {
                 $model->quantity = 0;
             }
-            if($model->cost	 == null){
+            if ($model->cost     == null) {
                 $model->cost = 0;
             }
-            if($model->price == null){
+            if ($model->price == null) {
                 $model->price = 0;
             }
-            if($model->qShow == null){
+            if ($model->qShow == null) {
                 $model->qShow = 0;
-            }else{
+            } else {
                 $model->qShow = 1;
             }
 
@@ -192,38 +195,36 @@ class CategoryController extends Controller
         $model = $this->findModel($id);
 
         if ($model->load(Yii::$app->request->post())) {
-            $model->update_at	 = date('Y-m-d H:i:s');
+            $model->update_at     = date('Y-m-d H:i:s');
             $model->user_update = Yii::$app->user->id;
             //=========
             if (!is_dir("img/category")) {
                 mkdir("img/category");
                 $path = "img/category";
-            }else{
+            } else {
                 $path = "img/category";
             }
-            $model->file = UploadedFile::getInstance($model,'file');
+            $model->file = UploadedFile::getInstance($model, 'file');
             if ($model->file != null) {
-            $ext = substr(strrchr($model->file,'.'),1);
-           if($ext != null)
-            {
-              $uniqid= uniqid();
-              $model->file->saveAs($path.'/'.$uniqid.'.'.$model->file->extension );
-              $model->path=$path.'/'.$uniqid.'.'.$model->file->extension;
+                $ext = substr(strrchr($model->file, '.'), 1);
+                if ($ext != null) {
+                    $uniqid = uniqid();
+                    $model->file->saveAs($path . '/' . $uniqid . '.' . $model->file->extension);
+                    $model->path = $path . '/' . $uniqid . '.' . $model->file->extension;
+                }
             }
-        }
             $model->save();
 
             return $this->redirect(['view', 'id' => $model->id]);
-            
-        }elseif (Yii::$app->request->isAjax) {
+        } elseif (Yii::$app->request->isAjax) {
             return $this->renderAjax('_form', [
-                        'model' => $model,
+                'model' => $model,
             ]);
         } else {
 
-        return $this->render('update', [
-            'model' => $model,
-        ]);
+            return $this->render('update', [
+                'model' => $model,
+            ]);
         }
     }
 
@@ -250,8 +251,7 @@ class CategoryController extends Controller
      */
     protected function findModel($id)
     {
-        if (($model = Category::findOne($id)) !== null)
-        {
+        if (($model = Category::findOne($id)) !== null) {
             return $model;
         }
 
@@ -261,12 +261,12 @@ class CategoryController extends Controller
     public function actionState($id)
     {
         $state = $this->findModel($id);
-        if($state->status == 0){
+        if ($state->status == 0) {
             Category::updateAll(['status' => 1], ['=', 'id', $id]);
-        }else{
+        } else {
             Category::updateAll(['status' => 0], ['=', 'id', $id]);
         }
-        
+
         return $this->redirect(['view', 'id' => $id]);
     }
 
@@ -277,54 +277,55 @@ class CategoryController extends Controller
         if ($model->load(Yii::$app->request->post())) {
             $model->status = 0;
             $model->qShow = 0;
-            if($model->quantity == null){
+            if ($model->quantity == null) {
                 $model->quantity = 0;
             }
-            if($model->cost	 == null){
+            if ($model->cost     == null) {
                 $model->cost = 0;
             }
-            if($model->price == null){
+            if ($model->price == null) {
                 $model->price = 0;
             }
-            $model->created_at	 = date('Y-m-d H:i:s');
+            $model->created_at     = date('Y-m-d H:i:s');
             $model->user_insert = Yii::$app->user->id;
             $model->save();
-           
+
             return $this->redirect(Yii::$app->request->referrer);
-        }elseif (Yii::$app->request->isAjax) {
+        } elseif (Yii::$app->request->isAjax) {
             return $this->renderAjax('_form', [
-                        'model' => $model,
+                'model' => $model,
             ]);
         } else {
 
-        return $this->render('create', [
-            'model' => $model,
-        ]);
+            return $this->render('create', [
+                'model' => $model,
+            ]);
         }
     }
- 
+
     /**
      * Lists all Inventory models.
      * @return mixed
      */
     public function actionReorder()
     {
-            $dataProvider = new ActiveDataProvider([
-                'query' => Inventory::find()
-               ->select('inventory.id, max(inventory.name) name, max(inventory.serialNo) serialNo,
+        $dataProvider = new ActiveDataProvider([
+            'query' => Inventory::find()
+                ->select('inventory.id, max(inventory.name) name, max(inventory.serialNo) serialNo,
                          max(category.minimum) as minimum, sum(inventory.quantity) quantity')
-               ->leftJoin('category', 'category.id = inventory.id')
-               ->groupBy('inventory.id, category.minimum ')
-               ->having('sum(inventory.quantity) <= category.minimum')
-               ->orderBy('inventory.id'),
-                     
-            'pagination' => [
-                'pageSize' => 70],
-          ]);
+                ->leftJoin('category', 'category.id = inventory.id')
+                ->groupBy('inventory.id, category.minimum ')
+                ->having('sum(inventory.quantity) <= category.minimum')
+                ->orderBy('inventory.id'),
 
-          return $this->render('reorder', [
+            'pagination' => [
+                'pageSize' => 70
+            ],
+        ]);
+
+        return $this->render('reorder', [
             'dataProvider' => $dataProvider,
-            ]);
+        ]);
     }
 
     /**
@@ -333,47 +334,48 @@ class CategoryController extends Controller
      */
     public function actionMoreRequest()
     {
-            $dataProvider = new ActiveDataProvider([ 
-                'query' => Inventory::find()
-               ->select('inventory.id, max(inventory.name) name, max(inventory.serialNo) serialNo, max(category.minimum) as minimum, sum(inventory.quantity) quantity')
-               ->leftJoin('category', 'category.id = inventory.id')
-               ->where('category.moreRequest = 1')
-               ->groupBy('inventory.id, category.minimum ')
-               ->having('sum(inventory.quantity) <= category.minimum')
-               ->orderBy('inventory.id'),
+        $dataProvider = new ActiveDataProvider([
+            'query' => Inventory::find()
+                ->select('inventory.id, max(inventory.name) name, max(inventory.serialNo) serialNo, max(category.minimum) as minimum, sum(inventory.quantity) quantity')
+                ->leftJoin('category', 'category.id = inventory.id')
+                ->where('category.moreRequest = 1')
+                ->groupBy('inventory.id, category.minimum ')
+                ->having('sum(inventory.quantity) <= category.minimum')
+                ->orderBy('inventory.id'),
 
             'pagination' => [
-                'pageSize' => 50],
-          ]);
+                'pageSize' => 50
+            ],
+        ]);
 
-          return $this->render('moreRequest', [
+        return $this->render('moreRequest', [
             'dataProvider' => $dataProvider,
-            ]);
+        ]);
     }
- 
+
     public function actionHistrans()
     {
         $model = new Inventory();
-        $data = Category::find()->where(['status'=>0])->all();
-       
+        $data = Category::find()->where(['status' => 0])->all();
+
         if ($model->load(Yii::$app->request->post())) {
-            $category = Category::find()->select('id')->where(['id'=> $model->id ])->one();
-            
-            if($model->allData != 0){
+            $category = Category::find()->select('id')->where(['id' => $model->id])->one();
+
+            if ($model->allData != 0) {
                 $model->min_date = '2010-01-01';
                 $model->max_date = date('Y-m-d');
             }
-            if(Yii::$app->user->identity->client != null){
+            if (Yii::$app->user->identity->client != null) {
                 $sqlSum = " SELECT
                 sum(category_histrans.quantity) as quantity
                 FROM category_histrans
-                where category_histrans.clientId in ( ".Yii::$app->user->identity->client." )
-                and category_histrans.id = ".$category->id."
-                and category_histrans.tranDate < '".$model->min_date."'  ";
+                where category_histrans.clientId in ( " . Yii::$app->user->identity->client . " )
+                and category_histrans.id = " . $category->id . "
+                and category_histrans.tranDate < '" . $model->min_date . "'  ";
                 $connection = Yii::$app->db;
                 $data = $connection->createCommand($sqlSum);
                 $lastBalance = $data->queryAll();
-    
+
                 $sql = " SELECT category_histrans.kind_id, category_histrans.id, category_histrans.printId,
                 category_histrans.name as name, category_histrans.quantity as quantity, category_histrans.unit as unit,
                 category_histrans.box as box, category_histrans.class as class, category_histrans.client as client,
@@ -381,55 +383,55 @@ class CategoryController extends Controller
                  category_histrans.trandate as trandate, category_histrans.billId as billId
                 , category_histrans.deleviried as deleviried
                 FROM category_histrans, branches
-                where category_histrans.branch = branches.id and category_histrans.id = ".$category->id."
-                and category_histrans.trandate  between '".$model->min_date."' and '".$model->max_date."'
-                and category_histrans.clientId in ( ".Yii::$app->user->identity->client.")
+                where category_histrans.branch = branches.id and category_histrans.id = " . $category->id . "
+                and category_histrans.trandate  between '" . $model->min_date . "' and '" . $model->max_date . "'
+                and category_histrans.clientId in ( " . Yii::$app->user->identity->client . ")
                 order by category_histrans.trandate, category_histrans.kind_id
                 ";
                 $connection = Yii::$app->db;
                 $data = $connection->createCommand($sql);
                 $info = $data->queryAll();
-                 if ($info == null){
+                if ($info == null) {
                     echo '<script type="text/javascript">
                     alert("عفوا لايوجد بيانات للعرض");
                     window.location.href="?r=category"
                     </script>';
-                 }
-            }else{
-            $sqlSum = " SELECT
+                }
+            } else {
+                $sqlSum = " SELECT
             sum(category_histrans.quantity) as quantity
             FROM category_histrans
-            where category_histrans.id = ".$category->id."
-            and category_histrans.tranDate < '".$model->min_date."'  ";
-            $connection = \Yii::$app->db;
-            $data = $connection->createCommand($sqlSum);
-            $lastBalance = $data->queryAll();
+            where category_histrans.id = " . $category->id . "
+            and category_histrans.tranDate < '" . $model->min_date . "'  ";
+                $connection = \Yii::$app->db;
+                $data = $connection->createCommand($sqlSum);
+                $lastBalance = $data->queryAll();
 
-            $sql = " SELECT category_histrans.kind_id, category_histrans.id, category_histrans.printId,
+                $sql = " SELECT category_histrans.kind_id, category_histrans.id, category_histrans.printId,
              category_histrans.name as name, category_histrans.quantity as quantity, category_histrans.unit as unit,
             category_histrans.box as box, category_histrans.class as class, category_histrans.client as client,
             branches.name as branch, category_histrans.kind as kind, category_histrans.trandate as trandate,
              category_histrans.billId as billId
             , category_histrans.deleviried as deleviried
             FROM category_histrans, branches
-            where category_histrans.branch = branches.id and category_histrans.id = ".$category->id."
-            and category_histrans.trandate  between '".$model->min_date."' and '".$model->max_date."'
+            where category_histrans.branch = branches.id and category_histrans.id = " . $category->id . "
+            and category_histrans.trandate  between '" . $model->min_date . "' and '" . $model->max_date . "'
             order by category_histrans.trandate, category_histrans.kind_id
             ";
-            $connection = Yii::$app->db;
-            $data = $connection->createCommand($sql);
-            $info = $data->queryAll();
-             if ($info == null){
-                echo '<script type="text/javascript">
+                $connection = Yii::$app->db;
+                $data = $connection->createCommand($sql);
+                $info = $data->queryAll();
+                if ($info == null) {
+                    echo '<script type="text/javascript">
                 alert("عفوا لايوجد بيانات للعرض");
                 window.location.href="?r=category"
                 </script>';
-             }
+                }
             }
-             return $this->render('histransrep', [
+            return $this->render('histransrep', [
                 'models' => $info,
                 'min_date' => $model->min_date,
-                'max_date'=>$model->max_date,
+                'max_date' => $model->max_date,
                 'sumsader' => 0,
                 'sumwared' => 0,
                 'sumPurchase' => 0,
@@ -439,8 +441,8 @@ class CategoryController extends Controller
                 'sum' => 0,
                 'coun' => 1,
                 'count' => 0,
-                'name'=>null,
-                'id'=> 0,
+                'name' => null,
+                'id' => 0,
                 'lastBalance' => $lastBalance,
                 'sumQuantity' => 0,
             ]);
@@ -461,63 +463,70 @@ class CategoryController extends Controller
             if (!is_dir("img/upload")) {
                 mkdir("img/upload");
                 $path = "img/upload";
-            }else{
+            } else {
                 $path = "img/upload";
             }
-            $model->file = UploadedFile::getInstance($model,'file');
-            $ext = substr(strrchr($model->file,'.'),1);
-           if($ext != null)
-            {        
-              $uniqid= uniqid(); 
-              $model->file->saveAs($path.'/'.$uniqid.'.'.$model->file->extension );   
-              $model->path=$path.'/'.$uniqid.'.'.$model->file->extension;
-            } 
+            $model->file = UploadedFile::getInstance($model, 'file');
+            $ext = substr(strrchr($model->file, '.'), 1);
+            if ($ext != null) {
+                $uniqid = uniqid();
+                $model->file->saveAs($path . '/' . $uniqid . '.' . $model->file->extension);
+                $model->path = $path . '/' . $uniqid . '.' . $model->file->extension;
+            }
             //=========
-            $inputFile =$path.'/'.$uniqid.'.'.$model->file->extension ;  
-                  
-            try{
-                $inputFileType = \PHPExcel_IOFactory::identify($inputFile);
-                $objReader = \PHPExcel_IOFactory::createReader($inputFileType);
+            $inputFile = $path . '/' . $uniqid . '.' . $model->file->extension;
+
+            try {
+                $inputFileType = \PhpOffice\PhpSpreadsheet\IOFactory::identify($inputFile);
+                $objReader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader($inputFileType);
                 $objPHPExcel = $objReader->load($inputFile);
- 
-            }catch(Exception $e)
-            {
-             die('Erorr');
+            } catch (Exception $e) {
+                die('Erorr');
             }
             $sheet = $objPHPExcel->getSheet(0);
             $highestRow = $sheet->getHighestRow();
             $highestColumn = $sheet->getHighestColumn();
 
-            for ($row =1 ; $row <=$highestRow ; $row++) { 
-             
-                 $rowData = $sheet->rangeToArray('A'.$row.':'.$highestColumn.$row,NULL,TRUE,FALSE);
-                 if ($row == 1) {
-                     continue;
-                 }
-                
-                 $workSheet =   new  Category();
-                 $workSheet->name=$rowData[0][0];
-                 $workSheet->class=$rowData[0][1];
-                 $workSheet->unit=$rowData[0][2];
-                 $workSheet->box=$rowData[0][3];
-                 $workSheet->cost=$rowData[0][4];
-                 $workSheet->price=$rowData[0][5];
-                 $workSheet->quantity=$rowData[0][6];
-                 $workSheet->minimum=$rowData[0][7];
-                 $workSheet->ending=$rowData[0][8];
-                 $workSheet->qShow=$rowData[0][9];
-                 $workSheet->serialNo=$rowData[0][10];
-                 $workSheet->path=$rowData[0][11];
-                 $workSheet->user_insert=1;
-                 
-                 $workSheet->created_at=date('Y-m-d H:i:s');
-                 $workSheet->user_update=1;
-                 $workSheet->update_at=date('Y-m-d H:i:s');
-                 $workSheet->status=0;
+            for ($row = 0; $row <= $highestRow; $row++) {
 
-                $workSheet->save(false) ;
+                $rowData = $sheet->rangeToArray('A' . $row . ':' . $highestColumn . $row, NULL, TRUE, FALSE);
+                if ($row == 0) {
+                    continue;
+                }
+
+                $workSheet =   new  Category();
+                $workSheet->name = $rowData[0][0];
+                $workSheet->class = $rowData[0][1];
+                $workSheet->unit = $rowData[0][2];
+                $workSheet->box = $rowData[0][3];
+                $workSheet->cost = $rowData[0][4];
+                $workSheet->price = $rowData[0][5];
+                $workSheet->quantity = $rowData[0][6];
+                $workSheet->minimum = $rowData[0][7];
+                $workSheet->ending = $rowData[0][8];
+                $workSheet->qShow = $rowData[0][9];
+                $workSheet->status = $rowData[0][10];
+                $workSheet->place = $rowData[0][11];
+                $workSheet->serialNo = $rowData[0][12];
+                $workSheet->country = $rowData[0][13];
+                $workSheet->company = $rowData[0][14];
+                $workSheet->path = $rowData[0][15];
+                $workSheet->commCode = $rowData[0][16];
+                $workSheet->moreRequest = $rowData[0][17];
+                $workSheet->weight = $rowData[0][18];
+                
+                $workSheet->user_insert = Yii::$app->user->identity->id;
+                $workSheet->created_at = date('Y-m-d H:i:s');
+                $workSheet->user_update = Yii::$app->user->identity->id;
+                $workSheet->update_at = date('Y-m-d H:i:s');
+                if($workSheet->name <> Null){
+                    $workSheet->save(false);
+                }else{
+                    break;
+                }
+                
             }
-        
+
             return $this->redirect(['index', 'id' => $model->id]);
         }
 
@@ -528,28 +537,29 @@ class CategoryController extends Controller
 
     public function actionHangouts()
     {
-        $dataProvider = new ActiveDataProvider([ 
+        $dataProvider = new ActiveDataProvider([
             'query'  => Totalinventory::find()
-            ->select('max(name)name, max(serialNo)serialNo, sum(quantity)quantity, max(costPrice)totalCost')
-            ->where(['branch'=>Yii::$app->user->identity->branch])
-            ->andWhere(['type'=> 1])
-            ->groupBy('id')
-            ->all(),
-                     
-        'pagination' => [
-            'pageSize' => false],
-      ]);
+                ->select('max(name)name, max(serialNo)serialNo, sum(quantity)quantity, max(costPrice)totalCost')
+                ->where(['branch' => Yii::$app->user->identity->branch])
+                ->andWhere(['type' => 1])
+                ->groupBy('id')
+                ->all(),
 
-      return $this->render('hangouts', [
-        'dataProvider' => $dataProvider,
+            'pagination' => [
+                'pageSize' => false
+            ],
+        ]);
+
+        return $this->render('hangouts', [
+            'dataProvider' => $dataProvider,
         ]);
     }
 
     public function actionBarcodePrint()
     {
         $model = new Category();
-       
-        
+
+
         if ($model->load(Yii::$app->request->post())) {
             return $this->render('printBarcode', [
                 'model' => $model,
@@ -563,31 +573,31 @@ class CategoryController extends Controller
     public function actionGetData($category)
     {
         $value = Category::find()
-                ->where(['id'=>$category])
-                ->one();
-        
+            ->where(['id' => $category])
+            ->one();
+
         echo json::encode($value);
     }
- 
+
     public function actionInfo($id)
     {
         $model = new Category();
-        $modelInfo = Stocks::find()->where(['category'=>$id])->one();
-        
+        $modelInfo = Stocks::find()->where(['category' => $id])->one();
+
         $dateOfArrival = Purchases::find()
-        ->leftJoin('purchasesDetails', 'purchases.id = purchasesDetails.PurchasesId')
-        ->where(['type'=>3])
-        ->andWhere('dateOfArrival is not null')
-        ->andWhere(['=','purchasesDetails.category', $id])
-        ->one();
-       
+            ->leftJoin('purchasesDetails', 'purchases.id = purchasesDetails.PurchasesId')
+            ->where(['type' => 3])
+            ->andWhere('dateOfArrival is not null')
+            ->andWhere(['=', 'purchasesDetails.category', $id])
+            ->one();
+
         if ($model->load(Yii::$app->request->post())) {
             return $this->redirect(Yii::$app->request->referrer);
-        }elseif (Yii::$app->request->isAjax) {
+        } elseif (Yii::$app->request->isAjax) {
             return $this->renderAjax('info', [
-                        'model' => $model,
-                        'modelInfo' =>$modelInfo,
-                        'dateOfArrival' => $dateOfArrival,
+                'model' => $model,
+                'modelInfo' => $modelInfo,
+                'dateOfArrival' => $dateOfArrival,
             ]);
         }
     }
@@ -596,21 +606,22 @@ class CategoryController extends Controller
     {
         $dataProvider = new ActiveDataProvider([
             'query'  => Totalinventory::find()
-            ->select(['*'])
-            ->leftJoin('stagnant', 'Totalinventory.id = stagnant.category')
-            ->where("stagnant.category is null")
-            ->andWhere(['<>','quantity', 0]),
-                     
-        'pagination' => [
-            'pageSize' => 100],
-      ]);
+                ->select(['*'])
+                ->leftJoin('stagnant', 'Totalinventory.id = stagnant.category')
+                ->where("stagnant.category is null")
+                ->andWhere(['<>', 'quantity', 0]),
 
-      return $this->render('stagnant', [
-        'dataProvider' => $dataProvider,
+            'pagination' => [
+                'pageSize' => 100
+            ],
+        ]);
+
+        return $this->render('stagnant', [
+            'dataProvider' => $dataProvider,
         ]);
     }
-    
-      public function actionDataTable()
+
+    public function actionDataTable()
     {
         $searchModel = new CategorySearch();
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
@@ -628,15 +639,51 @@ class CategoryController extends Controller
         if ($model->load(Yii::$app->request->post())) {
             $model->save(false);
             return $this->redirect(['temp-arrangement/create', 'id' => $model->id]);
-        }elseif (Yii::$app->request->isAjax) {
-           
+        } elseif (Yii::$app->request->isAjax) {
+
             return $this->renderAjax('changePlace', [
-                        'model' => $model,
+                'model' => $model,
             ]);
-        }else{
+        } else {
             return $this->render('changePlace', [
                 'model' => $this->findModel($id),
             ]);
         }
+    }
+
+    public function actionExport($created_at)
+    {
+        $export = Yii::createObject([
+            'class' => 'codemix\excelexport\ExcelFile',
+            'sheets' => [
+                'الاصناف' => [
+                    'class' => 'codemix\excelexport\ActiveExcelSheet',
+
+                    'query' => Category::find()
+                        ->where(['=', 'created_at', $created_at])
+                        ->orderBy(['id' => SORT_ASC]),
+
+
+                    'attributes' => [
+                        'name', 'class', 'unit', 'box', 'cost', 'price', 'quantity', 'minimum', 'ending', 'qShow', 'status', 'place', 'serialNo', 
+                        'country', 'company', 'path', 'commCode', 'moreRequest', 'weight'
+                    ],
+                    'styles' => [
+                        'A1:Z1000' => [
+                            'font' => [
+                                'bold' => true,
+                                'color' => ['rgb' => '000000'],
+                                'size' => 14,
+                                'name' => 'Times New Roman'
+                            ],
+                            'alignment' => [
+                                'horizontal' => Alignment::HORIZONTAL_RIGHT,
+                            ],
+                        ],
+                    ],
+                ]
+            ]
+        ]);
+        $export->send('category.xlsx');
     }
 }

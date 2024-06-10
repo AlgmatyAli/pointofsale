@@ -1,6 +1,8 @@
 <?php
 
 use app\models\Category;
+use dosamigos\datepicker\DatePicker as DatepickerDatePicker;
+use kartik\date\DatePicker;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use yii\helpers\Url;
@@ -71,7 +73,7 @@ JS;
         };
     }
 JS;
-            echo $form->field($model, 'id')->widget(Select2::classname(), [
+            echo $form->field($model, 'id')->widget(Select2::class, [
                 'name' => 'kv-repo-template',
                 // 'id' => 'tempinvoicepurchase-category',
                 'language' => 'en',
@@ -98,7 +100,20 @@ JS;
             ]);
             ?>
 
-            <?php //$form->field($model, 'class') ?>
+            <?=
+            $form->field($model, 'created_at')->widget(
+                DatePicker::class,
+                [
+                    'language' => 'ar',
+                    'pluginOptions' => [
+                        'autoclose' => true,
+                        'format' => 'yyyy-mm-dd',
+                        'todayHighlight' => true,
+                        'todayBtn' => true,
+                    ]
+                ]
+            ) ?>
+
         </div>
 
         <div class="col-lg-3">
@@ -125,13 +140,14 @@ JS;
 
         <br>
     </div>
-     <div class="row">
+    <div class="row">
         <div class="col-lg-2"></div>
         <div class="col-lg-8">
             <div class="form-group">
+                <?= Html::a('<i class="fa fa-fw fa-eraser"></i>' . ' ' . Yii::t('app', "Erase"), Url::toRoute(['index']), ['class' => 'btn btn-danger btn-lg']) ?>
                 <?= Html::a('<i class="fa fa-fw fa-plus"></i>' . ' ' . Yii::t('app', 'New Create'), ['create'], ['class' => 'btn btn-success btn-lg']) ?>
                 <?= Html::submitButton('<i class="fa fa-fw fa-search"></i>' . ' ' . Yii::t('app', 'Search'), ['class' => 'btn btn-primary btn-lg']) ?>
-                <?= Html::a('<i class="fa fa-fw fa-eraser"></i>' . ' ' . Yii::t('app', "Erase"), Url::toRoute(['index']), ['class' => 'btn btn-danger btn-lg']) ?>
+                <?= Html::a('<i class="fa fa-fw fa-export"></i>' . ' ' . Yii::t('app', "Export"), Url::toRoute(['export', 'created_at' => $model->created_at]), ['class' => 'btn btn-warning btn-lg']) ?>
                 <?= Html::a('<i class="fa fa-fw fa-upload"></i>' . ' ' . Yii::t('app', "upload"), Url::toRoute(['upload']), ['class' => 'btn btn-info btn-lg']) ?>
 
             </div>

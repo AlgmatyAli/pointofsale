@@ -73,7 +73,7 @@ class CategorySearch extends Category
             'qShow' => $this->qShow,
             'category.status' => $this->status,
             'user_insert' => $this->user_insert,
-            'created_at' => $this->created_at,
+            //'created_at' => $this->created_at,
             'user_update' => $this->user_update,
             'update_at' => $this->update_at,
             'category.commCode' => $this->commCode,
@@ -83,9 +83,10 @@ class CategorySearch extends Category
         $query->andFilterWhere(['like', 'category.name', $this->name])
             ->andFilterWhere(['=', 'category.class', $this->class])
             ->andFilterWhere(['=', 'category.place', $this->place])
-            ->andFilterWhere(['=', 'category.weight', $this->place])
+            ->andFilterWhere(['=', 'category.weight', $this->weight])
             ->andFilterWhere(['=', 'category.company', $this->company])
             ->andFilterWhere(['like', 'unit', $this->unit]);
+        $query->andFilterWhere(['=', 'created_at', $this->created_at]);
 
         return $dataProvider;
     }
