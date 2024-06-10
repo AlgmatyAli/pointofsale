@@ -487,10 +487,10 @@ class CategoryController extends Controller
             $highestRow = $sheet->getHighestRow();
             $highestColumn = $sheet->getHighestColumn();
 
-            for ($row = 0; $row <= $highestRow; $row++) {
+            for ($row = 1; $row <= $highestRow; $row++) {
 
                 $rowData = $sheet->rangeToArray('A' . $row . ':' . $highestColumn . $row, NULL, TRUE, FALSE);
-                if ($row == 0) {
+                if ($row == 1) {
                     continue;
                 }
 
