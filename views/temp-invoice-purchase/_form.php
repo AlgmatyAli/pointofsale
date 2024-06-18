@@ -79,12 +79,6 @@ use yii\widgets\Pjax;
             'enableAjaxValidation' => false,
             'enableClientValidation' => false,
         ]
-        // [
-        //     'options' => [
-        //         'enableClientValidation' => false,
-        //     ]
-        // ]
-
     ); ?>
 
     <?= $form->errorSummary($model); ?>
@@ -144,7 +138,7 @@ use yii\widgets\Pjax;
       '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> رقم التسلسل - </i> '  + product.id + '</div>' +
       //'<div class="col-sm-2"><i class="badge badge-primary badge-pill">حالة القطعة</i> ' +product.type+ '</div>' +
       '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الشركة - </i> ' + product.company + '</div>' +
-      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الكمية = </i> ' + '  ' + product.quantity + '</div>' +
+      //'<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الكمية = </i> ' + '  ' + product.quantity + '</div>' +
     '</div>';
     return '<div style="overflow:hidden;">' + markup + '</div>';
   };                
@@ -213,27 +207,6 @@ JS;
 
         ]);
         ?>
-        <?php
-        // echo $form->field($model, 'category')->widget(\kartik\widgets\Select2::classname(), [
-        //    'id' => 'categoryx',
-        //    'data' => \yii\helpers\ArrayHelper::map($data, 'id', 
-        //     function($model) {
-        //         return $model['name'].' --  '.$model['serialNo'];
-        //     }
-        // ),
-
-        //     'language' => 'en',
-        //     'options' => ['placeholder' => Yii::t('app', 'Choose Category'),
-        //     'dir' => 'rtl',
-        //     'onchange' => 'getInv( $(this) )'
-        //     ],
-        //     'pluginOptions' => [
-        //         'allowClear' => true 
-        //     ],
-
-        // ]); 
-        ?>
-
 
     </div>
 
@@ -255,13 +228,6 @@ JS;
             //'onfocusout' => 'totalCost( $(this) )'
         ]) ?>
     </div>
-
-    <!-- <div class="col-md-1">
-    <?php //$form->field($model, 'costTotal')->textInput(['maxlength' => true, 'placeholder' => 'Cost Total']);
-    ?>
-    </div> -->
-
-
 
     <div class="col-md-2">
         <?= $form->field($model, 'salePrice')->textInput(['maxlength' => true, 'placeholder' => 'Sale Price']) ?>
@@ -307,23 +273,6 @@ $gridColumn = [
         'format' => 'raw',
     ],
 
-    // [
-    //         'attribute' => 'category',
-    //         'label' => Yii::t('app', 'Category'),
-    //         'contentOptions' => ['style' => 'font-size:14px;'],
-    //         'value' => function($model){                   
-    //             return $model->category0->name;                   
-    //         },
-    //         'filterType' => GridView::FILTER_SELECT2,
-    //         'filter' => \yii\helpers\ArrayHelper::map(\app\models\Category::find()->asArray()->all(), 'id', 'name'),
-    //         'filterWidgetOptions' => [
-    //             'pluginOptions' => ['allowClear' => true],
-    //         ],
-    //         'filterInputOptions' => ['placeholder' => 'Category', 'id' => 'grid-temp-invoice-purchase-search-category']
-    // ],
-
-
-
     [
         'class' => 'kartik\grid\EditableColumn',
         'attribute' => Yii::t('app', 'costPrice'),
@@ -336,32 +285,6 @@ $gridColumn = [
         'pageSummary' => true,
         'footer' => true
     ],
-
-    // [
-    //     'class' => EditableColumn::class,
-    //     'attribute' => 'quantity',
-    //     'editableOptions' => function ($model, $key, $index) {
-    //         //$url = Url::to(['temp-invoice-purchase/update', 'id' => $model->id]);
-    //         return [
-    //             'format' => Editable::FORMAT_BUTTON,
-    //             'inputType' => Editable::INPUT_TEXT,
-    //             'options' => [
-    //                 'class' => 'form-control',
-    //             ],
-    //             'pluginEvents' => [
-    //                 'editableSuccess' => 'function(event, val, form, data) { 
-    //                     console.log("Editable success!"); 
-    //                 }',
-    //             ],
-    //             // 'ajaxSettings' => [
-    //             //     'url' => $url,
-    //             // ],
-    //         ];
-    //     },
-    //     'format' => ['decimal', 3],
-    //     'pageSummary' => true,
-    //     'footer' => true
-    // ],
 
     [
         'class' => 'kartik\grid\EditableColumn',
@@ -454,13 +377,7 @@ $gridColumn = [
     ],
 ];
 ?>
-<?php Pjax::begin([
-    // 'id' => 'pjax-grid-view',
-    // 'timeout' => 10000,
-    // 'clientOptions' => [
-    //     'type' => "POST",
-    // ],
-]); 
+<?php Pjax::begin();
 ?>
 <?= GridView::widget([
     'id' => 'my-gridview',
@@ -481,14 +398,3 @@ $gridColumn = [
 
 <?php Pjax::end(); ?>
 </div>
-
-<?php
-$this->registerJs("$(function() {
-     $('.popupModal').click(function(e) {
-     e.preventDefault();
-     $('#modal').modal('show').find('.modal-content')
-     .load($(this).attr('href'));
-     });
-});");
-
-?>

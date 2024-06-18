@@ -6,8 +6,6 @@ use Yii;
 use app\models\Stocks;
 use app\models\StocksSearch;
 use app\models\TempTransferItems;
-use app\models\TransferItems;
-use app\models\TransferItemsDetails;
 use yii\data\ActiveDataProvider;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
@@ -35,12 +33,12 @@ class StocksController extends Controller
                 'rules' => [
                     [
                         'allow' => true,
-                        'actions' => ['index', 'list', 'price-list', 'stock-taking', 'transfer'],
+                        'actions' => ['index', 'list', 'price-list', 'stock-taking'],
                         'roles' => ['inventory']
                     ],
                     [
                         'allow' => true,
-                        'actions' => ['zero-q'],
+                        'actions' => ['zero-q', 'transfer'],
                         'roles' => ['userCanSeeStockLessThanZero']
                     ],
 

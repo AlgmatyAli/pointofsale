@@ -225,8 +225,8 @@ JS;
 
 
         ?>
-              <br>
-      <hr>
+        <br>
+        <hr>
         <?php ActiveForm::end(); ?>
       </div>
       <br>
@@ -382,165 +382,167 @@ JS;
           </div><!-- /.info-box -->
         </div>
       </div>
-      <hr>
+      <!-- <hr> -->
       <div class="row">
         <div class="col-sm-6">
           <?php
-          foreach ($infos as $info) :
-            $bestCustomer[] = $info["cleintName"];
-            $count[] = $info['countt'];
+          // foreach ($infos as $info) :
+          //   $bestCustomer[] = $info["cleintName"];
+          //   $count[] = $info['countt'];
           ?>
-          <?php endforeach; ?>
+          <?php //endforeach; 
+          ?>
 
           <?php
-          if (Yii::$app->user->identity->client == null) {
-            echo ChartJs::widget([
-              'options' => [
-                'height' => 300,
-                'width' => 400,
-              ],
-              'type' => 'doughnut',
-              'clientOptions' => [
-                'legend' => [
-                  'display' => true,
-                  'position' => 'bottom',
-                  'labels' => [
-                    'fontSize' => 12,
-                    'fontColor' => "#425062",
-                  ]
-                ],
-                'tooltips' => [
-                  'enabled' => true,
-                  'intersect' => true
-                ],
-                'hover' => [
-                  'mode' => true
-                ],
-                'maintainAspectRatio' => true,
-                'scales' => [
-                  'yAxes' => [
-                    [
-                      'ticks' => [
-                        'beginAtZero' => true,
-                        'precision' => '0'
-                      ]
-                    ]
-                  ]
-                ]
-              ],
-              'data' => [
-                'labels' => $bestCustomer,
-                'datasets' => [
-                  [
-                    'data' => $count,
-                    'label' => Yii::t('app', 'Number Of Bill'),
-                    'backgroundColor' => [
-                      '#1d96f6',
-                      '#631a78',
-                      '#10bad1',
-                      '#de5c79',
-                      '#e907c4',
-                      '#74107d',
-                      '#f15932',
-                      '#c4520b',
-                      '#ef409f',
-                      '#b5d6dc',
-                      '#fa9c45',
-                      '#631a78',
-                      '#1d96f6',
-                    ],
-                    'borderColor' => [
-                      '#fff',
-                      '#fff',
-                      '#fff'
-                    ],
-                    'borderWidth' => 2,
-                    'hoverBorderColor' => ["#999", "#999", "#999"],
-                  ]
-                ]
-              ]
-            ]);
-          }
+          // if (Yii::$app->user->identity->client == null) {
+          //   echo ChartJs::widget([
+          //     'options' => [
+          //       'height' => 300,
+          //       'width' => 400,
+          //     ],
+          //     'type' => 'doughnut',
+          //     'clientOptions' => [
+          //       'legend' => [
+          //         'display' => true,
+          //         'position' => 'bottom',
+          //         'labels' => [
+          //           'fontSize' => 12,
+          //           'fontColor' => "#425062",
+          //         ]
+          //       ],
+          //       'tooltips' => [
+          //         'enabled' => true,
+          //         'intersect' => true
+          //       ],
+          //       'hover' => [
+          //         'mode' => true
+          //       ],
+          //       'maintainAspectRatio' => true,
+          //       'scales' => [
+          //         'yAxes' => [
+          //           [
+          //             'ticks' => [
+          //               'beginAtZero' => true,
+          //               'precision' => '0'
+          //             ]
+          //           ]
+          //         ]
+          //       ]
+          //     ],
+          //     'data' => [
+          //       'labels' => $bestCustomer,
+          //       'datasets' => [
+          //         [
+          //           'data' => $count,
+          //           'label' => Yii::t('app', 'Number Of Bill'),
+          //           'backgroundColor' => [
+          //             '#1d96f6',
+          //             '#631a78',
+          //             '#10bad1',
+          //             '#de5c79',
+          //             '#e907c4',
+          //             '#74107d',
+          //             '#f15932',
+          //             '#c4520b',
+          //             '#ef409f',
+          //             '#b5d6dc',
+          //             '#fa9c45',
+          //             '#631a78',
+          //             '#1d96f6',
+          //           ],
+          //           'borderColor' => [
+          //             '#fff',
+          //             '#fff',
+          //             '#fff'
+          //           ],
+          //           'borderWidth' => 2,
+          //           'hoverBorderColor' => ["#999", "#999", "#999"],
+          //         ]
+          //       ]
+          //     ]
+          //   ]);
+          // }
           ?>
         </div>
 
         <div class="col-sm-6">
           <?php
-          foreach ($details as $detail) :
-            $bestCategory[] = $detail["categoryName"];
-            $counts[] = $detail['counts'];
+          // foreach ($details as $detail) :
+          //   $bestCategory[] = $detail["categoryName"];
+          //   $counts[] = $detail['counts'];
           ?>
-          <?php endforeach; ?>
-          <?=
-          ChartJs::widget([
-            'options' => [
-              'height' => 300,
-              'width' => 400,
-            ],
-            'type' => 'bar',
-            'clientOptions' => [
-              'legend' => [
-                'display' => true,
-                'position' => 'bottom',
-                'labels' => [
-                  'fontSize' => 12,
-                  'fontColor' => "#425062",
-                ]
-              ],
-              'tooltips' => [
-                'enabled' => true,
-                'intersect' => true
-              ],
-              'hover' => [
-                'mode' => true
-              ],
-              'maintainAspectRatio' => true,
-              'scales' => [
-                'yAxes' => [
-                  [
-                    'ticks' => [
-                      'beginAtZero' => true,
-                      'precision' => '0'
-                    ]
-                  ]
-                ]
-              ]
-            ],
-            'data' => [
-              'labels' => $bestCategory,
-              'datasets' => [
-                [
-                  'data' => $counts,
-                  'label' => Yii::t('app', 'Number Of Category'),
-                  'backgroundColor' => [
-                    '#adc3fe',
-                    '#10bad1',
-                    '#de5c79',
-                    '#e907c4',
-                    '#74107d',
-                    '#f15932',
-                    '#c4520b',
-                    '#ef409f',
-                    '#b5d6dc',
-                    '#fa9c45',
-                    '#631a78',
-                    '#1d96f6',
-                  ],
-                  'borderColor' => [
-                    '#fff',
-                    '#fff',
-                    '#fff'
-                  ],
-                  'borderWidth' => 2,
-                  'hoverBorderColor' => ["#999", "#999", "#999"],
-                ]
-              ]
-            ]
-          ]);
+          <?php //endforeach; 
+          ?>
+          <?php
+          // ChartJs::widget([
+          //   'options' => [
+          //     'height' => 300,
+          //     'width' => 400,
+          //   ],
+          //   'type' => 'bar',
+          //   'clientOptions' => [
+          //     'legend' => [
+          //       'display' => true,
+          //       'position' => 'bottom',
+          //       'labels' => [
+          //         'fontSize' => 12,
+          //         'fontColor' => "#425062",
+          //       ]
+          //     ],
+          //     'tooltips' => [
+          //       'enabled' => true,
+          //       'intersect' => true
+          //     ],
+          //     'hover' => [
+          //       'mode' => true
+          //     ],
+          //     'maintainAspectRatio' => true,
+          //     'scales' => [
+          //       'yAxes' => [
+          //         [
+          //           'ticks' => [
+          //             'beginAtZero' => true,
+          //             'precision' => '0'
+          //           ]
+          //         ]
+          //       ]
+          //     ]
+          //   ],
+          //   'data' => [
+          //     'labels' => $bestCategory,
+          //     'datasets' => [
+          //       [
+          //         'data' => $counts,
+          //         'label' => Yii::t('app', 'Number Of Category'),
+          //         'backgroundColor' => [
+          //           '#adc3fe',
+          //           '#10bad1',
+          //           '#de5c79',
+          //           '#e907c4',
+          //           '#74107d',
+          //           '#f15932',
+          //           '#c4520b',
+          //           '#ef409f',
+          //           '#b5d6dc',
+          //           '#fa9c45',
+          //           '#631a78',
+          //           '#1d96f6',
+          //         ],
+          //         'borderColor' => [
+          //           '#fff',
+          //           '#fff',
+          //           '#fff'
+          //         ],
+          //         'borderWidth' => 2,
+          //         'hoverBorderColor' => ["#999", "#999", "#999"],
+          //       ]
+          //     ]
+          //   ]
+          // ]);
           ?>
         </div>
       </div>
-      <hr>
+      <!-- <hr> -->
       <div class="row">
         <div class="col-sm-4">
           <?php
@@ -558,3 +560,5 @@ JS;
 
       </div>
     </div>
+  </section>
+</div>

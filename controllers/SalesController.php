@@ -1423,6 +1423,12 @@ class SalesController extends Controller
             $criteriaـvalue = 1;
         }
 
+        if (Yii::$app->user->Identity->seeOtherBranchQ == 0) {
+            $whereBranch = 'branch=' . Yii::$app->user->Identity->branch;
+        } else {
+            $whereBranch = 'branch in (1,2,3,4,5,6,7,8,9)';
+        }
+
         if ($company->rate != 0) {
             $rate = ($company->rate / 100);
             $maxPrice = 'CASE
@@ -1446,7 +1452,7 @@ class SalesController extends Controller
             $query = new Query;
             if (Yii::$app->user->identity->client != null) {
                 $secript = [
-                    'category.id', 'name AS text', 'company AS company', 'stocks.quantity as quantity',
+                    'category.id', 'category.name AS text', 'company AS company', 'stocks.quantity as quantity',
                     // 'CASE
                     //          WHEN maxPrice >= '. $criteriaـvalue .' THEN round(maxPrice * "' . $rate . '" + maxPrice)
                     //          ELSE maxPrice
@@ -1464,7 +1470,7 @@ class SalesController extends Controller
             } else {
                 if (Yii::$app->user->identity->seeCostPrice == 1) {
                     $secript = [
-                        'category.id', 'name AS text', 'company AS company', 'stocks.quantity as quantity',
+                        'category.id', 'category.name AS text', 'company AS company', 'stocks.quantity as quantity',
                         // 'CASE
                         //      WHEN maxPrice >= '. $criteriaـvalue .' THEN round(maxPrice * "' . $rate . '" + maxPrice)
                         //      ELSE maxPrice
@@ -1487,7 +1493,7 @@ class SalesController extends Controller
                     ];
                 } else {
                     $secript = [
-                        'category.id', 'name AS text', 'company AS company', 'stocks.quantity as quantity',
+                        'category.id', 'category.name AS text', 'company AS company', 'stocks.quantity as quantity',
                         // 'CASE
                         //      WHEN maxPrice >= '. $criteriaـvalue .' THEN round(maxPrice * "' . $rate . '" + maxPrice)
                         //      ELSE maxPrice
@@ -1516,9 +1522,10 @@ class SalesController extends Controller
                 ->leftJoin('category', 'stocks.category = category.id')
                 ->leftJoin('prices', 'prices.category = category.id')
                 ->leftJoin('branches', 'branches.id = stocks.category')
-                // ->andWhere('stocks.branch=' . Yii::$app->user->Identity->branch)
+                //->andWhere('stocks.branch=' . Yii::$app->user->Identity->branch)
                 ->Where((['=', 'category.id', $q]))
-                // ->andWhere((['=', 'stocks.branch', Yii::$app->user->identity->branch]))
+                //->andWhere((['=', 'stocks.branch', Yii::$app->user->identity->branch]))
+                ->andWhere($whereBranch)
                 ->andWhere(['=',  'category.status', 0])
                 ->andWhere(['!=', 'stocks.quantity', 0])
                 ->limit(60);

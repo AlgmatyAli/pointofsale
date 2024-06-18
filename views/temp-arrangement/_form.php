@@ -61,7 +61,7 @@ $formatJs = <<< 'JS'
       '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> رقم التسلسل - </i> '  + product.id + '</div>' +
       //'<div class="col-sm-2"><i class="badge badge-primary badge-pill">حالة القطعة</i> ' +product.type+ '</div>' +
       '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الشركة - </i> ' + product.company + '</div>' +
-      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الكمية = </i> ' + '  ' + product.quantity + '</div>' +
+      //'<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الكمية = </i> ' + '  ' + product.quantity + '</div>' +
     '</div>';
     return '<div style="overflow:hidden;">' + markup + '</div>';
   };                
@@ -173,7 +173,7 @@ echo $form->field($model, 'category')->widget(Select2::classname(), [
                 }
             },
         ],
- 
+
         [
             'class' => 'kartik\grid\EditableColumn',
             'attribute' => 'quantity',
@@ -244,14 +244,3 @@ echo $form->field($model, 'category')->widget(Select2::classname(), [
         'showPageSummary' => true,
     ]); ?>
 </div>
-
-<?php
-$this->registerJs("$(function() {
-     $('.popupModal').click(function(e) {
-     e.preventDefault();
-     $('#modal').modal('show').find('.modal-content')
-     .load($(this).attr('href'));
-     });
-});");
-
-?>

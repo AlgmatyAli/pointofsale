@@ -716,16 +716,6 @@ JS;
 </div>
 
 <?php
-$this->registerJs("$(function() {
-     $('.popupModal').click(function(e) {
-     e.preventDefault();
-     $('#modal').modal('show').find('.modal-content')
-     .load($(this).attr('href'));
-     });
-});");
-
-?>
-<?php
 $this->registerJs("$('#focus_first').select2('focus');"); ?>
 <?php $this->registerJs("
     $(function () {

@@ -59,7 +59,7 @@ use yii\web\JsExpression;
       '<div class="col-sm-3"><i class="badge badge-primary badge-pill"> رقم القطعة 2 - </i> ' + product.commCode + '</div>' +
       '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> رقم التسلسل - </i> '  + product.id + '</div>' +
       '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الشركة - </i> ' + product.company + '</div>' +
-      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الكمية = </i> ' + '  ' + product.quantity + '</div>' +
+      //'<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الكمية = </i> ' + '  ' + product.quantity + '</div>' +
     '</div>';
     return '<div style="overflow:hidden;">' + markup + '</div>';
   };                
@@ -85,7 +85,7 @@ JS;
         };
     }
 JS;
-            echo $form->field($model, 'category')->widget(Select2::classname(), [
+            echo $form->field($model, 'category')->widget(Select2::class, [
                 'name' => 'kv-repo-template',
                 'id' => 'focus_first',
                 'language' => 'en',
@@ -137,18 +137,14 @@ JS;
         ],
 
         [
-            'attribute' => 'category',
-            'label' => Yii::t('app', 'Category'),
-            'headerOptions' => ['style' => 'width:20%'],
-            'value' => function ($model) {
-                return $model->category0->name;
+            'attribute' => Yii::t('app', 'Category'),
+            'headerOptions' => ['style' => 'width:30%'],
+            'value' => function ($data) {
+                return Html::a(Yii::t('app', ' {modelClass}', [
+                    'modelClass' => $data->category0->name,
+                ]), ['category/info', 'id' => $data->category0->id], ['class' => 'btn-link popupModal']);
             },
-            'filterType' => GridView::FILTER_SELECT2,
-            'filter' => \yii\helpers\ArrayHelper::map(\app\models\Category::find()->asArray()->all(), 'id', 'name'),
-            'filterWidgetOptions' => [
-                'pluginOptions' => ['allowClear' => true],
-            ],
-            'filterInputOptions' => ['placeholder' => 'Category', 'id' => 'grid-temp-transfer-Items-search-category']
+            'format' => 'raw',
         ],
 
         [
@@ -211,3 +207,14 @@ JS;
         'showPageSummary' => true,
     ]); ?>
 </div>
+
+<?php
+// $this->registerJs("$(function() {
+//      $('.popupModal').click(function(e) {
+//      e.preventDefault();
+//      $('#modal').modal('show').find('.modal-content')
+//      .load($(this).attr('href'));
+//      });
+// });");
+
+?>

@@ -259,20 +259,21 @@ class TempInvoicePurchaseController extends Controller
 
     public function actionGetInv($category)
     {
+        if (Yii::$app->user->Identity->seeOtherBranchQ == 0) {
+            $whereBranch = 'branch=' . Yii::$app->user->Identity->branch;
+        } else {
+            $whereBranch = 'branch in (1,2,3,4,5,6,7,8,9)';
+        }
+
         $data = Stocks::find()
                 ->leftJoin('category', 'stocks.category = category.id')
                 ->leftJoin('prices', 'category.id = prices.category')
                 ->select(['stocks.category', 'stocks.quantity as quantity', 'costPrice', 'prices.minPrice', 'prices.maxPrice','prices.minPrice2','prices.minPrice3'])
-                    ->Where(['stocks.branch' => Yii::$app->user->identity->branch])
+                   // ->andWhere($whereBranch)
                     ->andwhere(['stocks.category' => $category])
                     ->andwhere(['=', 'stocks.type', 1])
                     ->asArray()->one();
        echo json::encode($data);
-    }
-
-    public function actionInfo($q = null, $id = null)
-    {
-         Totalinventory::get_all_data($q = null, $id = null);    
     }
 
     public function actionUpload()

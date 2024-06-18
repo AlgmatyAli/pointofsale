@@ -14,7 +14,7 @@ $this->params['breadcrumbs'][] = $this->title;
 <div class="stocks-index">
 
     <center>
-        <h1><?= Html::encode($this->title)?></h1>
+        <h1><?= Html::encode($this->title) ?></h1>
         <hr>
     </center>
 
@@ -28,13 +28,16 @@ $this->params['breadcrumbs'][] = $this->title;
             },
 
         ],
-        [
-            'label' => Yii::t('app', 'Name'),
-            'headerOptions' => ['style' => 'width:20%'],
-            'value' => function ($data) {
-                return $data->name;
-            },
 
+        [
+            'attribute' => Yii::t('app', 'Category'),
+            'headerOptions' => ['style' => 'width:30%'],
+            'value' => function ($data) {
+                return Html::a(Yii::t('app', ' {modelClass}', [
+                    'modelClass' => $data->name,
+                ]), ['category/info', 'id' => $data->id], ['class' => 'btn-link popupModal']);
+            },
+            'format' => 'raw',
         ],
 
         [
@@ -91,8 +94,8 @@ $this->params['breadcrumbs'][] = $this->title;
         'dataProvider' => $dataProvider,
         'columns' => $gridColumn,
         'summary' => '',
-        'pjax' => true,
-        'pjaxSettings' => ['options' => ['id' => 'kv-pjax-container-inventory']],
+        //'pjax' => false,
+        // 'pjaxSettings' => ['options' => ['id' => 'kv-pjax-container-inventory']],
         'panel' => [
             'type' => GridView::TYPE_PRIMARY,
         ],
@@ -102,3 +105,14 @@ $this->params['breadcrumbs'][] = $this->title;
     <?php Pjax::end(); ?>
 
 </div>
+
+<?php
+$this->registerJs("$(function() {
+     $('.popupModal').click(function(e) {
+     e.preventDefault();
+     $('#modal').modal('show').find('.modal-content')
+     .load($(this).attr('href'));
+     });
+});");
+
+?>

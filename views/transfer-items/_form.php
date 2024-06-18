@@ -18,7 +18,7 @@ use dosamigos\datepicker\DatePicker;
     <?php $form = ActiveForm::begin(); ?>
 
    <?php     
-        echo $form->field($model, 'fromBranch')->widget(Select2::classname(), [
+        echo $form->field($model, 'fromBranch')->widget(Select2::class, [
         'data' => ArrayHelper::map(Branches::find()->all(),'id', 'name'),
         'language' => 'ar',
         'options' => ['placeholder' => 'اختيار اسم الفرع المسحوب منه...'],
@@ -28,8 +28,9 @@ use dosamigos\datepicker\DatePicker;
         ],
      ]);
      ?>
+     
     <?php     
-        echo $form->field($model, 'toBranch')->widget(Select2::classname(), [
+        echo $form->field($model, 'toBranch')->widget(Select2::class, [
         'data' => ArrayHelper::map(Branches::find()->all(),'id', 'name'),
         'language' => 'ar',
         'options' => ['placeholder' => 'اختيار اسم الفرع المودع له...'],
@@ -42,7 +43,7 @@ use dosamigos\datepicker\DatePicker;
 
     <?php 
        echo $form->field($model, 'at')->widget(
-        DatePicker::className(),
+        DatePicker::class,
         [
             'language' => 'ar',
             'clientOptions' => [

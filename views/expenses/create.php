@@ -12,7 +12,7 @@ $this->params['breadcrumbs'][] = $this->title;
 <div class="expenses-create">
     <div class="row">
     <div class="col-lg-3"></div>
-    <div class="col-lg-6">
+    <div class="col-lg-5">
     <h1><?= Html::encode($this->title) ?></h1><hr>
 
     <?= $this->render('_form', [

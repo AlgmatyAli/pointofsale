@@ -11,6 +11,7 @@ use app\models\base\TempTransferItems;
 use app\models\Stocks;
 use yii\filters\AccessControl;
 use yii\helpers\Json;
+use yii\web\Response;
 
 /**
  * TempTransferItemsController implements the CRUD actions for TempTransferItems model.
@@ -101,10 +102,14 @@ class TempTransferItemsController extends Controller
         $model = new TempTransferItems();
         $searchModel = new TempTransferItemsSearch();
 
+        if (Yii::$app->user->can('saleOnHoldItems')) {
+            $type = [1, 2, 3];
+        } else {
+            $type = [1, 2, 3];
+        }
+
         $searchModel->created_by = Yii::$app->user->identity->id;
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-
-        //$data = Category::find()->where(['status'=>0])->all();
 
         if (yii::$app->request->post('hasEditable')) {
             $id = Yii::$app->request->post('editableKey');
@@ -114,9 +119,44 @@ class TempTransferItemsController extends Controller
             $posted = current($_POST['TempTransferItems']);
             $post['TempTransferItems'] = $posted;
             if ($result->load($post)) {
-                $result->save(false);
+
+                if (Yii::$app->user->identity->seeOtherBranchQ == '0') {
+                    $branch = Yii::$app->user->identity->branch;
+                } else {
+                    $branch = [1, 2, 3];
+                }
+                $data = Stocks::find()
+                    ->select([
+                        'stocks.category as id', 'stocks.quantity as quantity',
+                        'prices.costPrice', 'prices.minPrice', 'prices.maxPrice'
+                    ])
+                    ->leftJoin('prices', 'stocks.category = prices.category')
+                    ->Where(['stocks.branch' => $branch])
+                    ->andwhere(['stocks.category' => $result->category])
+                    ->andwhere(['in', 'stocks.type', $type])
+                    ->one();
+
+                $sumQnty = TempTransferItems::find()
+                    ->where(['category' => $result->category, 'created_by' => Yii::$app->user->identity->id,])
+                    ->andWhere(['!=', 'id', $result->id])
+                    ->sum('quantity');
+
+                if ($sumQnty != null) {
+                    $balance = abs($data->quantity) - abs($sumQnty);
+                } else {
+                    $balance = abs($data->quantity);
+                }
+
+                if ($posted['quantity'] >= $balance) {
+                    $remaining = $balance;
+                } else {
+                    $remaining = $posted['quantity'];
+                }
+
                 if (isset($posted['quantity'])) {
+                    $result->quantity = $remaining;
                     $outMessage = $result->quantity;
+                    $result->save(false);
                 }
 
                 $output = $outMessage;
@@ -149,13 +189,35 @@ class TempTransferItemsController extends Controller
                 ->andwhere(['in', 'stocks.type', 1])
                 ->andWhere(['in', 'stocks.branch', $branch])
                 ->one();
+                
+            $sumQnty = TempTransferItems::find()
+                ->where(['category' => $model->category, 'created_by' => Yii::$app->user->identity->id,])
+                ->sum('quantity');
 
-            if ($item != null) {
-                if ($model->quantity > $item->quantity) {
-                    $model->quantity = abs($item->quantity);
+            if ($sumQnty != null) {
+                $balance = abs($item->quantity) - abs($sumQnty);
+            } else {
+                if ($item != null) {
+                    $balance = abs($item->quantity);
+                } else {
+                    $balance = 1;
                 }
             }
-
+            if (abs($model->quantity) > abs($balance)) {
+                $remaining = abs($balance);
+            } else {
+                $remaining = abs($model->quantity);
+            }
+            $model->quantity = $remaining;
+            if ($item != null) {
+                if ($sumQnty >= $item->quantity) {
+                    Yii::$app->response->format = Response::FORMAT_JSON;
+                    return ['error' => true, 'message' => Yii::t('app', "عفوا لقد تجاوزت الكمية الموجودة لايمكنك الاستمرار")];
+                }
+            } else {
+                Yii::$app->response->format = Response::FORMAT_JSON;
+                return ['error' => true, 'message' => Yii::t('app', "عفوا كمية هذا الصنف صفر لايمكنك الاستمرار")];
+            }
             $id = TempTransferItems::find()->max('id') + 1;
             $model->id = $id;
             $model->created_by = Yii::$app->user->identity->id;

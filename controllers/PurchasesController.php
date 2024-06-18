@@ -42,15 +42,19 @@ class PurchasesController extends Controller
                 'rules' => [
                     [
                         'allow' => true,
-                        'actions' => ['create', 'view', 'print-bill', 'print-bill-with-out-price',
-                         'print-bill-with-place', 'remove', 'add-purchases', 'date-of-arrival', 'noprice'],
+                        'actions' => [
+                            'create', 'view', 'print-bill', 'print-bill-with-out-price',
+                            'print-bill-with-place', 'remove', 'add-purchases', 'date-of-arrival', 'noprice'
+                        ],
                         'roles' => ['createPurchases'],
                     ],
                     [
                         'allow' => true,
-                        'actions' => ['update', 'view', 'print-bill', 'print-bill-with-out-price',
-                        'print-bill-with-place', 'remove', 'transfer-to-temp-invoice',
-                        'add-purchases', 'date-of-arrival', 'noprice'],
+                        'actions' => [
+                            'update', 'view', 'print-bill', 'print-bill-with-out-price',
+                            'print-bill-with-place', 'remove', 'transfer-to-temp-invoice',
+                            'add-purchases', 'date-of-arrival', 'noprice'
+                        ],
                         'roles' => ['updatePurchases'],
                     ],
                     [
@@ -207,7 +211,7 @@ class PurchasesController extends Controller
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
         $oldType = $model->type;
 
-        if (yii::$app->request->post('hasEditable')){
+        if (yii::$app->request->post('hasEditable')) {
             $id = Yii::$app->request->post('editableKey');
             $old = PurchasesDetails::find()->where(['id' => $id])->one();
             $result = PurchasesDetails::findOne($id);
@@ -246,10 +250,10 @@ class PurchasesController extends Controller
         }
         if ($model->load(Yii::$app->request->post())) {
             if ($model->type == 1) {
-                if($oldType == 3 && $model->totalCost != 0){
-                    $rate = ($model->total + $model->totalCost)/ $model->total;
+                if ($oldType == 3 && $model->totalCost != 0) {
+                    $rate = ($model->total + $model->totalCost) / $model->total;
                     $items =  PurchasesDetails::find()->where('PurchasesId = ' . $model->id)->all();
-                    foreach ($items  as $value){
+                    foreach ($items  as $value) {
                         $value->totalCost = ($value->costPrice * $rate);
                         $value->save(false);
                     }
@@ -257,7 +261,7 @@ class PurchasesController extends Controller
                 //============== read last cost and quantity from inventory
                 $items =  PurchasesDetails::find()->where('PurchasesId = ' . $model->id)->all();
                 //============== add to PurchasesDetails
-                foreach ($items  as $value){
+                foreach ($items  as $value) {
                     // ====================
                     $inventory =  Stocks::find()->select('sum(quantity) as quantity')->where('id=' . $value->category)
                         ->andWhere('type = 1')->one();
@@ -265,18 +269,18 @@ class PurchasesController extends Controller
                     //============== calculate avarage of cost
                     $invetCostPrice = floatval($inventory->quantity) * floatval($prices->costPrice);
                     is_float($invetCostPrice);
-                    
+
                     $tempCostPrice = floatval($value->quantity) * floatval($value->totalCost);
                     is_float($tempCostPrice);
 
                     $total_cost = 0;
                     if ($inventory->quantity <= 0) {
                         $total_cost = floatval($value->totalCost);
-                    }elseif ($inventory->quantity > 0){
+                    } elseif ($inventory->quantity > 0) {
                         if ($invetCostPrice == 0) {
                             $total_cost = floatval($value->totalCost);
-                        }else{
-                            $total_cost = (floatval($tempCostPrice) + floatval($invetCostPrice))/(floatval($inventory->quantity + $value->quantity));
+                        } else {
+                            $total_cost = (floatval($tempCostPrice) + floatval($invetCostPrice)) / (floatval($inventory->quantity + $value->quantity));
                         }
                     }
                     Prices::deleteAll(['category' => $value->category]);
@@ -291,7 +295,7 @@ class PurchasesController extends Controller
                     // ================
                     $value->save(false);
                 }
-            }elseif ($model->type == 3) {
+            } elseif ($model->type == 3) {
                 $items =  PurchasesDetails::find()->where('PurchasesId = ' . $model->id)->all();
                 foreach ($items  as $value) {
                     $exsit = Stocks::find()->where(['=', 'branch', Yii::$app->user->identity->branch])
@@ -392,9 +396,9 @@ class PurchasesController extends Controller
         $model = new Purchases();
 
         $total = TempInvoicePurchase::find()
-        ->where('created_by	=' . Yii::$app->user->identity->id)
-        ->andWhere('state =0')
-        ->sum('costPrice*quantity');
+            ->where('created_by	=' . Yii::$app->user->identity->id)
+            ->andWhere('state =0')
+            ->sum('costPrice*quantity');
 
         if ($total == 0) {
             Yii::$app->session->setFlash('error', Yii::t('app', "Sorry There is no Items at Invoice"));
@@ -479,24 +483,67 @@ class PurchasesController extends Controller
                     $prices->save(false);
                 }
                 if ($model->type == 1) {
-                     Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + $value->quantity
-                     WHERE category=:category
-                     and branch = :branch
-                     and type = :type")
-                        ->bindValue(':category', $value->category)
-                        ->bindValue(':branch', Yii::$app->user->identity->branch)
-                        ->bindValue(':type', 1)
-                        ->execute();
+                    $exsit = Stocks::find()->where(['=', 'branch', Yii::$app->user->identity->branch])
+                        ->andWhere(['=', 'category', $value->category])
+                        ->andWhere(['=', 'type', 1])
+                        ->one();
+                    if ($exsit == null) {
+                        Yii::$app->db->createCommand('INSERT INTO stocks(category, quantity, branch, type) VALUES
+                    (:category, :quantity, :branch, :type)')
+                            ->bindValues([':category' => $value->category])
+                            ->bindValues([':quantity' => $value->quantity])
+                            ->bindValues([':branch' => Yii::$app->user->identity->branch])
+                            ->bindValues([':type' => 1])
+                            ->execute();
+                    } else {
+                        Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + $value->quantity
+                WHERE category=:category
+                and branch = :branch
+                and type = :type")
+                            ->bindValue(':category', $value->category)
+                            ->bindValue(':branch', Yii::$app->user->identity->branch)
+                            ->bindValue(':type', 1)
+                            ->execute();
+                    }
+                    //  Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + $value->quantity
+                    //  WHERE category=:category
+                    //  and branch = :branch
+                    //  and type = :type")
+                    //     ->bindValue(':category', $value->category)
+                    //     ->bindValue(':branch', Yii::$app->user->identity->branch)
+                    //     ->bindValue(':type', 1)
+                    //     ->execute();
                 } elseif ($model->type == 2) {
-
-                    Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  - $value->quantity
-                    WHERE category=:category
-                    and branch = :branch
-                    and type = :type")
-                        ->bindValue(':category', $value->category)
-                        ->bindValue(':branch', Yii::$app->user->identity->branch)
-                        ->bindValue(':type', 1)
-                        ->execute();
+                    $exsit = Stocks::find()->where(['=', 'branch', Yii::$app->user->identity->branch])
+                        ->andWhere(['=', 'category', $value->category])
+                        ->andWhere(['=', 'type', 1])
+                        ->one();
+                    if ($exsit == null) {
+                        Yii::$app->db->createCommand('INSERT INTO stocks(category, quantity, branch, type) VALUES
+                    (:category, :quantity, :branch, :type)')
+                            ->bindValues([':category' => $value->category])
+                            ->bindValues([':quantity' => $value->quantity])
+                            ->bindValues([':branch' => Yii::$app->user->identity->branch])
+                            ->bindValues([':type' => 1])
+                            ->execute();
+                    } else {
+                        Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  - $value->quantity
+                WHERE category=:category
+                and branch = :branch
+                and type = :type")
+                            ->bindValue(':category', $value->category)
+                            ->bindValue(':branch', Yii::$app->user->identity->branch)
+                            ->bindValue(':type', 1)
+                            ->execute();
+                    }
+                    // Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  - $value->quantity
+                    // WHERE category=:category
+                    // and branch = :branch
+                    // and type = :type")
+                    //     ->bindValue(':category', $value->category)
+                    //     ->bindValue(':branch', Yii::$app->user->identity->branch)
+                    //     ->bindValue(':type', 1)
+                    //     ->execute();
                 } elseif ($model->type == 3) {
                     $exsit = Stocks::find()->where(['=', 'branch', Yii::$app->user->identity->branch])
                         ->andWhere(['=', 'category', $value->category])
@@ -529,9 +576,9 @@ class PurchasesController extends Controller
             $model->clinet = 1;
             $model->payWay = 0;
             $model->total = TempInvoicePurchase::find()
-            ->where('created_by	=' . Yii::$app->user->identity->id)
-            ->andWhere('state =0')
-            ->sum('costPrice*quantity');
+                ->where('created_by	=' . Yii::$app->user->identity->id)
+                ->andWhere('state =0')
+                ->sum('costPrice*quantity');
             $totalInvoice =
                 $model->paid = 0;
             return $this->renderAjax('_form', [
@@ -678,8 +725,8 @@ class PurchasesController extends Controller
             }
 
             $sale->total =  PurchasesDetails::find()
-            ->where(['PurchasesId' => $details->purchasesId])
-            ->sum('costPrice * quantity');
+                ->where(['PurchasesId' => $details->purchasesId])
+                ->sum('costPrice * quantity');
 
             if ($sale->total == null) {
                 Purchases::deleteAll(['id' => $purchasesId]);

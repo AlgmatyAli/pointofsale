@@ -20,7 +20,7 @@ use yii\helpers\Url;
     <?php $form = ActiveForm::begin(); ?>
     <div class="row">
         <div class="col-lg-3"></div>
-        <div class="col-lg-6">
+        <div class="col-lg-5">
             <?php
             if ($_GET['type'] == '1') {
                 $data = ArrayHelper::map(Client::find()
@@ -36,7 +36,7 @@ use yii\helpers\Url;
                     ->all(), 'id', 'name');
             }
 
-            echo $form->field($model, 'clinet')->widget(Select2::classname(), [
+            echo $form->field($model, 'clinet')->widget(Select2::class, [
                 'data' => $data,
                 'language' => 'ar',
                 'options' => ['placeholder' => 'الرجاء اختيار اسم العميل ...'],
@@ -60,19 +60,9 @@ use yii\helpers\Url;
             ]);
             ?>
 
-            <?= $form->field($model, 'agent')->widget(\kartik\widgets\Select2::classname(), [
-                'data' => ArrayHelper::map(\app\models\Agent::find()
-                    ->where(['in', 'branch', [Yii::$app->user->identity->branch]])
-                    //->andWhere(['branch' => Yii::$app->user->identity->branch])
-                    ->orderBy('id')->asArray()->all(), 'id', 'name'),
-                'options' => ['placeholder' => 'الرجاء الاختيار   ...'],
-                'pluginOptions' => [
-                    'allowClear' => true
-                ],
-            ]); ?>
             <?php
             echo $form->field($model, 'at')->widget(
-                DatePicker::className(),
+                DatePicker::class,
                 [
                     'language' => 'ar',
                     'clientOptions' => [
@@ -94,11 +84,10 @@ use yii\helpers\Url;
             <?= $form->field($model, 'payWay')->dropDownList(['نقدا' => 'نقدا', 'صك' => 'صك', 'بطاقة' => 'بطاقة',], ['prompt' => '']) ?>
 
             <?php
-            echo $form->field($model, 'currancy')->widget(Select2::classname(), [
+            echo $form->field($model, 'currancy')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Currancy::find()
                     ->all(), 'id', 'name'),
                 'language' => 'ar',
-                // 'options' => ['placeholder' => ' ...'],
                 'pluginOptions' => [
                     'allowClear' => false,
                     'multiple' => false,
@@ -107,8 +96,6 @@ use yii\helpers\Url;
             ?>
             <br>
 
-
-
             <?= $form->field($model, 'type')->hiddenInput(['readonly' => true, 'value' => $model->isNewRecord ? $_GET['type'] : $model->type])->label(false) ?>
 
             <div class="form-group">
@@ -116,10 +103,9 @@ use yii\helpers\Url;
                 <?= Html::a('<i class="fa fa-fw fa-window-close"></i>' . ' ' . Yii::t('app', 'Clear'), ['/receipt/create', 'type' => $_GET['type']], ['class' => 'btn btn-danger btn-lg']) ?>
             </div>
         </div>
-       
-       <?php
-            //if ($_GET['type'] == '1') {
-              echo  '<div class="col-sm-3 col-md-3 col-lg-3">
+
+        <?php
+        echo  '<div class="col-sm-3 col-md-3 col-lg-3">
                 <div class="panel panel-danger">
                     <div class="panel-heading"> رصيد الزبون </div>
                     <div class="panel-body">
@@ -127,11 +113,7 @@ use yii\helpers\Url;
                     </div>
                 </div>
             </div>';
-
-           // } 
-            ?>
-                
-        
+        ?>
 
         <?php ActiveForm::end(); ?>
 

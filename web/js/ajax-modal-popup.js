@@ -7,7 +7,15 @@ $(function () {
         $.fn.modal.Constructor.prototype.enforceFocus = $.noop;
 
     });
-})
+});
+
+$(function() {
+     $('.popupModal').click(function(e) {
+     e.preventDefault();
+     $('#modal').modal('show').find('.modal-content')
+     .load($(this).attr('href'));
+     });
+});
 // ========================
 // "kartik-v/yii2-widget-datecontrol"
 var $hasDateControl = $(this).find('[data-krajee-datecontrol]');
