@@ -231,21 +231,30 @@ class PurchasesController extends Controller
                     $purchase = Purchases::find()->where(['id' => $result->PurchasesId])->one();
                     $purchase->total = $purchase->total + ($q * $result->costPrice);
                     $purchase->save(false);
+                    $output = $outMessage;
+                    $out = Json::encode(['output' => $output]);
+                    return $out;
                 }
                 if (isset($posted['salePrice'])) {
                     $salePrice = $posted['salePrice'];
                     $p = $salePrice - $old->salePrice;
                     $outMessage = $result->salePrice;
+                    $output = $outMessage;
+                    $out = Json::encode(['output' => $output]);
+                    return $out;
                 }
                 if (isset($posted['salePrice_'])) {
                     $salePrice = $posted['salePrice_'];
                     $p = $salePrice - $old->salePrice_;
                     $outMessage = $result->salePrice_;
+                    $output = $outMessage;
+                    $out = Json::encode(['output' => $output]);
+                    return $out;
                 }
                 $result->save(false);
-                $output = $outMessage;
-                $out = Json::encode(['output' => $output]);
-                return $out;
+                // $output = $outMessage;
+                // $out = Json::encode(['output' => $output]);
+                // return $out;
             }
         }
         if ($model->load(Yii::$app->request->post())) {
