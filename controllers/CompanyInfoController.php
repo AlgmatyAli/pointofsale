@@ -117,9 +117,9 @@ class CompanyInfoController extends Controller
                 }else{
                     $path = "img/c_info";
                 }
-                
+                $model->file = UploadedFile::getInstance($model, 'file');
                 if($model->file != null){
-                $model->file = UploadedFile::getInstance($model,'file');
+               // $model->file = UploadedFile::getInstance($model,'file');
                 $ext = substr(strrchr($model->file,'.'),1);
                 
                if($ext != null)
@@ -160,8 +160,9 @@ class CompanyInfoController extends Controller
             }else{
                 $path = "img/c_info";
             }
+            $model->file = UploadedFile::getInstance($model, 'file');
             if($model->file != null){
-            $model->file = UploadedFile::getInstance($model,'file');
+           // $model->file = UploadedFile::getInstance($model,'file');
             if ($model->file != null) {
             $ext = substr(strrchr($model->file,'.'),1);
            if($ext != null)
