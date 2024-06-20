@@ -65,7 +65,7 @@ use kartik\widgets\SwitchInput;
         </div>
 
         <div class='col-md-3'>
-            <?php if (empty($model->img)) {
+            <?php if (empty($model->path)) {
 
                 echo $form->field($model, 'file')->widget(FileInput::classname(), ['options' => ['accept' => 'image/*'],]);
             } else {

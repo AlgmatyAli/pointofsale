@@ -66,8 +66,8 @@ use kartik\select2\Select2;
             </div>
         </div>
         <div class='col-md-3'>
-            <?php if (empty($model->img)) {
-
+            <?php if (empty($model->path)) {
+ 
                 echo $form->field($model, 'file')->widget(FileInput::classname(), ['options' => ['accept' => 'image/*'],]);
             } else {
                 $allimage[] = Html::img($model->path,  ['class' => 'file-preview-image']);
