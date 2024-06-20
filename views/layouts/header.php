@@ -1,15 +1,17 @@
 <?php
+
+use app\models\CompanyInfo;
 use yii\helpers\Html;
 use app\models\User;
 use yii\helpers\Url;
 /* @var $this \yii\web\View */
 /* @var $content string */
 ?>
-<?php  $path = User::find()->select(['path','username'])->where(['id'=>Yii::$app->user->identity->id])->one(); 
-?>
+<?php  $path = User::find()->select(['path','username'])->where(['id'=>Yii::$app->user->identity->id])->one(); ?>
+<?php  $company = CompanyInfo::find()->select(['name'])->one(); ?>
 <header class="main-header">
 
-    <?= Html::a('<span class="logo-mini">Z</span><span class="logo-lg">' . Yii::$app->name . '</span>', Yii::$app->homeUrl, ['class' => 'logo']) ?>
+    <?= Html::a('<span class="logo-mini">J</span><span class="logo-lg">' . $company->name . '</span>', Yii::$app->homeUrl, ['class' => 'logo']) ?>
          
     <nav class="navbar navbar-static-top " role="navigation">
 
