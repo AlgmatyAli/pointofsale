@@ -144,7 +144,11 @@ class TempTransferItemsController extends Controller
                 if ($sumQnty != null) {
                     $balance = abs($data->quantity) - abs($sumQnty);
                 } else {
-                    $balance = abs($data->quantity);
+                    if ($data != null) {
+                    $balance = abs($data->quantity); 
+                    }else{
+                        $balance = 1;
+                    }
                 }
 
                 if ($posted['quantity'] >= $balance) {

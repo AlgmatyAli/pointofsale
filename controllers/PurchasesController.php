@@ -213,7 +213,6 @@ class PurchasesController extends Controller
 
         if (yii::$app->request->post('hasEditable')) {
             $id = Yii::$app->request->post('editableKey');
-            $old = PurchasesDetails::find()->where(['id' => $id])->one();
             $result = PurchasesDetails::findOne($id);
 
             Json::encode(['output' => '', 'message' => '']);
@@ -225,36 +224,25 @@ class PurchasesController extends Controller
 
                 if (isset($posted['quantity'])) {
                     $outMessage = $result->quantity;
-                    $quantity = $posted['quantity'];
-                    $q = $quantity - $old->quantity;
-
-                    $purchase = Purchases::find()->where(['id' => $result->PurchasesId])->one();
-                    $purchase->total = $purchase->total + ($q * $result->costPrice);
-                    $purchase->save(false);
+                    $result->save(false);
                     $output = $outMessage;
                     $out = Json::encode(['output' => $output]);
                     return $out;
                 }
                 if (isset($posted['salePrice'])) {
-                    $salePrice = $posted['salePrice'];
-                    $p = $salePrice - $old->salePrice;
                     $outMessage = $result->salePrice;
+                    $result->save(false);
                     $output = $outMessage;
                     $out = Json::encode(['output' => $output]);
                     return $out;
                 }
                 if (isset($posted['salePrice_'])) {
-                    $salePrice = $posted['salePrice_'];
-                    $p = $salePrice - $old->salePrice_;
                     $outMessage = $result->salePrice_;
+                    $result->save(false);
                     $output = $outMessage;
                     $out = Json::encode(['output' => $output]);
                     return $out;
                 }
-                $result->save(false);
-                // $output = $outMessage;
-                // $out = Json::encode(['output' => $output]);
-                // return $out;
             }
         }
         if ($model->load(Yii::$app->request->post())) {
@@ -440,7 +428,7 @@ class PurchasesController extends Controller
                 ->andWhere('state = 0')
                 ->all();
             //============== add to PurchasesDetails
-            foreach ($items  as $value) {
+            foreach ($items as $value) {
                 $PurchasesDetails = new PurchasesDetails();
 
                 $inventory =  Stocks::find()->select('sum(quantity) as quantity')->where('category =' . $value->category)

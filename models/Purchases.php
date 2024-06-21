@@ -26,7 +26,8 @@ use Yii;
  * @property string $created_at
  * @property int|null $user_update
  * @property string|null $update_at
- *
+ * @property string|null $currancy
+ * @property string|null $total_currancy
  * @property Branches $br
  * @property Client $c
  * @property User $userInsert
@@ -59,15 +60,15 @@ class Purchases extends \yii\db\ActiveRecord
         [['total', 'paid', 'total_currancy',], 'number'],
         [['clientBill', 'notes', 'path', 'totalCost', 'standBy'], 'string', 'max' => 255],
         [['branch'], 'exist', 'skipOnError' => true, 'targetClass' =>
-        Branches::className(), 'targetAttribute' => ['branch' => 'id']],
+        Branches::class, 'targetAttribute' => ['branch' => 'id']],
         [['clinet'], 'exist', 'skipOnError' => true, 'targetClass' =>
-        Client::className(), 'targetAttribute' => ['clinet' => 'id']],
+        Client::class, 'targetAttribute' => ['clinet' => 'id']],
         [['user_insert'], 'exist', 'skipOnError' => true, 'targetClass' =>
-        User::className(), 'targetAttribute' => ['user_insert' => 'id']],
+        User::class, 'targetAttribute' => ['user_insert' => 'id']],
         [['user_update'], 'exist', 'skipOnError' => true, 'targetClass' =>
-        User::className(), 'targetAttribute' => ['user_update' => 'id']],
+        User::class, 'targetAttribute' => ['user_update' => 'id']],
         [['shippingType'], 'exist', 'skipOnError' => true, 'targetClass' =>
-        ShippingType::className(), 'targetAttribute' => ['dateOfArrival' => 'id']],
+        ShippingType::class, 'targetAttribute' => ['dateOfArrival' => 'id']],
         ];
     }
 
@@ -111,7 +112,7 @@ class Purchases extends \yii\db\ActiveRecord
      */
     public function getBr()
     {
-        return $this->hasOne(Branches::className(), ['id' => 'branch']);
+        return $this->hasOne(Branches::class, ['id' => 'branch']);
     }
 
     /**
@@ -121,12 +122,12 @@ class Purchases extends \yii\db\ActiveRecord
      */
     public function getC()
     {
-        return $this->hasOne(Client::className(), ['id' => 'clinet']);
+        return $this->hasOne(Client::class, ['id' => 'clinet']);
     }
 
     public function getCurrancy0()
     {
-        return $this->hasOne(Currancy::className(), ['id' => 'currancy']);
+        return $this->hasOne(Currancy::class, ['id' => 'currancy']);
     }
 
     /**
@@ -136,7 +137,7 @@ class Purchases extends \yii\db\ActiveRecord
      */
     public function getUserInsert()
     {
-        return $this->hasOne(User::className(), ['id' => 'user_insert']);
+        return $this->hasOne(User::class, ['id' => 'user_insert']);
     }
 
     /**
@@ -146,12 +147,12 @@ class Purchases extends \yii\db\ActiveRecord
      */
     public function getUserUpdate()
     {
-        return $this->hasOne(User::className(), ['id' => 'user_update']);
+        return $this->hasOne(User::class, ['id' => 'user_update']);
     }
 
     public function getShippingType0()
     {
-        return $this->hasOne(ShippingType::className(), ['id' => 'shippingType']);
+        return $this->hasOne(ShippingType::class, ['id' => 'shippingType']);
     }
 
     /**
@@ -162,6 +163,6 @@ class Purchases extends \yii\db\ActiveRecord
 
     public function getPurchasesDetails()
     {
-        return $this->hasMany(PurchasesDetails::className(), ['PurchasesId' => 'id']);
+        return $this->hasMany(PurchasesDetails::class, ['PurchasesId' => 'id']);
     }
 }

@@ -14,6 +14,9 @@ use Yii;
  * @property float $costPrice
  * @property string|null $totalCost
  * @property float|null $salePrice
+ * @property float|null $salePrice_
+ * @property float|null $salePrice_2
+ * @property float|null $salePrice_3
  * @property int $box
  * @property string|null $expire
  *
@@ -43,8 +46,8 @@ class PurchasesDetails extends \yii\db\ActiveRecord
             [['costPrice', 'totalCost', 'salePrice', 'salePrice_', 'salePrice_2', 'salePrice_3'], 'number'],
             [['expire'], 'safe'],
             [['totalCost'], 'string', 'max' => 255],
-            [['category'], 'exist', 'skipOnError' => true, 'targetClass' => Category::className(), 'targetAttribute' => ['category' => 'id']],
-            [['PurchasesId'], 'exist', 'skipOnError' => true, 'targetClass' => Purchases::className(), 'targetAttribute' => ['PurchasesId' => 'id']],
+            [['category'], 'exist', 'skipOnError' => true, 'targetClass' => Category::class, 'targetAttribute' => ['category' => 'id']],
+            [['PurchasesId'], 'exist', 'skipOnError' => true, 'targetClass' => Purchases::class, 'targetAttribute' => ['PurchasesId' => 'id']],
         ];
     }
 
@@ -78,7 +81,7 @@ class PurchasesDetails extends \yii\db\ActiveRecord
      */
     public function getCategory0()
     {
-        return $this->hasOne(Category::className(), ['id' => 'category']);
+        return $this->hasOne(Category::class, ['id' => 'category']);
     }
 
     /**
@@ -88,13 +91,13 @@ class PurchasesDetails extends \yii\db\ActiveRecord
      */
     public function getPurchases()
     {
-        return $this->hasOne(Purchases::className(), ['id' => 'PurchasesId']);
+        return $this->hasOne(Purchases::class, ['id' => 'PurchasesId']);
     }
 
    
 
     public function getClient()
     {
-        return $this->hasOne(Client::className(), ['id' => 'clinet'])->via('purchases');
+        return $this->hasOne(Client::class, ['id' => 'clinet'])->via('purchases');
     }
 }

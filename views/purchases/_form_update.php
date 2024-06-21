@@ -21,20 +21,34 @@ use yii\web\JsExpression;
 <div class="purchases-form">
 
     <?php $form = ActiveForm::begin(); ?>
+    <div class="form-group">
+        <div class="btn-group">
+            <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Save'), ['class' => 'btn btn-success']) ?>
+            <?= Html::a(
+                '<i class="fa fa-fw fa-window-close"></i>' . ' ' . Yii::t('app', 'Back'),
+                Yii::$app->request->referrer,
+                ['class' => 'btn btn-danger']
+            ) ?>
+        </div>
+    </div>
+    
     <div class="row">
-        <div class="col-md-2"></div>
-        <div class="col-md-8">
+        <div class="col-md-3">
             <?= $form->field($model, 'id')->textInput(['maxlength' => true]) ?>
-            <?= $form->field($model, 'type')->dropDownList(['1' => 'فاتورة مشتريات',
-            '2' => 'فاتورة مسترجع مشتريات',
-            '3' => 'فاتورة مشتريات معلقة']) ?>
+        </div>
+        <div class="col-md-3">
+            <?= $form->field($model, 'type')->dropDownList([
+                '1' => 'فاتورة مشتريات',
+                '2' => 'فاتورة مسترجع مشتريات',
+                '3' => 'فاتورة مشتريات معلقة'
+            ]) ?>
         </div>
     </div>
 
 
     <div class="row">
 
-        <div class="col-md-4">
+        <div class="col-md-3">
             <?php
             echo $form->field($model, 'clinet')->widget(Select2::classname(), [
                 'data' => ArrayHelper::map(Client::find()
@@ -45,8 +59,6 @@ use yii\web\JsExpression;
                 'pluginOptions' => [
                     'allowClear' => true,
                     'multiple' => false,
-
-
                 ],
             ]);
             ?>
@@ -66,7 +78,7 @@ use yii\web\JsExpression;
             ?>
 
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <?php
             echo $form->field($model, 'at')->widget(
                 DatePicker::className(),
@@ -81,31 +93,20 @@ use yii\web\JsExpression;
                 ]
             );
             ?>
+
             <?= $form->field($model, 'totalCost')->textInput(['maxlength' => true]) ?>
 
             <?= $form->field($model, 'total_currancy')->textInput(['maxlength' => true]) ?>
-
-            <?php
-                echo $form->field($model, 'shippingType')->widget(Select2::classname(), [
-                'data' => ArrayHelper::map(ShippingType::find()
-                    ->all(), 'id', 'name'),
-                'language' => 'ar',
-                'options' => ['placeholder' => 'الرجاء اختيار اسم طريقة الشحن ...'],
-                'pluginOptions' => [
-                    'allowClear' => true,
-                    'multiple' => false,
-
-
-                ],
-            ]);
-            ?>
-
         </div>
-        <div class="col-md-4">
-            <?= $form->field($model, 'payWay')->dropDownList(['0' => 'نقدا',
-            '1' => 'آجـــل',
-            '2' => 'دفعة على الحساب',],
-            ['prompt' => '']) ?>
+        <div class="col-md-3">
+            <?= $form->field($model, 'payWay')->dropDownList(
+                [
+                    '0' => 'نقدا',
+                    '1' => 'آجـــل',
+                    '2' => 'دفعة على الحساب',
+                ],
+                ['prompt' => '']
+            ) ?>
 
             <?= $form->field($model, 'total')->textInput() ?>
 
@@ -113,7 +114,9 @@ use yii\web\JsExpression;
                 'maxlength' => true,
                 'onfocusout' => 'netTotalsPurchases( $(this) )',
             ]); ?>
+        </div>
 
+        <div class="col-md-3">
             <?php
             echo $form->field($model, 'dateOfArrival')->widget(
                 DatePicker::className(),
@@ -128,19 +131,28 @@ use yii\web\JsExpression;
                 ]
             );
             ?>
+
+            <?php
+            echo $form->field($model, 'shippingType')->widget(Select2::classname(), [
+                'data' => ArrayHelper::map(ShippingType::find()
+                    ->all(), 'id', 'name'),
+                'language' => 'ar',
+                'options' => ['placeholder' => 'الرجاء اختيار اسم طريقة الشحن ...'],
+                'pluginOptions' => [
+                    'allowClear' => true,
+                    'multiple' => false,
+
+
+                ],
+            ]);
+            ?>
         </div>
 
         <div class="col-md-6">
-          <?= $form->field($model, 'notes')->textarea(['rows' => 3, 'columns' => 6]) ?>
+            <?= $form->field($model, 'notes')->textarea(['rows' => 3, 'columns' => 6]) ?>
         </div>
     </div>
-    <div class="form-group">
-      <div class="btn-group">
-        <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>'.' '.Yii::t('app', 'Save'), ['class' => 'btn btn-success']) ?>
-        <?= Html::a('<i class="fa fa-fw fa-window-close"></i>'.' '.Yii::t('app', 'Back'),
-         Yii::$app->request->referrer, ['class' => 'btn btn-danger']) ?>
-      </div>
-    </div>
+    
 </div>
 <br>
 

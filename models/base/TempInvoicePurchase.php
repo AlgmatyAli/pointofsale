@@ -22,6 +22,10 @@ use mootensai\behaviors\UUIDBehavior;
  * @property string $created_at
  * @property integer $updated_by
  * @property string $updated_at
+ * @property double $salePrice_
+ * @property double $salePrice_2
+ * @property double $salePrice_3
+ * @property double $costTotal
  *
  * @property \app\models\User $createdBy
  * @property \app\models\User $updatedBy

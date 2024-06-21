@@ -1,23 +1,9 @@
 <?php
 use yii\helpers\Html;
-use Faker\Provider\hr_HR\Company;
 use app\models\CompanyInfo;
 
 /* @var $this \yii\web\View */
 /* @var $content string */
-
-        yii\bootstrap\Modal::begin([
-            'header' => '<b>' . Yii::t('app', 'Jupiter') . '<hr></b>',
-            'headerOptions' => ['id' => 'modalHeader'],
-            'id' => 'modal',
-            'size' => 'modal-lg',
-             //keeps from closing modal with esc key or by clicking out of the modal.
-             // user must click cancel or X to close
-        'clientOptions' => ['backdrop' => 'static', 'keyboard' => true]
-        ]);
-            echo "<div id='modalContent'></div>";
-            yii\bootstrap\Modal::end();
-    
 
 if (Yii::$app->controller->action->id === 'login') { 
 /**
@@ -48,8 +34,9 @@ if (Yii::$app->controller->action->id === 'login') {
         app\assets\AppAsset::register($this);
     }
     ?>
-    <?php $info = CompanyInfo::find()->select(['skin'])->one(); 
+    <?php $info = CompanyInfo::find()->select(['skin', 'name'])->one(); 
           $body = '"' ."hold-transition ". $info->skin ." sidebar-mini" .'"';
+          $title = $info->name;
     ?>
     <?php //die($body);?>
 
@@ -60,7 +47,7 @@ if (Yii::$app->controller->action->id === 'login') {
         <meta charset="<?= Yii::$app->charset ?>"/>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <?= Html::csrfMetaTags() ?>
-        <title><?= Html::encode(Yii::$app->name) ?></title>
+        <title><?= Html::encode($title) ?></title>
         <?php $this->head() ?>
     </head> 
     <!-- skin-blue -->
@@ -99,6 +86,7 @@ if (Yii::$app->controller->action->id === 'login') {
             echo "<div id='modalContent'></div>";
             yii\bootstrap\Modal::end();
     ?>
+
      <?= \ibrarturi\scrollup\ScrollUp::widget([
     	'theme' => 'pill',   // pill, link, image, tab
     ]); ?>
