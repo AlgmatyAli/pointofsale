@@ -88,7 +88,7 @@ class CategoryController extends Controller
                     ],
                     [
                         'allow' => true,
-                        'actions' => ['histrans'],
+                        'actions' => ['histrans', 'histrans-by-client'],
                         'roles' => ['categoryHistrans'],
                     ],
                 ],
@@ -685,5 +685,109 @@ class CategoryController extends Controller
             ]
         ]);
         $export->send('category.xlsx');
+    }
+
+    public function actionHistransByClient()
+    {
+        $model = new Inventory();
+        $data = Category::find()->where(['status' => 0])->all();
+
+        if ($model->load(Yii::$app->request->post())) {
+            $category = Category::find()->select('id')->where(['id' => $model->id])->one();
+
+            if ($model->allData != 0) {
+                $model->min_date = '2010-01-01';
+                $model->max_date = date('Y-m-d');
+            }
+            if (Yii::$app->user->identity->client != null) {
+                $sqlSum = " SELECT
+                sum(category_histrans.quantity) as quantity
+                FROM category_histrans
+                where category_histrans.clientId in ( " . Yii::$app->user->identity->client . " )
+                and category_histrans.id = " . $category->id . "
+                and category_histrans.tranDate < '" . $model->min_date . "'  
+                and category_histrans.ClientId = ". $model->client;
+                $connection = Yii::$app->db;
+                $data = $connection->createCommand($sqlSum);
+                $lastBalance = $data->queryAll();
+
+                $sql = " SELECT category_histrans.kind_id, category_histrans.id, category_histrans.printId,
+                category_histrans.name as name, category_histrans.quantity as quantity, category_histrans.unit as unit,
+                category_histrans.box as box, category_histrans.class as class, category_histrans.client as client,
+                branches.name as branch, category_histrans.kind as kind,
+                 category_histrans.trandate as trandate, category_histrans.billId as billId
+                , category_histrans.deleviried as deleviried
+                FROM category_histrans, branches
+                where category_histrans.branch = branches.id and category_histrans.id = " . $category->id . "
+                and category_histrans.trandate  between '" . $model->min_date . "' and '" . $model->max_date . "'
+                and category_histrans.tranDate.ClientId = ". $model->client."
+                and category_histrans.clientId in ( " . Yii::$app->user->identity->client . ")
+                order by category_histrans, category_histrans.kind_id
+                ";
+                $connection = Yii::$app->db;
+                $data = $connection->createCommand($sql);
+                $info = $data->queryAll();
+                if ($info == null) {
+                    echo '<script type="text/javascript">
+                    alert("عفوا لايوجد بيانات للعرض");
+                    window.location.href="?r=category"
+                    </script>';
+                }
+            } else {
+                $sqlSum = " SELECT
+            sum(category_histrans.quantity) as quantity
+            FROM category_histrans
+            where category_histrans.id = " . $category->id . "
+            and category_histrans.tranDate < '" . $model->min_date . "'  
+            and category_histrans.ClientId = ". $model->client;
+                $connection = Yii::$app->db;
+                $data = $connection->createCommand($sqlSum);
+                $lastBalance = $data->queryAll();
+
+                $sql = " SELECT category_histrans.kind_id, category_histrans.id, category_histrans.printId,
+             category_histrans.name as name, category_histrans.quantity as quantity, category_histrans.unit as unit,
+            category_histrans.box as box, category_histrans.class as class, category_histrans.client as client,
+            branches.name as branch, category_histrans.kind as kind, category_histrans.trandate as trandate,
+             category_histrans.billId as billId
+            , category_histrans.deleviried as deleviried
+            FROM category_histrans, branches
+            where category_histrans.branch = branches.id and category_histrans.id = " . $category->id . "
+            and category_histrans.trandate  between '" . $model->min_date . "' and '" . $model->max_date . "'
+            and category_histrans.ClientId = ". $model->client."
+            order by category_histrans.trandate, category_histrans.kind_id";
+                $connection = Yii::$app->db;
+                $data = $connection->createCommand($sql);
+                $info = $data->queryAll();
+                if ($info == null) {
+                    echo '<script type="text/javascript">
+                alert("عفوا لايوجد بيانات للعرض");
+                window.location.href="?r=category"
+                </script>';
+                }
+            }
+            return $this->render('histransrep', [
+                'models' => $info,
+                'min_date' => $model->min_date,
+                'max_date' => $model->max_date,
+                'sumsader' => 0,
+                'sumwared' => 0,
+                'sumPurchase' => 0,
+                'sumBackPurchase' => 0,
+                'sumSales' => 0,
+                'sumBackSales' => 0,
+                'sum' => 0,
+                'coun' => 1,
+                'count' => 0,
+                'name' => null,
+                'id' => 0,
+                'lastBalance' => $lastBalance,
+                'sumQuantity' => 0,
+            ]);
+        }
+
+        return $this->render('histransClient', [
+            'model' => $model,
+            'data' => $data
+        ]);
     }
 }

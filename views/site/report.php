@@ -18,6 +18,8 @@ use yii\widgets\DetailView;
 
       <?= Html::a(Yii::t('app', 'كشف حساب صنف '), ['/category/histrans'], ['class' => 'btn btn-default btn-block']) ?>
 
+      <?= Html::a(Yii::t('app', 'كشف حساب صنف حسب العميل '), ['/category/histrans-by-client'], ['class' => 'btn btn-default btn-block']) ?>
+
       <?= Html::a(Yii::t('app', 'كشف حساب عميل'), ['/client/histrans'], ['class' => 'btn btn-default btn-block']) ?>
 
       <?= Html::a(Yii::t('app', 'تقرير باجمالي الديون'),  ['/client/credts', 'type' => '0,1,2'], ['class' => 'btn btn-default btn-block']) ?>

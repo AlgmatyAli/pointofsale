@@ -19,14 +19,17 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <?php Pjax::begin(); ?>
         <?php 
-            $quantity=0; $costPrice=0; $salePrice=0;
+            $quantity=0; $costPrice=0; $salePrice=0; $i=0;
             $data = $dataProvider->getModels();
 
             foreach ($data as $value) {
+                $i++;
+                
                 $quantity =  $quantity + $value['quantity'];
                 $costPrice =  $costPrice + $value['costPrice'] * $value['quantity'];
                 $salePrice = $salePrice + $value['maxPrice'] * $value['quantity'];
             }
+            //die(var_dump( $quantity));
         ?>
         <div class="col-md-3 col-sm-6 col-xs-12">
                 <div class="info-box">

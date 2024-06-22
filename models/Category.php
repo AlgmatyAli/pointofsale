@@ -27,7 +27,10 @@ use Yii;
  * @property string $created_at
  * @property int|null $user_update
  * @property string|null $update_at
- *
+ * @property string $place
+ * @property string $commCode
+ * @property string $moreRequest
+ * @property string $weight
  * @property User $userInsert
  * @property User $userUpdate
  * @property Prices[] $prices

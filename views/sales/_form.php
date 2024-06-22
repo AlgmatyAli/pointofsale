@@ -28,8 +28,8 @@ $company = CompanyInfo::find()->one();
 
             <?php
             if (Yii::$app->user->identity->client <> null) {
-                echo $form->field($model, 'clinet')->widget(\kartik\widgets\Select2::classname(), [
-                    'data' => \yii\helpers\ArrayHelper::map(\app\models\Client::find()
+                echo $form->field($model, 'clinet')->widget(\kartik\widgets\Select2::class, [
+                    'data' =>  ArrayHelper::map(\app\models\Client::find()
                         ->where(['in', 'type', [0, 2]])
                         //->andWhere(['branch' => Yii::$app->user->identity->branch])
                         ->andWhere(['in', 'id', explode(',', Yii::$app->user->identity->client)])
@@ -40,8 +40,8 @@ $company = CompanyInfo::find()->one();
                     ],
                 ]);
             } else {
-                echo $form->field($model, 'clinet')->widget(\kartik\widgets\Select2::classname(), [
-                    'data' => \yii\helpers\ArrayHelper::map(\app\models\Client::find()
+                echo $form->field($model, 'clinet')->widget(\kartik\widgets\Select2::class, [
+                    'data' =>  ArrayHelper::map(\app\models\Client::find()
                         ->where(['in', 'type', [0, 2]])
                         //->andWhere(['branch' => Yii::$app->user->identity->branch])                       
                         ->orderBy('id')->asArray()->all(), 'id', 'name'),
@@ -52,8 +52,8 @@ $company = CompanyInfo::find()->one();
             }
             ?>
 
-            <?= $form->field($model, 'agent')->widget(\kartik\widgets\Select2::classname(), [
-                'data' => \yii\helpers\ArrayHelper::map(\app\models\Agent::find()
+            <?= $form->field($model, 'agent')->widget(\kartik\widgets\Select2::class, [
+                'data' =>  ArrayHelper::map(\app\models\Agent::find()
                     ->where(['in', 'branch', [Yii::$app->user->identity->branch]])
                     //->andWhere(['branch' => Yii::$app->user->identity->branch])
                     ->orderBy('id')->asArray()->all(), 'id', 'name'),
@@ -65,7 +65,7 @@ $company = CompanyInfo::find()->one();
 
             <?=
             $form->field($model, 'at')->widget(
-                DatePicker::className(),
+                DatePicker::class,
                 [
                     'value' => '02-16-2012',
                     'language' => 'ar',
@@ -87,7 +87,7 @@ $company = CompanyInfo::find()->one();
             }
             ?>
             <?php
-            echo $form->field($model, 'currancy')->widget(Select2::classname(), [
+            echo $form->field($model, 'currancy')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Currancy::find()->all(), 'id', 'name'),
                 'language' => 'ar',
                 'pluginOptions' => [
@@ -135,7 +135,7 @@ $company = CompanyInfo::find()->one();
 
             <?=
             $form->field($model, 'deserving')->widget(
-                DatePicker::className(),
+                DatePicker::class,
                 [
                     'value' => '02-16-2012',
                     'language' => 'ar',

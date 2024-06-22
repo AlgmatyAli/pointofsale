@@ -23,7 +23,7 @@ class Inventory extends \yii\db\ActiveRecord
      */
     public $min_date;
     public $max_date;
-    Public $costPrice,$maxPrice,$minPrice, $allData, $at;
+    Public $costPrice,$maxPrice,$minPrice, $allData, $at, $client;
     public static function tableName()
     {
         return 'inventory';
@@ -39,7 +39,7 @@ class Inventory extends \yii\db\ActiveRecord
             [['quantity'], 'number'],
             [['name', 'class'], 'string', 'max' => 255],
             [['unit'], 'string', 'max' => 100],
-            [['tranDate', 'min_date', 'max_date', 'commCode', 'allData', 'at', 'maxPrice'], 'safe'],
+            [['tranDate', 'min_date', 'max_date', 'commCode', 'allData', 'at', 'maxPrice', 'client'], 'safe'],
 
         ];
     }
@@ -67,19 +67,20 @@ class Inventory extends \yii\db\ActiveRecord
             'commCode' => Yii::t('app', 'Comm Code'),
             'allData' => Yii::t('app', 'All Data'),
             'company' => Yii::t('app', 'Company'),
+            'client' => Yii::t('app', 'Client'),
         ];
     }
 
     public function getPrices0()
     {
-        return $this->hasOne(Prices::className(), ['category' => 'id']);
+        return $this->hasOne(Prices::class, ['category' => 'id']);
     }
     public function getBranches0()
     {
-        return $this->hasOne(Branches::className(), ['id' => 'branch']);
+        return $this->hasOne(Branches::class, ['id' => 'branch']);
     } 
     public function getCategory0()
     {
-        return $this->hasOne(\app\models\Category::className(), ['id' => 'id']);
+        return $this->hasOne(Category::class, ['id' => 'id']);
     } 
 }
