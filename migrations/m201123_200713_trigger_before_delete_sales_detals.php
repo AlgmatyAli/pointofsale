@@ -11,30 +11,30 @@ class m201123_200713_trigger_before_delete_sales_detals extends Migration
      */
     public function safeUp()
     {
-        $this->execute(" 
+    //     $this->execute(" 
 
-        CREATE TRIGGER `before_delete_sales_detals` BEFORE DELETE ON `salesDetails`
-        FOR EACH ROW INSERT into salesDetails_deleted
-       (id	 , 
-       salesId	 , 
-       category	 , 
-       quantity	 , 
-       costPrice	 , 
-       salePrice	 , 
-       box	 , 
-       expire	  )
-       VALUES
-       (old.id	 , 
-       old.salesId	 , 
-       old.category	 , 
-       old.quantity	 , 
-       old.costPrice	 , 
-       old.salePrice	 , 
-       old.box	 , 
-       old.expire	  )
+    //     CREATE TRIGGER `before_delete_sales_detals` BEFORE DELETE ON `salesDetails`
+    //     FOR EACH ROW INSERT into salesDetails_deleted
+    //    (id	 , 
+    //    salesId	 , 
+    //    category	 , 
+    //    quantity	 , 
+    //    costPrice	 , 
+    //    salePrice	 , 
+    //    box	 , 
+    //    expire	  )
+    //    VALUES
+    //    (old.id	 , 
+    //    old.salesId	 , 
+    //    old.category	 , 
+    //    old.quantity	 , 
+    //    old.costPrice	 , 
+    //    old.salePrice	 , 
+    //    old.box	 , 
+    //    old.expire	  )
         
-        "
-    );
+    //     "
+    // );
     }
 
     /**

@@ -60,7 +60,7 @@ use yii\widgets\DetailView;
 
       <?= Html::a(Yii::t('app', 'تقرير عن الايصالات الملغية '), ['/receipt-arch/index'], ['class' => 'btn btn-default btn-block']) ?>
 
-      <?= Html::a(Yii::t('app', 'كشف حساب عميل تفصيلي'), ['/client'], ['class' => 'btn btn-default btn-block']) ?>
+      <?= Html::a(Yii::t('app', 'كشف حساب عميل تفصيلي'), ['/client/index'], ['class' => 'btn btn-default btn-block']) ?>
 
       <?= Html::a(Yii::t('app', 'تقرير عن المصروفات'), ['/expenses/index'], ['class' => 'btn btn-default btn-block']) ?>
 
