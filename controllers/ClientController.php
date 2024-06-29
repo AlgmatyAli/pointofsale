@@ -85,6 +85,22 @@ class ClientController extends Controller
         ]);
     }
 
+    
+    /**
+     * Lists all Client models.
+     * @return mixed
+     */
+    public function actionIndex_()
+    {
+        $searchModel = new ClientSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+
+        return $this->render('index_', [
+            'searchModel' => $searchModel,
+            'dataProvider' => $dataProvider,
+        ]);
+    }
+
     /**
      * Displays a single Client model.
      * @param integer $id
@@ -242,6 +258,22 @@ class ClientController extends Controller
                 MAX(dept.Phone) as phone, max(dept.deserving) as deserving  FROM dept
                 where dept.Type in(".$model->type.")  
                 GROUP BY dept.id, dept.type having SUM(dept.credt)<>0";    
+                $connection = Yii::$app->db;
+                $model = $connection->createCommand($sql);
+                $info = $model->queryAll();
+                 if ($info == null){
+                    Yii::$app->session->setFlash('error', Yii::t('app',"There is Nothing to Show !"));
+                    return $this->redirect(Yii::$app->request->referrer);
+                 }
+    
+                 return $this->render('creditsrep', [
+                    'models' => $info,
+                    'dept'=>0,
+                    'credt'=>0,
+                    'coun'=>1,
+                    'count'=>0,
+                ]);  
+            }
             
         }elseif($model->type == 1){
                 $model->type = '1';
@@ -249,24 +281,39 @@ class ClientController extends Controller
                 MAX(dept_supp.Phone) as phone FROM dept_supp
                 where dept_supp.Type in(".$model->type.")
                 GROUP BY dept_supp.id, dept_supp.type having SUM(dept_supp.credt)<>0";
+                $connection = Yii::$app->db;
+                $model = $connection->createCommand($sql);
+                $info = $model->queryAll();
+                 if ($info == null){
+                    Yii::$app->session->setFlash('error', Yii::t('app',"There is Nothing to Show !"));
+                    return $this->redirect(Yii::$app->request->referrer);
+                 }
+    
+                 return $this->render('creditsrep', [
+                    'models' => $info,
+                    'dept'=>0,
+                    'credt'=>0,
+                    'coun'=>1,
+                    'count'=>0,
+                ]);  
             }
 
-            $connection = Yii::$app->db;
-            $model = $connection->createCommand($sql);
-            $info = $model->queryAll();
-             if ($info == null){
-                Yii::$app->session->setFlash('error', Yii::t('app',"There is Nothing to Show !"));
-                return $this->redirect(Yii::$app->request->referrer);
-             }
 
-             return $this->render('creditsrep', [
-                'models' => $info,
-                'dept'=>0,
-                'credt'=>0,
-                'coun'=>1,
-                'count'=>0,
-            ]);  
-        }
+            // $connection = Yii::$app->db;
+            // $model = $connection->createCommand($sql);
+            // $info = $model->queryAll();
+            //  if ($info == null){
+            //     Yii::$app->session->setFlash('error', Yii::t('app',"There is Nothing to Show !"));
+            //     return $this->redirect(Yii::$app->request->referrer);
+            //  }
+
+            //  return $this->render('creditsrep', [
+            //     'models' => $info,
+            //     'dept'=>0,
+            //     'credt'=>0,
+            //     'coun'=>1,
+            //     'count'=>0,
+            // ]);  
 
         return $this->render('credits', [
             'model' => $model,
