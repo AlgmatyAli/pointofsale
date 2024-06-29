@@ -52,7 +52,7 @@ class ClientController extends Controller
 
                     [
                         'allow' => true,
-                        'actions' => ['index'],
+                        'actions' => ['index', 'index_'],
                         'roles' => ['indexClient'],
                     ],
                     [
