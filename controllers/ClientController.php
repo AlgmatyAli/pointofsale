@@ -273,8 +273,6 @@ class ClientController extends Controller
                     'coun'=>1,
                     'count'=>0,
                 ]);  
-            }
-            
         }elseif($model->type == 1){
                 $model->type = '1';
                 $sql = " SELECT dept_supp.id, dept_supp.type as type, MAX(dept_supp.name) as name,  SUM(dept_supp.credt) as credt,
@@ -296,7 +294,7 @@ class ClientController extends Controller
                     'coun'=>1,
                     'count'=>0,
                 ]);  
-            }
+            } 
 
 
             // $connection = Yii::$app->db;
@@ -314,7 +312,7 @@ class ClientController extends Controller
             //     'coun'=>1,
             //     'count'=>0,
             // ]);  
-
+        }
         return $this->render('credits', [
             'model' => $model,
         ]);
