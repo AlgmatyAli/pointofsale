@@ -125,10 +125,11 @@ class TempTransferItemsController extends Controller
                 } else {
                     $branch = [1, 2, 3];
                 }
+
                 $data = Stocks::find()
                     ->select([
-                        'stocks.category as id', 'stocks.quantity as quantity',
-                        'prices.costPrice', 'prices.minPrice', 'prices.maxPrice'
+                        'max(stocks.category) as category', 'sum(stocks.quantity) as quantity', 'max(prices.costPrice) as costPrice',
+                        'max(prices.minPrice) as minPrice', 'max(prices.maxPrice) as maxPrice'
                     ])
                     ->leftJoin('prices', 'stocks.category = prices.category')
                     ->Where(['stocks.branch' => $branch])
@@ -183,17 +184,16 @@ class TempTransferItemsController extends Controller
             }
 
             $item = Stocks::find()
-                ->select([
-                    'stocks.category as id', 'stocks.quantity as quantity',
-                    'prices.costPrice', 'prices.minPrice', 'prices.maxPrice'
-                ])
-                ->leftJoin('prices', 'stocks.category = prices.category')
-                ->where(['stocks.category' => $model->category])
-                ->andWhere(['<>', 'stocks.quantity', 0])
-                ->andwhere(['in', 'stocks.type', 1])
-                ->andWhere(['in', 'stocks.branch', $branch])
-                ->one();
-                
+            ->select([
+                'max(stocks.category) as category', 'sum(stocks.quantity) as quantity', 'max(prices.costPrice) as costPrice',
+                'max(prices.minPrice) as minPrice', 'max(prices.maxPrice) as maxPrice'
+            ])
+            ->leftJoin('prices', 'stocks.category = prices.category')
+            ->Where(['stocks.branch' => $branch])
+            ->andwhere(['stocks.category' => $model->category])
+            ->andwhere(['in', 'stocks.type', 1])
+            ->one();
+
             $sumQnty = TempTransferItems::find()
                 ->where(['category' => $model->category, 'created_by' => Yii::$app->user->identity->id,])
                 ->sum('quantity');
