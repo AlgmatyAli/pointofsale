@@ -18,7 +18,7 @@ class ExceptController extends Controller
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['post'],
                 ],
@@ -39,8 +39,8 @@ class ExceptController extends Controller
             $q = str_replace(' ', '%', $q);
             $query = new Query;
             $secript = [
-                'category.id', 'name AS text', 'company AS company', 'stocks.quantity as quantity',
-                'maxPrice as maxPrice', 'costPrice as costPrice', 'serialNo AS serialNo', 'minPrice AS minPrice', 'place', 'commCode',
+                'category.id', 'category.name AS text', 'company AS company', 'stocks.quantity as quantity',
+                'maxPrice as maxPrice', 'costPrice as costPrice', 'serialNo AS serialNo', 'minPrice AS minPrice', 'place', 'commCode', 'branches.name AS BRNAME'
             ];
             $query->select(
                 $secript
@@ -48,6 +48,7 @@ class ExceptController extends Controller
                 ->from('category')
                 ->leftJoin('prices', 'prices.category = category.id')
                 ->leftJoin('stocks', 'stocks.category = category.id')
+                ->leftJoin('branches', 'branches.id = stocks.branch')
                 ->where('category.name like' . "'%" . $q . "%'")
                 //->andWhere($whereBranch)
                 ->orWhere(['like', 'category.serialNo', $q])

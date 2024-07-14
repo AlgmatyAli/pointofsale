@@ -44,7 +44,7 @@ use yii\web\JsExpression;
    if (product.loading) {
     return product.text;
    }
- var markup =
+ var markup = 
     '<div class="row">' + 
       '<div class="col-sm-6">' +
         '<b style="margin-center:5px">' + product.text + '</b>' + 
@@ -55,11 +55,12 @@ use yii\web\JsExpression;
       '</div>' +
       '<br>'+
       '<div class="row">' + 
-      '<div class="col-sm-3"><i class="badge badge-primary badge-pill"> رقم القطعة 1 - </i> ' + product.serialNo + '</div>' +
-      '<div class="col-sm-3"><i class="badge badge-primary badge-pill"> رقم القطعة 2 - </i> ' + product.commCode + '</div>' +
+      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> رقم القطعة 1 - </i> ' + product.serialNo + '</div>' +
+      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> رقم القطعة 2 - </i> ' + product.commCode + '</div>' +
       '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> رقم التسلسل - </i> '  + product.id + '</div>' +
       '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الشركة - </i> ' + product.company + '</div>' +
       '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الكمية = </i> ' + '  ' + product.quantity + '</div>' +
+      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> - </i> <span class="label label-info"> ' + product.BRNAME + '</div>' +
     '</div>';
     return '<div style="overflow:hidden;">' + markup + '</div>';
   };                

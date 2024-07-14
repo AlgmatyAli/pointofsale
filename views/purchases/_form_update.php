@@ -50,7 +50,7 @@ use yii\web\JsExpression;
 
         <div class="col-md-3">
             <?php
-            echo $form->field($model, 'clinet')->widget(Select2::classname(), [
+            echo $form->field($model, 'clinet')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Client::find()
                     ->where(['in', 'type', [1, 2]])
                     ->all(), 'id', 'name'),
@@ -66,7 +66,7 @@ use yii\web\JsExpression;
             <?= $form->field($model, 'clientBill')->textInput(['maxlength' => true]) ?>
 
             <?php
-            echo $form->field($model, 'currancy')->widget(Select2::classname(), [
+            echo $form->field($model, 'currancy')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Currancy::find()
                     ->all(), 'id', 'name'),
                 'language' => 'ar',
@@ -81,7 +81,7 @@ use yii\web\JsExpression;
         <div class="col-md-3">
             <?php
             echo $form->field($model, 'at')->widget(
-                DatePicker::className(),
+                DatePicker::class,
                 [
                     'language' => 'ar',
                     'clientOptions' => [
@@ -119,7 +119,7 @@ use yii\web\JsExpression;
         <div class="col-md-3">
             <?php
             echo $form->field($model, 'dateOfArrival')->widget(
-                DatePicker::className(),
+                DatePicker::class,
                 [
                     'language' => 'ar',
                     'clientOptions' => [
@@ -133,7 +133,7 @@ use yii\web\JsExpression;
             ?>
 
             <?php
-            echo $form->field($model, 'shippingType')->widget(Select2::classname(), [
+            echo $form->field($model, 'shippingType')->widget(Select2::class, [
                 'data' => ArrayHelper::map(ShippingType::find()
                     ->all(), 'id', 'name'),
                 'language' => 'ar',
