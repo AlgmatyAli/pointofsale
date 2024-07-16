@@ -10,7 +10,6 @@ use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use app\models\Purchases;
 use app\models\Category;
-use app\models\Inventory;
 use app\models\Stocks;
 use yii\filters\AccessControl;
 
@@ -26,13 +25,13 @@ class PurchasesDetailsController extends Controller
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
                 ],
             ],
             'access' => [
-                'class' => AccessControl::className(),
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
@@ -239,7 +238,7 @@ class PurchasesDetailsController extends Controller
                     // }
                     // =========
                     $purchase = Purchases::find()->where(['id'=>$purchasesId])->one();
-                    $purchase->total = $purchase->total + ($model->quantity* $model->salePrice);
+                    $purchase->total = $purchase->total + ($model->quantity * $model->costPrice);
                     $purchase->save(false);
             return $this->redirect(['purchases/update','id' => $purchasesId ]);
         {

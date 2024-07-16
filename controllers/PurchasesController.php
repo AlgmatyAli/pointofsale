@@ -214,6 +214,7 @@ class PurchasesController extends Controller
         if (yii::$app->request->post('hasEditable')) {
             $id = Yii::$app->request->post('editableKey');
             $result = PurchasesDetails::findOne($id);
+            $purchases = Purchases::find()->where(['id' => $result->PurchasesId])->one();
 
             Json::encode(['output' => '', 'message' => '']);
             $post = [];
@@ -239,6 +240,26 @@ class PurchasesController extends Controller
                 if (isset($posted['salePrice_'])) {
                     $outMessage = $result->salePrice_;
                     $result->save(false);
+                    $output = $outMessage;
+                    $out = Json::encode(['output' => $output]);
+                    return $out;
+                }
+                if (isset($posted['costPrice'])) {
+                    $outMessage = $result->costPrice;
+                    $result->save(false);
+                    $purchases->total = PurchasesDetails::find()->where(['PurchasesId' => $result->PurchasesId])
+                        ->sum('costPrice * quantity');
+                    $purchases->save(false);
+                    $output = $outMessage;
+                    $out = Json::encode(['output' => $output]);
+                    return $out;
+                }
+                if (isset($posted['totalCost'])) {
+                    $outMessage = $result->totalCost;
+                    $result->save(false);
+                    $purchases->total = PurchasesDetails::find()->where(['PurchasesId' => $result->PurchasesId])
+                        ->sum('costPrice * quantity');
+                    $purchases->save(false);
                     $output = $outMessage;
                     $out = Json::encode(['output' => $output]);
                     return $out;
