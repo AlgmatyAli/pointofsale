@@ -398,6 +398,7 @@ return [
     'Create Prices Percentage of increase' => 'تسجيل نسبة على سعر البيع الأول ',
     'Percentage of increase' => 'قيمة الزيادة بالنسبة المئوية',
     'Zero Qnty' => 'عرض الاصناف المنتهية',
+    'Update Sales Prices' => 'تعديل اسعار البيع بالفاتورة'
 ];
 
 ?>

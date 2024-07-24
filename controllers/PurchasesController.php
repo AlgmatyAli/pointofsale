@@ -73,6 +73,11 @@ class PurchasesController extends Controller
                         'actions' => ['save-as-new'],
                         'roles' => ['SavePurchasesAsNew'],
                     ],
+                    [
+                        'allow' => true,
+                        'actions' => ['purchases-details'],
+                        'roles' => ['prices'],
+                    ],
                     // =============
                     [
                         'allow' => true,
@@ -814,6 +819,45 @@ class PurchasesController extends Controller
         return $this->render('printBill_', [
             'infos' => $info,
             'models' => $info,
+        ]);
+    }
+
+    public function actionPurchasesDetails($id)
+    {
+        if (yii::$app->request->post('hasEditable')) {
+            $id = Yii::$app->request->post('editableKey');
+            $result = PurchasesDetails::findOne($id);
+
+            Json::encode(['output' => '', 'message' => '']);
+            $post = [];
+            $posted = current($_POST['PurchasesDetails']);
+
+            $post['PurchasesDetails'] = $posted;
+            if ($result->load($post)) {
+
+                if (isset($posted['salePrice'])) {
+                    $outMessage = $result->salePrice;
+                    $result->save(false);
+                    $output = $outMessage;
+                    $out = Json::encode(['output' => $output]);
+                    return $out;
+                }
+                if (isset($posted['salePrice_'])) {
+                    $outMessage = $result->salePrice_;
+                    $result->save(false);
+                    $output = $outMessage;
+                    $out = Json::encode(['output' => $output]);
+                    return $out;
+                }
+            }
+        }
+
+        $searchModel = new PurchasesDetailsSearch();
+        $searchModel->PurchasesId = $id;
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+
+        return $this->render('_form_update_details', [
+            'dataProvider' => $dataProvider,
         ]);
     }
 }

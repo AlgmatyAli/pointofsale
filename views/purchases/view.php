@@ -50,6 +50,12 @@ $this->params['breadcrumbs'][] = $this->title;
 
         <?= Html::button('<i class="fa fa-fw fa-copy"></i>' . ' ' . Yii::t('app', 'SaveAsNew'), ['value' => Url::to(['purchases/save-as-new', 'oldId' => $model->id]), 'class' => 'btn btn-success btn-sm popup']); ?>
 
+        <?=  Html::a(
+                '<i class="fa fa-fw fa-edit"></i>' . ' ' . Yii::t('app', 'Update Sales Prices'),
+                ['purchases-details', 'id' => $model->id],
+                ['class' => 'btn btn-primary btn-sm']
+            );
+            ?>
         <?=
         Html::a('<i class="fa fa-fw fa-trash"></i>' . ' ' . Yii::t('app', 'Delete'), ['delete', 'id' => $model->id], [
             'class' => 'btn btn-warning btn-sm',
