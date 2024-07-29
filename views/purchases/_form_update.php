@@ -146,6 +146,8 @@ use yii\web\JsExpression;
                 ],
             ]);
             ?>
+            <br>
+            <?php echo $form->field($model, 'changeSalePrice')->checkbox() ?>
         </div>
 
         <div class="col-md-6">

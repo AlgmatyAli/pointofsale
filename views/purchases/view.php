@@ -145,6 +145,8 @@ $this->params['breadcrumbs'][] = $this->title;
                         return 'مشتريات';
                     } elseif ($model->type == 2) {
                         return 'مسترجع مشتريات';
+                    } elseif ($model->type == 3) {
+                        return 'مشتريات معلقة';
                     }
                 }
             ],

@@ -306,15 +306,21 @@ class PurchasesController extends Controller
                             $total_cost = (floatval($tempCostPrice) + floatval($invetCostPrice)) / (floatval($inventory->quantity + $value->quantity));
                         }
                     }
-                    Prices::deleteAll(['category' => $value->category]);
-                    $prices = new Prices();
-                    $prices->category = $value->category;
-                    $prices->costPrice = $total_cost;
-                    $prices->minPrice = $value->salePrice;
-                    $prices->minPrice2 = $value->salePrice_2;
-                    $prices->minPrice3 = $value->salePrice_3;
-                    $prices->maxPrice = $value->salePrice;
-                    $prices->save();
+                    if($model->changeSalePrice == 1){
+                        Prices::deleteAll(['category' => $value->category]);
+                        $prices = new Prices();
+                        $prices->category = $value->category;
+                        $prices->costPrice = $total_cost;
+                        $prices->minPrice = $value->salePrice;
+                        $prices->minPrice2 = $value->salePrice_2;
+                        $prices->minPrice3 = $value->salePrice_3;
+                        $prices->maxPrice = $value->salePrice;
+                        $prices->save();
+                    }else{
+                        $prices = Prices::find()->where(['category' => $value->category])->one();
+                        $prices->costPrice = $total_cost;
+                        $prices->save();
+                    }
                     // ================
                     $value->save(false);
                 }

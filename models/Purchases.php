@@ -39,8 +39,8 @@ class Purchases extends \yii\db\ActiveRecord
     /**
      * {@inheritdoc}
      */
-    public $file;
-    
+    public $file, $changeSalePrice;
+
     public static function tableName()
     {
         return 'purchases';
@@ -52,23 +52,27 @@ class Purchases extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-        [['billId', 'clinet', 'at', 'payWay', 'clientBill', 'BuyFor', 'branch', 'total', 'type',
-         'user_insert', 'created_at', 'total', 'paid'], 'required'],
-        [['billId', 'clinet', 'payWay', 'BuyFor', 'branch', 'type','currancy', 'user_insert',
-         'user_update', 'shippingType'], 'integer'],
-        [['at', 'created_at', 'update_at', 'dateOfArrival'], 'safe'],
-        [['total', 'paid', 'total_currancy',], 'number'],
-        [['clientBill', 'notes', 'path', 'totalCost', 'standBy'], 'string', 'max' => 255],
-        [['branch'], 'exist', 'skipOnError' => true, 'targetClass' =>
-        Branches::class, 'targetAttribute' => ['branch' => 'id']],
-        [['clinet'], 'exist', 'skipOnError' => true, 'targetClass' =>
-        Client::class, 'targetAttribute' => ['clinet' => 'id']],
-        [['user_insert'], 'exist', 'skipOnError' => true, 'targetClass' =>
-        User::class, 'targetAttribute' => ['user_insert' => 'id']],
-        [['user_update'], 'exist', 'skipOnError' => true, 'targetClass' =>
-        User::class, 'targetAttribute' => ['user_update' => 'id']],
-        [['shippingType'], 'exist', 'skipOnError' => true, 'targetClass' =>
-        ShippingType::class, 'targetAttribute' => ['dateOfArrival' => 'id']],
+            [[
+                'billId', 'clinet', 'at', 'payWay', 'clientBill', 'BuyFor', 'branch', 'total', 'type',
+                'user_insert', 'created_at', 'total', 'paid'
+            ], 'required'],
+            [[
+                'billId', 'clinet', 'payWay', 'BuyFor', 'branch', 'type', 'currancy', 'user_insert',
+                'user_update', 'shippingType'
+            ], 'integer'],
+            [['at', 'created_at', 'update_at', 'dateOfArrival', 'changeSalePrice'], 'safe'],
+            [['total', 'paid', 'total_currancy',], 'number'],
+            [['clientBill', 'notes', 'path', 'totalCost', 'standBy'], 'string', 'max' => 255],
+            [['branch'], 'exist', 'skipOnError' => true, 'targetClass' =>
+            Branches::class, 'targetAttribute' => ['branch' => 'id']],
+            [['clinet'], 'exist', 'skipOnError' => true, 'targetClass' =>
+            Client::class, 'targetAttribute' => ['clinet' => 'id']],
+            [['user_insert'], 'exist', 'skipOnError' => true, 'targetClass' =>
+            User::class, 'targetAttribute' => ['user_insert' => 'id']],
+            [['user_update'], 'exist', 'skipOnError' => true, 'targetClass' =>
+            User::class, 'targetAttribute' => ['user_update' => 'id']],
+            [['shippingType'], 'exist', 'skipOnError' => true, 'targetClass' =>
+            ShippingType::class, 'targetAttribute' => ['dateOfArrival' => 'id']],
         ];
     }
 
@@ -98,10 +102,11 @@ class Purchases extends \yii\db\ActiveRecord
             'user_update' => Yii::t('app', 'User Update'),
             'update_at' => Yii::t('app', 'Update At'),
             'item_total' => Yii::t('app', 'Item Total'),
-            'total_currancy'=>Yii::t('app','Total Currancy'),
-            'currancy'=>Yii::t('app','Currancy'),
-            'shippingType'=>Yii::t('app','Shipping Type'),
-            'dateOfArrival'=>Yii::t('app','Date Of Arrival'),
+            'total_currancy' => Yii::t('app', 'Total Currancy'),
+            'currancy' => Yii::t('app', 'Currancy'),
+            'shippingType' => Yii::t('app', 'Shipping Type'),
+            'dateOfArrival' => Yii::t('app', 'Date Of Arrival'),
+            'changeSalePrice' => Yii::t('app', 'Change Sale Price'),
         ];
     }
 
