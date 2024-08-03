@@ -285,6 +285,21 @@ class PurchasesController extends Controller
                 $items =  PurchasesDetails::find()->where('PurchasesId = ' . $model->id)->all();
                 //============== add to PurchasesDetails
                 foreach ($items  as $value) {
+                    $exsit = Stocks::find()->where(['=', 'branch', Yii::$app->user->identity->branch])
+                        ->andWhere(['=', 'category', $value->category])
+                        ->andWhere(['=', 'type', $model->type])
+                        ->one();
+                    if ($exsit == null) {
+                        $command = Yii::$app->db->createCommand("INSERT INTO stocks
+                        (`category`, `quantity`, `branch`, `type`)
+                        VALUES
+                        (:category, :quantity, :branch, :type)");
+                        $command->bindValue(':category', $value->category);
+                        $command->bindValue(':quantity', $value->quantity);
+                        $command->bindValue(':branch', Yii::$app->user->identity->branch);
+                        $command->bindValue(':type', $model->type);
+                        $command->execute();
+                    }
                     // ====================
                     $inventory =  Stocks::find()->select('sum(quantity) as quantity')->where('id=' . $value->category)
                         ->andWhere('type = 1')->one();
