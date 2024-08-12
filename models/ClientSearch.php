@@ -19,7 +19,7 @@ class ClientSearch extends Client
     {
         return [
             [['id', 'type', 'user_insert', 'user_update'], 'integer'],
-            [['debt'], 'number'],
+            [['debt', 'post_paid'], 'number'],
             [['name', 'phone', 'mobile', 'address', 'email', 'balance', 'created_at', 'update_at'], 'safe'],
         ];
     }

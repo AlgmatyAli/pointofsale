@@ -399,7 +399,8 @@ return [
     'Percentage of increase' => 'قيمة الزيادة بالنسبة المئوية',
     'Zero Qnty' => 'عرض الاصناف المنتهية',
     'Update Sales Prices' => 'تعديل اسعار البيع بالفاتورة',
-    'Change Sale Price' => 'تعديل سعر البيع'
+    'Change Sale Price' => 'تعديل سعر البيع',
+    'Post Paid' => 'امكانية الدفع بالاجل',
 ];
 
 ?>

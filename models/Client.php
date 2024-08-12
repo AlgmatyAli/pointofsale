@@ -47,7 +47,7 @@ class Client extends \yii\db\ActiveRecord
             [['name', 'type', 'branch', 'user_insert', 'created_at'], 'required'],
             [['type', 'branch', 'user_insert', 'user_update'], 'integer'],
             [['created_at', 'update_at'], 'safe'],
-            [['debt'], 'number'],
+            [['debt', 'post_paid'], 'number'],
             [['name', 'phone', 'mobile', 'address', 'email', 'balance'], 'string', 'max' => 255],
             [['user_insert'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['user_insert' => 'id']],
             [['user_update'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['user_update' => 'id']],
@@ -74,6 +74,7 @@ class Client extends \yii\db\ActiveRecord
             'created_at' => Yii::t('app', 'Created At'),
             'update_at' => Yii::t('app', 'Update At'),
             'debt' => Yii::t('app', 'Debt'),
+            'post_paid' => Yii::t('app', 'Post Paid'),
         ];
     }
 
