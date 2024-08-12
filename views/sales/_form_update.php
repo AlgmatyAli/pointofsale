@@ -210,7 +210,7 @@ use yii\widgets\Pjax;
                     'value' => '02-16-2012',
                     //'id' => 'deleviryAt',
                     'language' => 'ar',
-                    'clientOptions' => [
+                    'pluginOptions' => [
                         'autoclose' => true,
                         'format' => 'yyyy-mm-dd',
                         'todayHighlight' => true,
