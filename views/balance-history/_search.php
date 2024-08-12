@@ -24,7 +24,7 @@ use yii\widgets\ActiveForm;
             <?= $form->field($model, 'value')->textInput(['maxlength' => true, 'placeholder' => 'Value']) ?>
 
             <?php
-            echo $form->field($model, 'clinet')->widget(Select2::classname(), [
+            echo $form->field($model, 'clinet')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Client::find()->all(), 'id', 'name'),
                 'language' => 'ar',
                 'options' => ['placeholder' => '...'],
@@ -37,7 +37,7 @@ use yii\widgets\ActiveForm;
         </div>
         <div class="col-md-6">
             <?php
-            echo $form->field($model, 'currancy')->widget(Select2::classname(), [
+            echo $form->field($model, 'currancy')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Currancy::find()->all(), 'id', 'name'),
                 'language' => 'ar',
                 'options' => ['placeholder' => '...'],
@@ -48,7 +48,7 @@ use yii\widgets\ActiveForm;
             ]);
             ?>
 
-            <?= $form->field($model, 'AT')->widget(\kartik\datecontrol\DateControl::classname(), [
+            <?= $form->field($model, 'AT')->widget(\kartik\datecontrol\DateControl::class, [
                 'type' => \kartik\datecontrol\DateControl::FORMAT_DATE,
                 'saveFormat' => 'php:Y-m-d',
                 'ajaxConversion' => true,

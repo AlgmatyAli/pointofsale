@@ -5,7 +5,7 @@ use yii\widgets\ActiveForm;
 use kartik\select2\Select2;
 use app\models\Branches;
 use yii\helpers\ArrayHelper;
-use dosamigos\datepicker\DatePicker;
+use kartik\date\DatePicker;
 
 
 /* @var $this yii\web\View */
@@ -46,7 +46,7 @@ use dosamigos\datepicker\DatePicker;
         DatePicker::class,
         [
             'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,

@@ -7,7 +7,7 @@ use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
 use app\models\Client;
 use app\models\ShippingType;
-use dosamigos\datepicker\DatePicker;
+use kartik\date\DatePicker;
 use yii\helpers\Url;
 use kartik\grid\GridView;
 use yii\web\JsExpression;
@@ -31,7 +31,7 @@ use yii\web\JsExpression;
             ) ?>
         </div>
     </div>
-    
+
     <div class="row">
         <div class="col-md-3">
             <?= $form->field($model, 'id')->textInput(['maxlength' => true]) ?>
@@ -84,7 +84,7 @@ use yii\web\JsExpression;
                 DatePicker::class,
                 [
                     'language' => 'ar',
-                    'clientOptions' => [
+                    'pluginOptions' => [
                         'autoclose' => true,
                         'format' => 'yyyy-mm-dd',
                         'todayHighlight' => true,
@@ -122,7 +122,7 @@ use yii\web\JsExpression;
                 DatePicker::class,
                 [
                     'language' => 'ar',
-                    'clientOptions' => [
+                    'pluginOptions' => [
                         'autoclose' => true,
                         'format' => 'yyyy-mm-dd',
                         'todayHighlight' => true,
@@ -154,7 +154,7 @@ use yii\web\JsExpression;
             <?= $form->field($model, 'notes')->textarea(['rows' => 3, 'columns' => 6]) ?>
         </div>
     </div>
-    
+
 </div>
 <br>
 

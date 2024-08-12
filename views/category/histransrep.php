@@ -1,14 +1,7 @@
 <?php
 
 use yii\helpers\Html;
-use yii\widgets\DetailView;
-use yii\grid\GridView;
-use app\models\Dept;
 use app\models\CompanyInfo;
-use yii\helpers\Url;
-use yii\data\ActiveDataProvider;
-use yii\widgets\ListView;
-use app\models\HistransClient;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\Salaryroll */
@@ -152,16 +145,16 @@ foreach ($models as $model) {
                 ?></td>
             <td><?php
                 if ($model["quantity"] <= 0) {
-                  echo number_format($model["quantity"] *-1, 3) . "\n";
+                  echo number_format($model["quantity"] * -1, 3) . "\n";
                 } else {
                   echo number_format(0, 3) . "\n";
                 }
                 ?></td>
-            <td style="color:blue;"><?php 
-                $sumQuantity = $sumQuantity + $model["quantity"] ;
-                echo number_format($sumQuantity, 3) . "\n"; 
-              
-              ?></td>
+            <td style="color:blue;"><?php
+                                    $sumQuantity = $sumQuantity + $model["quantity"];
+                                    echo number_format($sumQuantity, 3) . "\n";
+
+                                    ?></td>
             <td>
               <?php
               if ($model["kind"] == 'فاتورة مشتريات رقم' || $model["kind"] == 'فاتورة مسترجع مشتريات رقم ') {
@@ -226,62 +219,62 @@ foreach ($models as $model) {
     <div class='col-md-1'></div>
     <div class='col-md-10'>
       <table class="kv-grid-table table table-bordered table-striped kv-table-wrap">
-      <thead class="kv-table-header w0">
-        <tr>
-          <th></th>
-          <th>
-            <h5> </h5>
-          </th>
-          <th>
-            <h5> </h5>
-          </th>
-          <th>
-            <h5> </h5>
-          </th>
-          <th>
-            <h5> </h5>
-          </th>
-          <th>
-            <h5> </h5>
-          </th>
-          <th>
-          </th>
-        </tr>
-        <tr>
-          <th>
-            <h5> اجمالي المبيعات</h5>
-          </th>
-          <th>
-            <h5> اجمالي مسترجع المبيعات</h5>
-          </th>
-          <th>
-            <h5> اجمالي المشتريات</h5>
-          </th>
-          <th>
-            <h5> اجمالي مسترجع المشتريات</h5>
-          </th>
-          <th>
-            <h5> اجمالي تسوية رصيد الجرد اضافة</h5>
-          </th>
-          <th>
-          <h5> اجمالي تسوية رصيد الجرد انقاص</h5>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
+        <thead class="kv-table-header w0">
           <tr>
-            <td style="color:red;"><?php echo number_format(($sumSales*-1), 3) . "\n"; ?></td>
+            <th></th>
+            <th>
+              <h5> </h5>
+            </th>
+            <th>
+              <h5> </h5>
+            </th>
+            <th>
+              <h5> </h5>
+            </th>
+            <th>
+              <h5> </h5>
+            </th>
+            <th>
+              <h5> </h5>
+            </th>
+            <th>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <h5> اجمالي المبيعات</h5>
+            </th>
+            <th>
+              <h5> اجمالي مسترجع المبيعات</h5>
+            </th>
+            <th>
+              <h5> اجمالي المشتريات</h5>
+            </th>
+            <th>
+              <h5> اجمالي مسترجع المشتريات</h5>
+            </th>
+            <th>
+              <h5> اجمالي تسوية رصيد الجرد اضافة</h5>
+            </th>
+            <th>
+              <h5> اجمالي تسوية رصيد الجرد انقاص</h5>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color:red;"><?php echo number_format(($sumSales * -1), 3) . "\n"; ?></td>
             <td style="color:red;"><?php echo number_format($sumBackSales, 3) . "\n"; ?></td>
             <td style="color:red;"><?php echo number_format($sumPurchase, 3) . "\n"; ?></td>
             <td style="color:red;"><?php echo number_format($sumBackPurchase, 3) . "\n"; ?></td>
             <td style="color:red;"><?php echo number_format(0, 3) . "\n"; ?></td>
             <td style="color:red;"><?php echo number_format(0, 3) . "\n"; ?></td>
           </tr>
-      </tbody>
+        </tbody>
       </table>
     </div>
   </div>
 
- 
+
 
 </div>

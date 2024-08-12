@@ -1,7 +1,6 @@
 <?php
 use yii\helpers\Html;
 use app\models\CompanyInfo;
-use yii\helpers\Url;
 use yii\grid\GridView;
 ?>
 <?php $title = CompanyInfo::find()->select(['*'])->asArray()->one();?>

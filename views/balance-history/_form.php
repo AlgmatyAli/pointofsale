@@ -21,7 +21,7 @@ use yii\widgets\ActiveForm;
 
     <?= $form->field($model, 'currancy')->textInput(['placeholder' => 'Currancy']) ?>
 
-    <?= $form->field($model, 'AT')->widget(\kartik\datecontrol\DateControl::classname(), [
+    <?= $form->field($model, 'AT')->widget(\kartik\datecontrol\DateControl::class, [
         'type' => \kartik\datecontrol\DateControl::FORMAT_DATE,
         'saveFormat' => 'php:Y-m-d',
         'ajaxConversion' => true,

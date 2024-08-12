@@ -4,7 +4,6 @@ use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\widgets\ActiveForm;
 use yii\helpers\ArrayHelper;
-use app\models\AuthItem;
 use kartik\file\FileInput;
 use app\models\Branches;
 use kartik\select2\Select2;

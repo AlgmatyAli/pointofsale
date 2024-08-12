@@ -26,7 +26,7 @@ use yii\helpers\Url;
     <div class="col-lg-4">
  
     <?php  
-                echo $form->field($model, 'branch')->widget(Select2::classname(), [
+                echo $form->field($model, 'branch')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Branches::find()->all(),'id', 'name'),
                 'language' => 'ar',
                 'options' => ['placeholder' => 'الرجاء اختيار اسم الفرع ...'],

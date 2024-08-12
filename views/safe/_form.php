@@ -5,7 +5,7 @@ use yii\widgets\ActiveForm;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
 use app\models\Branches;
-use dosamigos\datepicker\DatePicker;
+use kartik\date\DatePicker;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\Safe */
@@ -17,7 +17,7 @@ use dosamigos\datepicker\DatePicker;
     <?php $form = ActiveForm::begin(); ?>
 
      <?php     
-        echo $form->field($model, 'branch')->widget(Select2::classname(), [
+        echo $form->field($model, 'branch')->widget(Select2::class, [
         'data' => ArrayHelper::map(Branches::find()->all(),'id', 'name'),
         'language' => 'ar',
         'options' => ['placeholder' => 'الرجاء اختيار اسم الفرع ...'],
@@ -34,10 +34,10 @@ use dosamigos\datepicker\DatePicker;
 
     <?php 
        echo $form->field($model, 'at')->widget(
-        DatePicker::className(),
+        DatePicker::class,
         [
             'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,

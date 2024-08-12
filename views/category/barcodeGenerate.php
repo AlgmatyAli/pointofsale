@@ -2,11 +2,8 @@
 
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use kartik\file\FileInput;
-use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
 use app\models\Category;
-use barcode\barcode\BarcodeGenerator as BarcodeGenerator;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\Category */
@@ -19,7 +16,7 @@ use barcode\barcode\BarcodeGenerator as BarcodeGenerator;
     <div class="row">
     <div class="col-md-12">
        
-        <?= $form->field($model, 'id')->widget(\kartik\widgets\Select2::classname(), [
+        <?= $form->field($model, 'id')->widget(\kartik\widgets\Select2::class, [
        'data' => ArrayHelper::map(Category::find()->all(),'id', 'name'),
         'language' => 'en',
         'options' => ['placeholder' => Yii::t('app', 'Choose Category'),

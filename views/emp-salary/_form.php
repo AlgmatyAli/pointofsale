@@ -5,10 +5,8 @@ use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
-use app\models\User;
-use dosamigos\datepicker\DatePicker;
+use kartik\date\DatePicker;
 use app\models\Employee;
-use yii\helpers\Url;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\EmpSalary */
@@ -38,7 +36,7 @@ use yii\helpers\Url;
       <div class="col-md-2"></div>
       <div class="col-md-8">
 
-        <?= $form->field($model, 'employee')->widget(Select2::classname(), [
+        <?= $form->field($model, 'employee')->widget(Select2::class, [
         'data' => ArrayHelper::map(Employee::find()->where(['=','state',0])
         ->all(),'id', 'name'),
         'language' => 'ar',
@@ -90,10 +88,10 @@ use yii\helpers\Url;
     </div>
     <?php
        echo $form->field($model, 'at')->widget(
-        DatePicker::className(),
+        DatePicker::class,
         [
             'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,
@@ -106,7 +104,7 @@ use yii\helpers\Url;
     <?= $form->field($model, 'value')->textInput(['onfocusout' => 'checValue( $(this) )']) ?>
 
     <?php
-               echo $form->field($model, 'currancy')->widget(Select2::classname(), [
+               echo $form->field($model, 'currancy')->widget(Select2::class, [
                    'data' => ArrayHelper::map(Currancy::find()->all(), 'id', 'name'),
                    'language' => 'ar',
                    'pluginOptions' => [

@@ -5,7 +5,7 @@ use yii\widgets\ActiveForm;
 use kartik\select2\Select2;
 use app\models\Branches;
 use yii\helpers\ArrayHelper;
-use dosamigos\datepicker\DatePicker;
+use kartik\date\DatePicker;
 use kartik\grid\GridView;
 use yii\helpers\Url;
 use yii\web\JsExpression;
@@ -45,7 +45,7 @@ use yii\web\JsExpression;
     <div class="col-md-1"></div>
         <div class="col-md-3">
             <?php
-            echo $form->field($model, 'fromBranch')->widget(Select2::classname(), [
+            echo $form->field($model, 'fromBranch')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Branches::find()->all(), 'id', 'name'),
                 'language' => 'ar',
                 'options' => ['placeholder' => 'اختيار اسم الفرع المسحوب منه...'],
@@ -58,7 +58,7 @@ use yii\web\JsExpression;
         </div>
         <div class="col-md-3">
             <?php
-            echo $form->field($model, 'toBranch')->widget(Select2::classname(), [
+            echo $form->field($model, 'toBranch')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Branches::find()->all(), 'id', 'name'),
                 'language' => 'ar',
                 'options' => ['placeholder' => 'اختيار اسم الفرع المودع له...'],
@@ -72,10 +72,10 @@ use yii\web\JsExpression;
         <div class="col-md-3">
             <?php
             echo $form->field($model, 'at')->widget(
-                DatePicker::className(),
+                DatePicker::class,
                 [
                     'language' => 'ar',
-                    'clientOptions' => [
+                    'pluginOptions' => [
                         'autoclose' => true,
                         'format' => 'yyyy-mm-dd',
                         'todayHighlight' => true,

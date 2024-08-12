@@ -3,7 +3,7 @@
 use app\models\base\Currancy;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use dosamigos\datepicker\DatePicker;
+use kartik\date\DatePicker;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
 use app\models\Items;
@@ -29,10 +29,10 @@ use yii\helpers\Url;
 
     <?php
     echo $form->field($model, 'at')->widget(
-        DatePicker::className(),
+        DatePicker::class,
         [
             'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,
@@ -43,7 +43,7 @@ use yii\helpers\Url;
     ?>
 
     <?php
-    echo $form->field($model, 'itemId')->widget(Select2::classname(), [
+    echo $form->field($model, 'itemId')->widget(Select2::class, [
         'data' => ArrayHelper::map(Items::find()
             ->all(), 'id', 'name'),
         'language' => 'ar',
@@ -58,7 +58,7 @@ use yii\helpers\Url;
     <?= $form->field($model, 'value')->textInput() ?>
 
     <?php
-    echo $form->field($model, 'currancy')->widget(Select2::classname(), [
+    echo $form->field($model, 'currancy')->widget(Select2::class, [
         'data' => ArrayHelper::map(Currancy::find()->all(), 'id', 'name'),
         'language' => 'ar',
         'pluginOptions' => [

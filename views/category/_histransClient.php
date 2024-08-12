@@ -4,7 +4,7 @@ use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
-use dosamigos\datepicker\DatePicker;
+use kartik\date\DatePicker;
 use yii\helpers\Url;
 use app\models\Category;
 use app\models\Client;
@@ -93,7 +93,7 @@ JS;
         ],
     ]);
     ?>
-    
+
     <?php
     echo $form->field($model, 'client')->widget(Select2::class, [
         'data' =>  ArrayHelper::map(Client::find()
@@ -106,33 +106,13 @@ JS;
     ]);
 
     ?>
-    <?php
-    //  echo $form->field($model, 'id')->widget(\kartik\widgets\Select2::class, [
-    //    'id' => 'categoryx',
-    //    'data' => \yii\helpers\ArrayHelper::map($data, 'id', 
-    //     function($model) {
-    //         return $model['name'].' --  '.$model['serialNo'];
-    //     }
-    // ),
-
-    //     'language' => 'en',
-    //     'options' => ['placeholder' => Yii::t('app', 'Choose Category'),
-    //     'dir' => 'rtl',
-    //     'multiple'=>true,
-    //     ],
-    //     'pluginOptions' => [
-    //         'allowClear' => true 
-    //     ],
-
-    // ]); 
-    ?>
-
+    
     <?=
     $form->field($model, 'min_date')->widget(
         DatePicker::class,
         [
             'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,
@@ -146,7 +126,7 @@ JS;
         DatePicker::class,
         [
             'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,

@@ -2,8 +2,7 @@
 
 use app\models\base\Currancy;
 use app\models\CustomsDeclaration;
-use app\models\CustomsOffice;
-use dosamigos\datepicker\DatePicker;
+use kartik\date\DatePicker;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
@@ -23,7 +22,7 @@ use yii\widgets\ActiveForm;
             <?= $form->field($model, 'shipmentId')->textInput() ?>
 
             <?php
-            echo $form->field($model, 'customsOffice')->widget(Select2::classname(), [
+            echo $form->field($model, 'customsOffice')->widget(Select2::class, [
                 'data' => ArrayHelper::map(CustomsDeclaration::find()
                     ->all(), 'id', 'name'),
                 'language' => 'ar',
@@ -37,11 +36,11 @@ use yii\widgets\ActiveForm;
 
             <?=
             $form->field($model, 'at')->widget(
-                DatePicker::className(),
+                DatePicker::class,
                 [
                     'value' => '02-16-2012',
                     'language' => 'ar',
-                    'clientOptions' => [
+                    'pluginOptions' => [
                         'autoclose' => true,
                         'format' => 'yyyy-mm-dd',
                         'todayHighlight' => true,
@@ -53,7 +52,7 @@ use yii\widgets\ActiveForm;
             <?= $form->field($model, 'value')->textInput() ?>
 
             <?php
-            echo $form->field($model, 'currancy')->widget(Select2::classname(), [
+            echo $form->field($model, 'currancy')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Currancy::find()
                     ->all(), 'id', 'name'),
                 'language' => 'ar',

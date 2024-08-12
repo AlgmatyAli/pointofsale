@@ -6,7 +6,7 @@ use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
-use dosamigos\datepicker\DatePicker;
+use kartik\date\DatePicker;
 use yii\helpers\Url;
 
 /* @var $this yii\web\View */
@@ -18,7 +18,7 @@ use yii\helpers\Url;
 
     <?php $form = ActiveForm::begin(); ?>
     <?php
-    echo $form->field($model, 'customId')->widget(Select2::classname(), [
+    echo $form->field($model, 'customId')->widget(Select2::class, [
         'data' => ArrayHelper::map(CustomsDeclaration::find()->all(), 'id', 'name'),
         'language' => 'ar',
         'options' => ['placeholder' => 'الرجاء اختيار اسم المصرح الجمركي ...'],
@@ -30,7 +30,7 @@ use yii\helpers\Url;
     ?>
 
     <?php
-    echo $form->field($model, 'currancy')->widget(Select2::classname(), [
+    echo $form->field($model, 'currancy')->widget(Select2::class, [
         'data' => ArrayHelper::map(Currancy::find()->all(), 'id', 'name'),
         'language' => 'ar',
         'options' => ['placeholder' => 'الرجاء اختيار اسم العملة ...'],
@@ -43,7 +43,7 @@ use yii\helpers\Url;
 
     <?=
     $form->field($model, 'min_date')->widget(
-        DatePicker::className(),
+        DatePicker::class,
         [
             'language' => 'ar',
             'clientOptions' => [
@@ -57,7 +57,7 @@ use yii\helpers\Url;
     ?>
     <?=
     $form->field($model, 'max_date')->widget(
-        DatePicker::className(),
+        DatePicker::class,
         [
             'language' => 'ar',
             'clientOptions' => [

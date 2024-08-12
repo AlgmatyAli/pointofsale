@@ -7,10 +7,12 @@ use yii\widgets\ActiveForm;
 /* @var $model app\models\Currancy */
 /* @var $form yii\widgets\ActiveForm */
 
-\mootensai\components\JsBlock::widget(['viewFile' => '_script', 'pos'=> \yii\web\View::POS_END, 
+\mootensai\components\JsBlock::widget([
+    'viewFile' => '_script',
+    'pos' => \yii\web\View::POS_END,
     'viewParams' => [
-        'class' => 'Receipt', 
-        'relID' => 'receipt', 
+        'class' => 'Receipt',
+        'relID' => 'receipt',
         'value' => \yii\helpers\Json::encode($model->receipts),
         'isNewRecord' => ($model->isNewRecord) ? 1 : 0
     ]
@@ -29,11 +31,6 @@ use yii\widgets\ActiveForm;
 
     <?= $form->field($model, 'code')->textInput(['maxlength' => true, 'placeholder' => 'Code']) ?>
 
-    
-
-   
-
-   
     <div class="form-group">
         <?= Html::submitButton($model->isNewRecord ? Yii::t('app', 'Create') : Yii::t('app', 'Update'), ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']) ?>
     </div>

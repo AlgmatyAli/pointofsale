@@ -4,9 +4,8 @@ use app\models\base\Currancy;
 use app\models\User;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use kartik\daterange\DateRangePicker;
 use yii\helpers\Url;
-use dosamigos\datepicker\DatePicker;
+use kartik\date\DatePicker;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
 
@@ -19,7 +18,7 @@ use yii\helpers\ArrayHelper;
 <div class="sales-form">
 
     <?php $form = ActiveForm::begin(); ?>
-    <?=  $form->field($model, 'currancy')->widget(Select2::classname(), [
+    <?=  $form->field($model, 'currancy')->widget(Select2::class, [
      'data' => ArrayHelper::map(Currancy::find()
      ->all(),'id', 'name'),
      'language' => 'ar',
@@ -30,7 +29,7 @@ use yii\helpers\ArrayHelper;
      ],
     ]); ?>
 
-   <?=  $form->field($model, 'user_insert')->widget(Select2::classname(), [
+   <?=  $form->field($model, 'user_insert')->widget(Select2::class, [
      'data' => ArrayHelper::map(User::find()
      ->where(['=', 'isActive', 'active'])
      ->all(),'id', 'username'),
@@ -44,11 +43,11 @@ use yii\helpers\ArrayHelper;
 
       <?= 
         $form->field($model, 'min_date')->widget(
-        DatePicker::className(),
+        DatePicker::class,
         [
             'value' => '02-16-2012',
             'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,
@@ -58,11 +57,11 @@ use yii\helpers\ArrayHelper;
             ); ?>
         <?= 
         $form->field($model, 'max_date')->widget(
-        DatePicker::className(),
+        DatePicker::class,
         [
             'value' => '02-16-2012',
             'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,

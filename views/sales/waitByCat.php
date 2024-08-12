@@ -1,7 +1,6 @@
 <?php
 
 use app\models\Category;
-use fedemotta\datatables\DataTables;
 use yii\helpers\Html;
 use kartik\grid\GridView;
 use yii\helpers\ArrayHelper;

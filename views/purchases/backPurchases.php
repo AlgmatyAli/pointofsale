@@ -5,11 +5,9 @@ use yii\widgets\ActiveForm;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
 use app\models\Client;
-use dosamigos\datepicker\DatePicker;
-use app\models\Branches;
+use kartik\date\DatePicker;
 use wbraganca\dynamicform\DynamicFormWidget;
 use app\models\Category;
-use kartik\file\FileInput;
 /* @var $this yii\web\View */
 /* @var $model app\models\Purchases */
 /* @var $form yii\widgets\ActiveForm */
@@ -23,7 +21,7 @@ use kartik\file\FileInput;
     <div class="col-md-1"></div>
     <div class="col-md-3">
     <?php     
-        echo $form->field($model, 'clinet')->widget(Select2::classname(), [
+        echo $form->field($model, 'clinet')->widget(Select2::class, [
         'data' => ArrayHelper::map(Client::find()
         ->where(['in', 'type', [1,2]])
        // ->andWhere(['in', 'id', explode(',', Yii::$app->user->identity->client)])
@@ -42,10 +40,10 @@ use kartik\file\FileInput;
     <div class="col-md-3">
     <?php 
        echo $form->field($model, 'at')->widget(
-        DatePicker::className(),
+        DatePicker::class,
         [
             'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,
@@ -111,7 +109,7 @@ use kartik\file\FileInput;
                         <div class="row">
                         <div class="col-md-4">
                             <?php 
-                             echo $form->field($modelPurchase, "[{$i}]category")->widget(Select2::classname(), [
+                             echo $form->field($modelPurchase, "[{$i}]category")->widget(Select2::class, [
                                 'data' =>ArrayHelper::map(Category::find()->where('status='. 0)->orderBy('id')->asArray()->all(), 'id', 'name'),
                                 'language' => 'ar',
                                 'options' => ['placeholder' => 'الرجاء اختيار اسم الصنف ...'],

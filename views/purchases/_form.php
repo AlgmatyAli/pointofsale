@@ -7,7 +7,7 @@ use yii\helpers\ArrayHelper;
 use app\models\Client;
 use app\models\Currancy;
 use app\models\ShippingType;
-use dosamigos\datepicker\DatePicker;
+use kartik\date\DatePicker;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\Purchases */
@@ -26,7 +26,7 @@ use dosamigos\datepicker\DatePicker;
     <div class="row">
         <div class="col-md-4">
             <?php
-            echo $form->field($model, 'clinet')->widget(Select2::classname(), [
+            echo $form->field($model, 'clinet')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Client::find()
                     ->where(['in', 'type', [1, 2]])
                     // ->andWhere(['in', 'id', explode(',', Yii::$app->user->identity->client)])
@@ -45,7 +45,7 @@ use dosamigos\datepicker\DatePicker;
             <?= $form->field($model, 'clientBill')->textInput(['maxlength' => true]) ?>
 
             <?php
-            echo $form->field($model, 'currancy')->widget(Select2::classname(), [
+            echo $form->field($model, 'currancy')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Currancy::find()
                     // ->where(['in', 'type', [1,2]])
                     // ->andWhere(['in', 'id', explode(',', Yii::$app->user->identity->client)])
@@ -63,7 +63,7 @@ use dosamigos\datepicker\DatePicker;
             ?>
 
             <?php
-            echo $form->field($model, 'shippingType')->widget(Select2::classname(), [
+            echo $form->field($model, 'shippingType')->widget(Select2::class, [
                 'data' => ArrayHelper::map(ShippingType::find()
                     ->all(), 'id', 'name'),
                 'language' => 'ar',
@@ -80,10 +80,10 @@ use dosamigos\datepicker\DatePicker;
         <div class="col-md-4">
             <?php
             echo $form->field($model, 'at')->widget(
-                DatePicker::className(),
+                DatePicker::class,
                 [
                     'language' => 'ar',
-                    'clientOptions' => [
+                    'pluginOptions' => [
                         'autoclose' => true,
                         'format' => 'yyyy-mm-dd',
                         'todayHighlight' => true,
@@ -98,10 +98,10 @@ use dosamigos\datepicker\DatePicker;
 
             <?php
             echo $form->field($model, 'dateOfArrival')->widget(
-                DatePicker::className(),
+                DatePicker::class,
                 [
                     'language' => 'ar',
-                    'clientOptions' => [
+                    'pluginOptions' => [
                         'autoclose' => true,
                         'format' => 'yyyy-mm-dd',
                         'todayHighlight' => true,

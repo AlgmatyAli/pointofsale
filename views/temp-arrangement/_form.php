@@ -88,7 +88,7 @@ $resultsJs = <<< JS
     } 
 JS;
 //var salesId= getElementById("sales-id").value;
-echo $form->field($model, 'category')->widget(Select2::classname(), [
+echo $form->field($model, 'category')->widget(Select2::class, [
     'name' => 'kv-repo-template',
     'id' => 'focus_first',
     'language' => 'en',
@@ -201,14 +201,14 @@ echo $form->field($model, 'category')->widget(Select2::classname(), [
             },
         ],
 
-        [
-            'attribute' => 'created_at',
-            'label' => 'سنة الجرد',
-            'format' => 'raw',
-            'value' => function ($model) {
-                return  date('Y', $model->created_at);
-            }
-        ],
+        // [
+        //     'attribute' => 'created_at',
+        //     'label' => 'سنة الجرد',
+        //     'format' => 'raw',
+        //     'value' => function ($model) {
+        //         return  date('Y', $model->created_at);
+        //     }
+        // ],
 
         [
             'class' => 'yii\grid\ActionColumn',

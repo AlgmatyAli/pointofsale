@@ -24,7 +24,7 @@ use yii\helpers\Url;
 
         <div class="col-md-4">
 
-            <?= $form->field($model, 'clinet')->widget(Select2::classname(), [
+            <?= $form->field($model, 'clinet')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Client::find()
                     ->all(), 'id', 'name'),
                 'language' => 'ar',
@@ -40,7 +40,7 @@ use yii\helpers\Url;
 
         <div class="col-md-4">
             <?php
-            echo $form->field($model, 'currancy')->widget(Select2::classname(), [
+            echo $form->field($model, 'currancy')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Currancy::find()->all(), 'id', 'name'),
                 'language' => 'ar',
                 'options' => ['placeholder' => '...'],

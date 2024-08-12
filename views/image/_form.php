@@ -3,7 +3,6 @@
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use kartik\file\FileInput;
-use yii\bootstrap4\Modal;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\Image */
@@ -16,7 +15,7 @@ use yii\bootstrap4\Modal;
 
     <?= $form->field($model, 'name')->textInput(['maxlength' => true]) ?>
 
-    <?php echo $form->field($model, 'file')->widget(FileInput::classname(),['options' => ['accept' => '*/*','id'=>'files'],]);  ?>
+    <?php echo $form->field($model, 'file')->widget(FileInput::class,['options' => ['accept' => '*/*','id'=>'files'],]);  ?>
 
 
     <div class="form-group">

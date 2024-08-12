@@ -3,7 +3,7 @@
 use app\models\base\Currancy;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use dosamigos\datepicker\DatePicker;
+use kartik\date\DatePicker;
 use kartik\grid\GridView;
 use yii\helpers\Url;
 use kartik\select2\Select2;
@@ -164,21 +164,21 @@ use yii\widgets\Pjax;
             ?>
         </div>
         <div class="col-md-4">
-            <?=
-            $form->field($model, 'at')->widget(
-                DatePicker::class,
-                [
-                    'value' => '02-16-2012',
-                    'language' => 'ar',
-                    'clientOptions' => [
-                        'autoclose' => true,
-                        'format' => 'yyyy-mm-dd',
-                        'todayHighlight' => true,
-                        'todayBtn' => true,
-                    ]
+            <?php
+            echo '<label class="form-label">تاريخ الفاتورة</label>';
+            echo  DateDatePicker::widget([
+                'model' => $model,
+                'attribute' => 'at',
+                'options' => ['placeholder' => 'Enter date ...'],
+                'pluginOptions' => [
+                    'autoclose' => true,
+                    'format' => 'yyyy-mm-dd',
+                    'todayHighlight' => true,
                 ]
-            )
+            ]);
             ?>
+            <br>
+
             <?php
             if ($model->type != 2) {
                 $payWay = ['0' => 'نقدا', '1' => 'آجـــل', '2' => 'دفعة على الحساب',];
@@ -187,20 +187,22 @@ use yii\widgets\Pjax;
             }
             echo $form->field($model, 'payWay')->dropDownList($payWay, ['prompt' => 'اختيار طريقة الدفع'])
             ?>
-            <?=
-            $form->field($model, 'deserving')->widget(
-                DatePicker::class,
-                [
-                    'value' => '02-16-2012',
-                    'language' => 'ar',
-                    'clientOptions' => [
-                        'autoclose' => true,
-                        'format' => 'yyyy-mm-dd',
-                        'todayHighlight' => true,
-                        'todayBtn' => true,
-                    ]
+
+            <?php
+            echo '<label class="form-label">تاريخ الاستحقاق</label>';
+
+            echo DatePicker::widget([
+                'model' => $model,
+                'attribute' => 'deserving',
+                'options' => ['placeholder' => 'Enter Deserving ...'],
+                'pluginOptions' => [
+                    'autoclose' => true,
+                    'format' => 'yyyy-mm-dd',
+                    'todayHighlight' => true,
                 ]
-            ) ?>
+            ]);
+            ?>
+
             <?=
             $form->field($model, 'deleviryAt')->widget(
                 DatePicker::class,
@@ -246,10 +248,10 @@ use yii\widgets\Pjax;
     <?php ActiveForm::end(); ?>
     <br>
     <?php ActiveForm::begin(); ?>
-        
+
     <?php
     if ($company->criteriaـvalue <> 0) {
-    $formatJs = <<< 'JS'
+        $formatJs = <<< 'JS'
     var formatProduct = function (product) {
     if (product.loading) {
       return product.text;
@@ -306,10 +308,10 @@ use yii\widgets\Pjax;
     return product.name || product.text;
   }
 JS;
-    // Register the formatting script
-    $this->registerJs($formatJs, $this::POS_HEAD);
-    // script to parse the results into the format expected by Select2
-    $resultsJs = <<< JS
+        // Register the formatting script
+        $this->registerJs($formatJs, $this::POS_HEAD);
+        // script to parse the results into the format expected by Select2
+        $resultsJs = <<< JS
     function (data, params) {
        params.page = params.page || 5;
         return {
@@ -320,41 +322,41 @@ JS;
         };
     }
 JS;
-    //var salesId= getElementById("sales-id").value;
-    echo Select2::widget([
-        'name' => 'kv-repo-template',
-        //'value' => '14719648',
-        //'initValueText' => 'kartik-v/yii2-widgets',
-        'language' => 'en',
-        'options' => [
-            'placeholder' => Yii::t('app', 'Search...'),
-            'dir' => 'rtl',
-            'onchange' => '
+        //var salesId= getElementById("sales-id").value;
+        echo Select2::widget([
+            'name' => 'kv-repo-template',
+            //'value' => '14719648',
+            //'initValueText' => 'kartik-v/yii2-widgets',
+            'language' => 'en',
+            'options' => [
+                'placeholder' => Yii::t('app', 'Search...'),
+                'dir' => 'rtl',
+                'onchange' => '
         var salesId= getElementById("sales-id").value;
         $.get( "index.php?r=sales-details/addsale&categoryid="+$(this).val()+"&salesId="+salesId, function( data ) {
               
         });
         ',
-        ],
-        // $.get( "add?categoryid="+category+"&type="+1, function( data ) {});
-        'pluginOptions' => [
-            'allowClear' => true,
-            'minimumInputLength' => 1,
-            'ajax' => [
-                'url' => Url::to(['/sales/itemlist']),
-                'dataType' => 'json',
-                // 'delay' => 250,
-                'data' => new JsExpression('function(params) { return {q:params.term, page: params.page}; }'),
-                'processResults' => new JsExpression($resultsJs),
-                'cache' => true
             ],
-            'escapeMarkup' => new JsExpression('function (markup) { return markup; }'),
-            'templateResult' => new JsExpression('formatProduct'),
-            'templateSelection' => new JsExpression('formatProductSelection'),
-        ],
-    ]);
-}else{
-    $formatJs = <<< 'JS'
+            // $.get( "add?categoryid="+category+"&type="+1, function( data ) {});
+            'pluginOptions' => [
+                'allowClear' => true,
+                'minimumInputLength' => 1,
+                'ajax' => [
+                    'url' => Url::to(['/sales/itemlist']),
+                    'dataType' => 'json',
+                    // 'delay' => 250,
+                    'data' => new JsExpression('function(params) { return {q:params.term, page: params.page}; }'),
+                    'processResults' => new JsExpression($resultsJs),
+                    'cache' => true
+                ],
+                'escapeMarkup' => new JsExpression('function (markup) { return markup; }'),
+                'templateResult' => new JsExpression('formatProduct'),
+                'templateSelection' => new JsExpression('formatProductSelection'),
+            ],
+        ]);
+    } else {
+        $formatJs = <<< 'JS'
     var formatProduct = function (product) {
     if (product.loading) {
       return product.text;
@@ -384,10 +386,10 @@ JS;
     return product.name || product.text;
   }
 JS;
-    // Register the formatting script
-    $this->registerJs($formatJs, $this::POS_HEAD);
-    // script to parse the results into the format expected by Select2
-    $resultsJs = <<< JS
+        // Register the formatting script
+        $this->registerJs($formatJs, $this::POS_HEAD);
+        // script to parse the results into the format expected by Select2
+        $resultsJs = <<< JS
     function (data, params) {
        params.page = params.page || 5;
         return {
@@ -398,40 +400,40 @@ JS;
         };
     }
 JS;
-    //var salesId= getElementById("sales-id").value;
-    echo Select2::widget([
-        'name' => 'kv-repo-template',
-        //'value' => '14719648',
-        //'initValueText' => 'kartik-v/yii2-widgets',
-        'language' => 'en',
-        'options' => [
-            'placeholder' => Yii::t('app', 'Search...'),
-            'dir' => 'rtl',
-            'onchange' => '
+        //var salesId= getElementById("sales-id").value;
+        echo Select2::widget([
+            'name' => 'kv-repo-template',
+            //'value' => '14719648',
+            //'initValueText' => 'kartik-v/yii2-widgets',
+            'language' => 'en',
+            'options' => [
+                'placeholder' => Yii::t('app', 'Search...'),
+                'dir' => 'rtl',
+                'onchange' => '
         var salesId= getElementById("sales-id").value;
         $.get( "index.php?r=sales-details/addsale&categoryid="+$(this).val()+"&salesId="+salesId, function( data ) {
               
         });
         ',
-        ],
-        // $.get( "add?categoryid="+category+"&type="+1, function( data ) {});
-        'pluginOptions' => [
-            'allowClear' => true,
-            'minimumInputLength' => 1,
-            'ajax' => [
-                'url' => Url::to(['/sales/itemlist']),
-                'dataType' => 'json',
-                // 'delay' => 250,
-                'data' => new JsExpression('function(params) { return {q:params.term, page: params.page}; }'),
-                'processResults' => new JsExpression($resultsJs),
-                'cache' => true
             ],
-            'escapeMarkup' => new JsExpression('function (markup) { return markup; }'),
-            'templateResult' => new JsExpression('formatProduct'),
-            'templateSelection' => new JsExpression('formatProductSelection'),
-        ],
-    ]);
-}
+            // $.get( "add?categoryid="+category+"&type="+1, function( data ) {});
+            'pluginOptions' => [
+                'allowClear' => true,
+                'minimumInputLength' => 1,
+                'ajax' => [
+                    'url' => Url::to(['/sales/itemlist']),
+                    'dataType' => 'json',
+                    // 'delay' => 250,
+                    'data' => new JsExpression('function(params) { return {q:params.term, page: params.page}; }'),
+                    'processResults' => new JsExpression($resultsJs),
+                    'cache' => true
+                ],
+                'escapeMarkup' => new JsExpression('function (markup) { return markup; }'),
+                'templateResult' => new JsExpression('formatProduct'),
+                'templateSelection' => new JsExpression('formatProductSelection'),
+            ],
+        ]);
+    }
     ?>
 
     <?php ActiveForm::end(); ?>

@@ -26,16 +26,16 @@ foreach ($models as $model) {
     <br><br><br>
 
     <?php
-    $sum=0;
-    $coun=1;
+    $sum = 0;
+    $coun = 1;
     $sumwared = 0;
     $sumsader = 0;
     foreach ($lastBalance as $model):
-    $sumwared +=  (float) $model["wared"];
-    $sumsader +=  (float) $model["sader"];
-      $balance =  $sumsader - $sumwared ;
+      $sumwared +=  (float) $model["wared"];
+      $sumsader +=  (float) $model["sader"];
+      $balance =  $sumsader - $sumwared;
     ?>
-    <?php endforeach; 
+    <?php endforeach;
     ?>
 
     <?php $title = CompanyInfo::find()->select(['*'])->asArray()->one(); ?>
@@ -124,10 +124,10 @@ foreach ($models as $model) {
                         <td><?= $model["notes"] ?></td>
                         <td><?= number_format((float) $model["value"], 3) . "\n" ?></td>
                         <td><?= number_format((float) $model["paid"], 3) . "\n" ?></td>
-                        <td><?php 
-                         echo number_format(($sumwared - $sumsader) + $balance, 3)."\n"; 
-                        ?>
-                       </td>
+                        <td><?php
+                            echo number_format(($sumwared - $sumsader) + $balance, 3) . "\n";
+                            ?>
+                        </td>
                         <td>
                         </td>
                       </tr>

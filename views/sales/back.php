@@ -6,13 +6,7 @@ use yii\widgets\ActiveForm;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
 use app\models\Client;
-use app\models\User;
-use dosamigos\datepicker\DatePicker;
-use app\models\Branches;
-use wbraganca\dynamicform\DynamicFormWidget;
-use app\models\Category;
-use kartik\widgets\DepDrop;
-use kartik\file\FileInput;
+use kartik\date\DatePicker;
 /* @var $this yii\web\View */
 /* @var $model app\models\Sales */
 /* @var $form yii\widgets\ActiveForm */
@@ -25,24 +19,24 @@ use kartik\file\FileInput;
         <div class="col-md-1"></div>
         <div class="col-md-5">
 
-            <?=
-            $form->field($model, 'at')->widget(
-                DatePicker::className(),
-                [
-                    'value' => '02-16-2012',
-                    'language' => 'ar',
-                    'clientOptions' => [
-                        'autoclose' => true,
-                        'format' => 'yyyy-mm-dd',
-                        'todayHighlight' => true,
-                        'todayBtn' => true,
-                    ]
+            <?php
+            echo '<label class="form-label">تاريخ الفاتورة</label>';
+            echo  DatePicker::widget([
+                'model' => $model,
+                'attribute' => 'at',
+                'options' => ['placeholder' => 'Enter date ...'],
+                'pluginOptions' => [
+                    'autoclose' => true,
+                    'format' => 'yyyy-mm-dd',
+                    'todayHighlight' => true,
                 ]
-            ) ?>
+            ]);
+            ?>
+            <br>
 
         </div>
         <div class="col-md-5">
-            <?= $form->field($model, 'clinet')->widget(Select2::classname(), [
+            <?= $form->field($model, 'clinet')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Client::find()->where(['in', 'type', [0, 2]])->all(), 'id', 'name'),
                 'language' => 'ar',
                 'id' => 'clinet',
@@ -61,7 +55,7 @@ use kartik\file\FileInput;
             <?= $form->field($model, 'payWay')->dropDownList(['1' => 'نقدا', '2' => 'على الحساب',], ['prompt' => '']) ?>
 
             <?php
-            echo $form->field($model, 'currancy')->widget(Select2::classname(), [
+            echo $form->field($model, 'currancy')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Currancy::find()->all(), 'id', 'name'),
                 'language' => 'ar',
                 'pluginOptions' => [

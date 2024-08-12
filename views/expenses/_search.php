@@ -7,7 +7,6 @@ use kartik\daterange\DateRangePicker;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
 use app\models\Items;
-use app\models\Branches;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\ExpensesSearch */
@@ -46,7 +45,7 @@ use app\models\Branches;
     ?><br>
 
     <?php 
-     echo $form->field($model, 'itemId')->widget(Select2::classname(), [
+     echo $form->field($model, 'itemId')->widget(Select2::class, [
         'data' =>ArrayHelper::map(Items::find()
            ->all(),'id', 'name'),
         'language' => 'ar',

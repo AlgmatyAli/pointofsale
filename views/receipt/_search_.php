@@ -25,7 +25,7 @@ use yii\helpers\Url;
  
     <?= $form->field($model, 'rId') ?>
 
-    <?=  $form->field($model, 'clinet')->widget(Select2::classname(), [
+    <?=  $form->field($model, 'clinet')->widget(Select2::class, [
         'data' => ArrayHelper::map(Client::find()
        // ->where(['branch' => Yii::$app->user->identity->branch])
        ->where(['in', 'type', [1,2]])
@@ -68,7 +68,7 @@ use yii\helpers\Url;
 
     <?= $form->field($model, 'payWay')->dropDownList([ 'نقدا' => 'نقدا', 'صك' => 'صك', 'بطاقة' => 'بطاقة', ], ['prompt' => 'الرجاء اختيار طريقة الدفع']) ?>
 
-    <?= $form->field($model, 'type')->widget(Select2::classname(), [
+    <?= $form->field($model, 'type')->widget(Select2::class, [
                 'data' => [
                     '2' => ' صرف', '1' => 'قبض'
                 ],

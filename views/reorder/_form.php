@@ -2,7 +2,7 @@
 
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use dosamigos\datepicker\DatePicker;
+use kartik\date\DatePicker;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\Reorder */
@@ -13,19 +13,19 @@ use dosamigos\datepicker\DatePicker;
 
     <?php $form = ActiveForm::begin(); ?>
 
-    <?php 
-       echo $form->field($model, 'at')->widget(
-        DatePicker::className(),
+    <?php
+    echo $form->field($model, 'at')->widget(
+        DatePicker::class,
         [
             'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,
                 'todayBtn' => true,
             ]
         ]
-        );
+    );
     ?>
 
     <div class="form-group">

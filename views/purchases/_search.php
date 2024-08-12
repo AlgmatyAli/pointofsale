@@ -3,8 +3,6 @@
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use kartik\daterange\DateRangePicker;
-use app\models\Branches;
-use wbraganca\dynamicform\DynamicFormWidget;
 use app\models\Client;
 use app\models\Currancy;
 use app\models\ShippingType;
@@ -29,7 +27,7 @@ use yii\helpers\Url;
         <div class="col-sm-2">
             <?= $form->field($model, 'billId') ?>
 
-            <?= $form->field($model, 'clinet')->widget(Select2::classname(), [
+            <?= $form->field($model, 'clinet')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Client::find()
                     ->where(['in', 'type', [1, 2]])
                     //->andWhere(['branch' => Yii::$app->user->identity->branch])
@@ -73,7 +71,7 @@ use yii\helpers\Url;
         <div class="col-md-2">
             <?php echo $form->field($model, 'total_currancy')->textInput(['maxlength' => true,])  ?>
 
-            <?= $form->field($model, 'currancy')->widget(\kartik\widgets\Select2::classname(), [
+            <?= $form->field($model, 'currancy')->widget(\kartik\widgets\Select2::class, [
                 'data' => ArrayHelper::map(Currancy::find()->orderBy('id')->asArray()->all(), 'id', 'name'),
                 // 'options' => ['placeholder' => Yii::t('app', 'Choose Category')],
                 'pluginOptions' => [
@@ -82,7 +80,7 @@ use yii\helpers\Url;
             ]); ?>
         </div>
         <div class="col-md-2">
-           <?php
+            <?php
             echo '<label class="control-label">تاريخ الوصول</label>';
             echo DateRangePicker::widget([
                 'model' => $model,
@@ -99,7 +97,7 @@ use yii\helpers\Url;
             ]);
             ?><br>
 
-            <?= $form->field($model, 'shippingType')->widget(\kartik\widgets\Select2::classname(), [
+            <?= $form->field($model, 'shippingType')->widget(\kartik\widgets\Select2::class, [
                 'data' => ArrayHelper::map(ShippingType::find()->orderBy('id')->asArray()->all(), 'id', 'name'),
                 'options' => ['placeholder' => Yii::t('app', 'اختيار نوع الشحن')],
                 'pluginOptions' => [

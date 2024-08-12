@@ -17,10 +17,8 @@
         "php": ">=8.0",
         "yiisoft/yii2": "~2.0.14",
         "yiisoft/yii2-bootstrap": "~2.0.0",
-        "yiisoft/yii2-swiftmailer": "~2.0.0 || ~2.1.0",
         "kartik-v/yii2-widget-depdrop": "@dev",
         "kartik-v/yii2-widget-fileinput": "@dev",
-        "2amigos/yii2-date-picker-widget" : "~1.0",
         "wbraganca/yii2-dynamicform": "*",
         "kartik-v/yii2-datecontrol": "dev-master",
         "kartik-v/yii2-widget-datetimepicker": "*",
@@ -30,7 +28,6 @@
         "softark/yii2-dual-listbox": "dev-master",
         "yiisoft/yii2-bootstrap4": "@dev",
         "kartik-v/yii2-date-range": "dev-master",
-        "2amigos/yii2-chartjs-widget" : "~2.0",
         "airani/yii2-adminlte-rtl": "~1.0",
         "macgyer/yii2-materializecss": "*",
         "picqer/php-barcode-generator": "^0.3.0",
@@ -41,12 +38,9 @@
         "kartik-v/yii2-widgets": "*",
         "kartik-v/yii2-widget-select2": "dev-master",
         "yiisoft/yii2-jui": "^2.0",
-        "yii2mod/yii2-google-maps-markers": "*",
         "mootensai/yii2-enhanced-gii": "dev-master",
         "kartik-v/yii2-editable": "@dev",
-        "2amigos/yii2-ckeditor-widget" : "*",
         "moonlandsoft/yii2-phpexcel": "*",
-        "twilio/sdk": "^6.24",
         "ibrarturi/yii2-scrollup": "dev-master",
         "philippfrenzel/yii2fullcalendar":"*",
         "kartik-v/yii2-widget-touchspin": "dev-master",
@@ -56,8 +50,9 @@
         "kartik-v/yii2-dialog": "@dev",
         "kartik-v/yii2-ipinfo": "dev-master",
         "kartik-v/yii2-field-range": "dev-master",
-        "codemix/yii2-excelexport": "^2.8"
-
+        "codemix/yii2-excelexport": "^2.8",
+        "kartik-v/yii2-widget-datepicker": "dev-master",
+        "yiisoft/yii2-symfonymailer": "~3.0.0"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.1.0",

@@ -42,12 +42,9 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
-        //'filterModel' => $searchModel,
         'summary' => '',
         'columns' => [
             ['class' => 'yii\grid\SerialColumn'],
-
-           // 'id',
             'employee0.name',
             'loanId',
             'kestValue',
@@ -55,11 +52,6 @@ $this->params['breadcrumbs'][] = $this->title;
             'month',
             'year',
             'notes',
-            //'created_by',
-            //'created_at',
-            //'updated_by',
-            //'updated_at',
-
             [
                 'class' => 'yii\grid\ActionColumn',
                 'options'=>['style'=>'width:120px;'],

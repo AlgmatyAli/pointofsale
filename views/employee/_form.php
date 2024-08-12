@@ -2,7 +2,7 @@
 
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use dosamigos\datepicker\DatePicker;
+use kartik\date\DatePicker;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\Employee */
@@ -19,30 +19,28 @@ use dosamigos\datepicker\DatePicker;
 
     <?= $form->field($model, 'dayOfWork')->textInput(['maxlength' => true]) ?>
 
-    <?php // $form->field($model, 'salaryByDay')->textInput(['maxlength' => true]) ?>
-
-    <?php 
-       echo $form->field($model, 'startWork')->widget(
-        DatePicker::className(),
+    <?php
+    echo $form->field($model, 'startWork')->widget(
+        DatePicker::class,
         [
             'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,
                 'todayBtn' => true,
             ]
         ]
-        );
+    );
     ?>
 
-    <?= $form->field($model, 'notes')->textarea(['rows'=>3, 'maxlength' => true]) ?>
+    <?= $form->field($model, 'notes')->textarea(['rows' => 3, 'maxlength' => true]) ?>
 
-    <?= $form->field($model, 'state')->dropDownList([ '0' => 'يعمل', '1' => 'موقوف'], ['prompt' => 'اختيار الحالة']) ?>
+    <?= $form->field($model, 'state')->dropDownList(['0' => 'يعمل', '1' => 'موقوف'], ['prompt' => 'اختيار الحالة']) ?>
 
-   <div class="form-group">
-        <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>'.' '.Yii::t('app', 'Save'), ['class' => 'btn btn-success btn-lg']) ?>
-        <?= Html::a('<i class="fa fa-fw fa-window-close"></i>'.' '.Yii::t('app', 'Clear'), ['/branches/index'], ['class'=>'btn btn-danger btn-lg']) ?>
+    <div class="form-group">
+        <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Save'), ['class' => 'btn btn-success btn-lg']) ?>
+        <?= Html::a('<i class="fa fa-fw fa-window-close"></i>' . ' ' . Yii::t('app', 'Clear'), ['/branches/index'], ['class' => 'btn btn-danger btn-lg']) ?>
     </div>
 
     <?php ActiveForm::end(); ?>

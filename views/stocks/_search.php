@@ -70,7 +70,7 @@ JS;
         };
     }
 JS;
-            echo $form->field($model, 'id')->widget(Select2::classname(), [
+            echo $form->field($model, 'id')->widget(Select2::class, [
                 'name' => 'kv-repo-template',
                 // 'id' => 'tempinvoicepurchase-category',
                 'language' => 'en',
@@ -106,7 +106,7 @@ JS;
             <?php
             $data = Category::find()->select(['class'])->distinct()->all();
             $listData = ArrayHelper::map($data, 'class', 'class');
-            echo $form->field($model, 'class')->widget(Select2::classname(), [
+            echo $form->field($model, 'class')->widget(Select2::class, [
                 'data' => $listData,
                 'language' => 'ar',
                 'options' => ['placeholder' => 'الرجاء اختيار التصنيف  ...'],
@@ -117,7 +117,7 @@ JS;
             ]);
             ?>
             <?php
-            echo $form->field($model, 'branch')->widget(Select2::classname(), [
+            echo $form->field($model, 'branch')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Branches::find()->all(), 'id', 'name'),
                 'language' => 'ar',
                 'options' => ['placeholder' => 'الرجاء اختيار اسم الفرع ...'],
@@ -133,7 +133,7 @@ JS;
             <?php
             $data = Category::find()->select(['company'])->distinct()->all();
             $listData = ArrayHelper::map($data, 'company', 'company');
-            echo $form->field($model, 'company')->widget(Select2::classname(), [
+            echo $form->field($model, 'company')->widget(Select2::class, [
                 'data' => $listData,
                 'language' => 'ar',
                 'options' => ['placeholder' => 'الرجاء اختيار الشركة  ...'],

@@ -28,7 +28,7 @@ use kartik\widgets\SwitchInput;
             <?= $form->field($model, 'address')->textarea(['rows' => 9]) ?>
 
             <?php
-            echo $form->field($model, 'currancy')->widget(Select2::classname(), [
+            echo $form->field($model, 'currancy')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Currancy::find()
                     ->all(), 'id', 'name'),
                 'language' => 'ar',
@@ -56,8 +56,14 @@ use kartik\widgets\SwitchInput;
             <?= $form->field($model, 'email')->textInput(['maxlength' => true]) ?>
 
             <?= $form->field($model, 'skin')->dropDownList([
-                'skin-blue' => 'skin-blue', 'skin-blue-light' => 'skin-blue-light', 'skin-yellow' => 'skin-yellow',
-                'skin-yellow-light' => 'skin-yellow-light', 'skin-green' => 'skin-green', 'skin-green-light' => 'skin-green-light', 'skin-red' => 'skin-red', 'skin-red-light' => 'skin-red-light'
+                'skin-blue' => 'skin-blue',
+                'skin-blue-light' => 'skin-blue-light',
+                'skin-yellow' => 'skin-yellow',
+                'skin-yellow-light' => 'skin-yellow-light',
+                'skin-green' => 'skin-green',
+                'skin-green-light' => 'skin-green-light',
+                'skin-red' => 'skin-red',
+                'skin-red-light' => 'skin-red-light'
             ], ['prompt' => 'اختيار لون الخلفية']) ?>
 
             <?= $form->field($model, 'criteriaـvalue')->textInput(['maxlength' => true])->label('قيمة البحث') ?>
@@ -67,12 +73,12 @@ use kartik\widgets\SwitchInput;
         <div class='col-md-3'>
             <?php if (empty($model->path)) {
 
-                echo $form->field($model, 'file')->widget(FileInput::classname(), ['options' => ['accept' => 'image/*'],]);
+                echo $form->field($model, 'file')->widget(FileInput::class, ['options' => ['accept' => 'image/*'],]);
             } else {
                 $allimage[] = Html::img($model->path,  ['class' => 'file-preview-image']);
 
                 echo $form->field($model, 'file')->widget(
-                    FileInput::classname(),
+                    FileInput::class,
                     [
                         'options' => ['accept' => 'image/*'],
                         'pluginOptions' => [
@@ -89,7 +95,7 @@ use kartik\widgets\SwitchInput;
 
     <div class='row'>
         <div class='col-md-6'>
-            <?= $form->field($model, 'terms')->widget(CKEditor::className(), [
+            <?= $form->field($model, 'terms')->widget(CKEditor::class, [
                 'options' => ['rows' => 6],
                 'preset' => 'basic'
             ]) ?>
@@ -110,7 +116,7 @@ use kartik\widgets\SwitchInput;
                     'onColor' => 'success',
                     'offColor' => 'danger',
                 ]
-            ]); 
+            ]);
             ?>
             <?php
             echo $form->field($model, 'payWayCash')->widget(SwitchInput::class, [
@@ -138,7 +144,7 @@ use kartik\widgets\SwitchInput;
             ]); ?>
         </div>
     </div>
-    <?php //echo $form->field($model, 'file')->widget(FileInput::classname(),['options' => ['accept' => '*/*','id'=>'files'],]);  
+    <?php //echo $form->field($model, 'file')->widget(FileInput::class,['options' => ['accept' => '*/*','id'=>'files'],]);  
     ?>
 
     <div class="form-group">

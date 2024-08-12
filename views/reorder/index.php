@@ -29,12 +29,6 @@ $this->params['breadcrumbs'][] = $this->title;
             ['class' => 'yii\grid\SerialColumn'],
             'id',
             'at',
-            // 'branch',
-            // 'created_by',
-            // 'created_at',
-            //'updated_by',
-            //'updated_at',
-
             [
                 'class' => 'yii\grid\ActionColumn',
                 'options'=>['style'=>'width:120px;'],

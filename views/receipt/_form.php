@@ -6,7 +6,7 @@ use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
 use app\models\Client;
 use app\models\Currancy;
-use dosamigos\datepicker\DatePicker;
+use kartik\date\DatePicker;
 use yii\helpers\Url;
 
 
@@ -65,7 +65,7 @@ use yii\helpers\Url;
                 DatePicker::class,
                 [
                     'language' => 'ar',
-                    'clientOptions' => [
+                    'pluginOptions' => [
                         'autoclose' => true,
                         'format' => 'yyyy-mm-dd',
                         'todayHighlight' => true,

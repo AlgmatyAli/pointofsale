@@ -32,9 +32,6 @@ $this->params['breadcrumbs'][] = $this->title;
             'costPrice',
             'minPrice',
             'minPrice2',
-            //'minPrice3',
-            //'maxPrice',
-
             ['class' => 'yii\grid\ActionColumn'],
         ],
     ]); ?>

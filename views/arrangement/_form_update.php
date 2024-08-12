@@ -2,11 +2,8 @@
 
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use dosamigos\datepicker\DatePicker;
 use kartik\grid\GridView;
-use yii\helpers\Url;
-use kartik\select2\Select2;
-use yii\web\JsExpression;
+use kartik\date\DatePicker;
 /* @var $this yii\web\View */
 /* @var $model app\models\Arrangement */
 /* @var $form yii\widgets\ActiveForm */
@@ -18,14 +15,13 @@ use yii\web\JsExpression;
 
      <?php 
        echo $form->field($model, 'at')->widget(
-        DatePicker::className(),
+        DatePicker::class,
         [
             'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,
-                'todayBtn' => true,
             ]
         ]
         );

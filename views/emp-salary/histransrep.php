@@ -1,14 +1,7 @@
 <?php
 
 use yii\helpers\Html;
-use yii\widgets\DetailView;
-use yii\grid\GridView;
-use app\models\Dept;
 use app\models\CompanyInfo;
-use yii\helpers\Url;
-use yii\data\ActiveDataProvider;
-use yii\widgets\ListView;
-use app\models\HistransClient;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\Salaryroll */

@@ -4,7 +4,6 @@ use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\widgets\ActiveForm;
 use yii\helpers\ArrayHelper;
-use app\models\AuthItem;
 use kartik\file\FileInput;
 use app\models\Branches;
 use kartik\select2\Select2;
@@ -28,7 +27,7 @@ use kartik\select2\Select2;
             <?= $form->field($model, 'isActive')->dropDownList(['active' => 'active', 'disabled' => 'disabled',], ['prompt' => 'Select User Status...']) ?>
 
             <?php
-            echo $form->field($model, 'branch')->widget(Select2::classname(), [
+            echo $form->field($model, 'branch')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Branches::find()->all(), 'id', 'name'),
                 'language' => 'ar',
                 'options' => ['placeholder' => 'الرجاء اختيار اسم الفرع ...'],
@@ -39,7 +38,7 @@ use kartik\select2\Select2;
             ]);
             ?>
 
-            <?= $form->field($model, 'permission')->widget(\kartik\widgets\Select2::classname(), [
+            <?= $form->field($model, 'permission')->widget(\kartik\widgets\Select2::class, [
                 'data' => \yii\helpers\ArrayHelper::map(\app\models\AuthItem::find()->where(['!=', 'type', '2'])->asArray()->all(), 'type', 'name'),
                 'options' => ['placeholder' => Yii::t('app', 'Choose User Type')],
                 'pluginOptions' => [
@@ -48,7 +47,7 @@ use kartik\select2\Select2;
             ]);
             ?>
 
-            <?= $form->field($model, 'client')->widget(\kartik\widgets\Select2::classname(), [
+            <?= $form->field($model, 'client')->widget(\kartik\widgets\Select2::class, [
                 'data' => \yii\helpers\ArrayHelper::map(\app\models\Client::find()->orderBy('id')->asArray()->all(), 'id', 'name'),
                 'options' => ['placeholder' => Yii::t('app', 'Choose User Type')],
                 'pluginOptions' => [
@@ -68,12 +67,12 @@ use kartik\select2\Select2;
         <div class='col-md-3'>
             <?php if (empty($model->path)) {
  
-                echo $form->field($model, 'file')->widget(FileInput::classname(), ['options' => ['accept' => 'image/*'],]);
+                echo $form->field($model, 'file')->widget(FileInput::class, ['options' => ['accept' => 'image/*'],]);
             } else {
                 $allimage[] = Html::img($model->path,  ['class' => 'file-preview-image']);
 
                 echo $form->field($model, 'file')->widget(
-                    FileInput::classname(),
+                    FileInput::class,
                     [
                         'options' => ['accept' => 'image/*'],
                         'pluginOptions' => [
@@ -84,7 +83,7 @@ use kartik\select2\Select2;
                 );
             }
             ?>
-            <?php // echo $form->field($model, 'file')->widget(FileInput::classname(),['options' => ['accept' => '*/*','id'=>'files'],]);  
+            <?php // echo $form->field($model, 'file')->widget(FileInput::class,['options' => ['accept' => '*/*','id'=>'files'],]);  
             ?>
         </div>
         <div class='col-md-1'></div>

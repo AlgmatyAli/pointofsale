@@ -83,47 +83,47 @@ use yii\widgets\DetailView;
         </div>
     </div>
     <div class="col-md-6">
-      <?php
-       if($dateOfArrival != null){
-      echo DetailView::widget([
-            'model' => $dateOfArrival,
-            'attributes' => [
-                [
-                    'label' => Yii::t('app', 'رقم الفاتورة'),
-                    'attribute' => 'billId',
-                    'hAlign' => 'right',
+        <?php
+        if ($dateOfArrival != null) {
+            echo DetailView::widget([
+                'model' => $dateOfArrival,
+                'attributes' => [
+                    [
+                        'label' => Yii::t('app', 'رقم الفاتورة'),
+                        'attribute' => 'billId',
+                        'hAlign' => 'right',
 
-                ],
-                [
-                    'label' => Yii::t('app', 'اسم العميل'),
-                    'attribute' => 'c.name',
-                    'hAlign' => 'right',
+                    ],
+                    [
+                        'label' => Yii::t('app', 'اسم العميل'),
+                        'attribute' => 'c.name',
+                        'hAlign' => 'right',
 
-                ],
-                [
-                    'label' => Yii::t('app', 'نوع الشحن'),
-                    'attribute' => 'shippingType0.name',
-                    'hAlign' => 'right',
+                    ],
+                    [
+                        'label' => Yii::t('app', 'نوع الشحن'),
+                        'attribute' => 'shippingType0.name',
+                        'hAlign' => 'right',
 
-                ],
-                [
-                    'label' => Yii::t('app', 'تاريخ الوصول'),
-                    'attribute' => 'dateOfArrival',
-                    'hAlign' => 'right',
+                    ],
+                    [
+                        'label' => Yii::t('app', 'تاريخ الوصول'),
+                        'attribute' => 'dateOfArrival',
+                        'hAlign' => 'right',
 
+                    ],
+                    [
+                        'label' => Yii::t('app', 'الزمن المتبقي للوصول'),
+                        'format' => 'raw',
+                        'value' => function ($searchModel) {
+                            $datetime1 = date_create($searchModel->dateOfArrival);
+                            $datetime2 = date_create(date('Y-m-d'));
+                            return  $datetime1->diff($datetime2)->days;
+                        }
+                    ],
                 ],
-                [
-                    'label' => Yii::t('app', 'الزمن المتبقي للوصول'),
-                    'format' => 'raw',
-                    'value' => function ($searchModel) {
-                         $datetime1 = date_create($searchModel->dateOfArrival);
-                         $datetime2 = date_create(date('Y-m-d'));
-                         return  $datetime1->diff($datetime2)->days;
-                    }
-                ],
-            ],
-        ]);
-    }
+            ]);
+        }
         ?>
     </div>
 </div>

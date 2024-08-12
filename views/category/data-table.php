@@ -1,6 +1,5 @@
 <?php
 
-use yii\helpers\Html;
 use fedemotta\datatables\DataTables;
 use yii\widgets\Pjax;
 

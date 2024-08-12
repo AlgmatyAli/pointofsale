@@ -48,18 +48,19 @@ $config = [
             'errorAction' => 'site/error',
         ],
         'mailer' => [
-            'class' => 'yii\swiftmailer\Mailer',
+            'class' => \yii\symfonymailer\Mailer::class,  
             'enableSwiftMailerLogging' => true,
 
             //'useFileTransport'=>false,
             'viewPath' => '@app/mail',
             'transport' => [
-                'class' => 'Swift_SmtpTransport',
+                'scheme' => 'smtps',
                 'host' => 'smtp.gmail.com',
                 'username' => 'algmatyali@gmail.com',
                 'password' => 'Internationalco.',
                 'port' => '587',
                 'encryption' => 'tls',
+                'dsn' => 'native://default',
                 //   'port' => 465,
                 //   'encryption' => 'ssl',
                 ///captcha/image/85a67061994e9054bd08fc843411cc5d5bf45356/

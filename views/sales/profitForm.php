@@ -2,9 +2,8 @@
 
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use kartik\daterange\DateRangePicker;
 use yii\helpers\Url;
-use dosamigos\datepicker\DatePicker;
+use kartik\date\DatePicker;
 /* @var $this yii\web\View */
 /* @var $model app\models\Sales */
 /* @var $form yii\widgets\ActiveForm */
@@ -17,11 +16,11 @@ use dosamigos\datepicker\DatePicker;
    
       <?= 
         $form->field($model, 'min_date')->widget(
-        DatePicker::className(),
+        DatePicker::class,
         [
             'value' => '02-16-2012',
             'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,
@@ -31,11 +30,11 @@ use dosamigos\datepicker\DatePicker;
             ); ?>
         <?= 
         $form->field($model, 'max_date')->widget(
-        DatePicker::className(),
+        DatePicker::class,
         [
             'value' => '02-16-2012',
             'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,

@@ -4,9 +4,8 @@ use app\models\base\Currancy;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use kartik\select2\Select2;
-use yii\helpers\ArrayHelper;
-use app\models\User;
-use dosamigos\datepicker\DatePicker;
+use yii\helpers\ArrayHelper;;
+use kartik\date\DatePicker;
 use app\models\Employee;
 
 /* @var $this yii\web\View */
@@ -22,7 +21,7 @@ use app\models\Employee;
         <div class="col-md-2"></div>
         <div class="col-md-8">
 
-            <?= $form->field($model, 'employee')->widget(Select2::classname(), [
+            <?= $form->field($model, 'employee')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Employee::find()->where(['=', 'state', 0])
                     ->all(), 'id', 'name'),
                 'language' => 'ar',
@@ -36,15 +35,12 @@ use app\models\Employee;
                 ],
             ]); ?>
 
-            <?php //echo $form->field($model, 'salary')->textInput() 
-            ?>
-
             <?php
             echo $form->field($model, 'at')->widget(
-                DatePicker::className(),
+                DatePicker::class,
                 [
                     'language' => 'ar',
-                    'clientOptions' => [
+                    'pluginOptions' => [
                         'autoclose' => true,
                         'format' => 'yyyy-mm-dd',
                         'todayHighlight' => true,
@@ -55,8 +51,19 @@ use app\models\Employee;
             ?>
             <?= $form->field($model, 'month')->dropDownList(
                 [
-                    '0' => 'اختيار الشهر', '1' => '1', '2' => '2', '3' => '3', '4' => '4', '5' => '5',
-                    '6' => '6', '7' => '7', '8' => '8', '9' => '9', '10' => '10', '11' => '11', '12' => '12',
+                    '0' => 'اختيار الشهر',
+                    '1' => '1',
+                    '2' => '2',
+                    '3' => '3',
+                    '4' => '4',
+                    '5' => '5',
+                    '6' => '6',
+                    '7' => '7',
+                    '8' => '8',
+                    '9' => '9',
+                    '10' => '10',
+                    '11' => '11',
+                    '12' => '12',
                 ],
                 [
                     'prompt' => 'الرجاء اختيار الشهر...',
@@ -69,15 +76,12 @@ use app\models\Employee;
                 ['prompt' => 'الرجاء اختيار السنـة...']
             ) ?>
 
-            <?php // $form->field($model, 'drawing')->textInput() 
-            ?>
-
             <?= $form->field($model, 'value')->textInput() ?>
 
             <?= $form->field($model, 'why')->textarea(['rows' => 6]) ?>
 
             <?php
-            echo $form->field($model, 'currancy')->widget(Select2::classname(), [
+            echo $form->field($model, 'currancy')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Currancy::find()->all(), 'id', 'name'),
                 'language' => 'ar',
                 'pluginOptions' => [

@@ -1,15 +1,8 @@
 <?php
 
 use yii\helpers\Html;
-use yii\widgets\DetailView;
 use yii\grid\GridView;
-use app\models\Dept;
 use app\models\CompanyInfo;
-use yii\helpers\Url;
-use yii\data\ActiveDataProvider;
-use yii\widgets\ListView;
-use app\models\HistransClient;
-use app\models\Inventory;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\Salaryroll */
@@ -67,14 +60,7 @@ use app\models\Inventory;
                 'attribute' => 'quantity',
                 'format' => 'raw'
             ],
-            
-            // [
-            //     'label' => Yii::t('app', 'Minimum'),
-            //     'headerOptions' => ['style' => 'width:7%'],
-            //     'attribute' => 'minimum',
-            //     'format' => 'raw'
-            // ],
-            
+
         ],
         ]);
     ?>

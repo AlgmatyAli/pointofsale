@@ -15,10 +15,10 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <div class="row">
         <div class="col-sm-9">
-            <h2><?= Yii::t('app', 'Currancy').' '. Html::encode($this->title) ?></h2>
+            <h2><?= Yii::t('app', 'Currancy') . ' ' . Html::encode($this->title) ?></h2>
         </div>
         <div class="col-sm-3" style="margin-top: 15px">
-            
+
             <?= Html::a(Yii::t('app', 'Update'), ['update', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
             <?= Html::a(Yii::t('app', 'Delete'), ['delete', 'id' => $model->id], [
                 'class' => 'btn btn-danger',
@@ -32,18 +32,18 @@ $this->params['breadcrumbs'][] = $this->title;
     </div>
 
     <div class="row">
-<?php 
-    $gridColumn = [
-        ['attribute' => 'id', 'visible' => false],
-        'name',
-        'code',
-       
-    ];
-    echo DetailView::widget([
-        'model' => $model,
-        'attributes' => $gridColumn
-    ]);
-?>
+        <?php
+        $gridColumn = [
+            ['attribute' => 'id', 'visible' => false],
+            'name',
+            'code',
+
+        ];
+        echo DetailView::widget([
+            'model' => $model,
+            'attributes' => $gridColumn
+        ]);
+        ?>
     </div>
-   
+
 </div>

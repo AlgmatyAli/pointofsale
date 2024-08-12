@@ -3,11 +3,8 @@
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use kartik\select2\Select2;
-use yii\helpers\ArrayHelper;
-use dosamigos\datepicker\DatePicker;
+use kartik\date\DatePicker;
 use yii\helpers\Url;
-use app\models\Category;
-use app\models\Inventory;
 use yii\web\JsExpression;
 /* @var $this yii\web\View */
 /* @var $model app\models\ReceiptSearch */
@@ -51,11 +48,11 @@ use yii\web\JsExpression;
   }
 JS;
 
-// Register the formatting script
-$this->registerJs($formatJs, $this::POS_HEAD);
+    // Register the formatting script
+    $this->registerJs($formatJs, $this::POS_HEAD);
 
-// script to parse the results into the format expected by Select2
-$resultsJs = <<< JS
+    // script to parse the results into the format expected by Select2
+    $resultsJs = <<< JS
     function (data, params) {
        params.page = params.page || 5;
         return {
@@ -66,83 +63,66 @@ $resultsJs = <<< JS
         };
     }
 JS;
-//var salesId= getElementById("sales-id").value;
-    echo $form->field($model, 'id')->widget(Select2::classname(), [
-    'name' => 'kv-repo-template',
-    'id' => 'focus_first',
-    'language' => 'en',
-    'options' => ['placeholder' => Yii::t('app','Search...'), 
-    'dir' => 'rtl',
-    'multiple'=>true,
-    ],
-        'pluginOptions' => [
-        'autofocus' =>true,
-        'minimumInputLength' => 1,
-        'ajax' => [
-            'url' => Url::to(['/except/itemlist']),
-            'dataType' => 'json',
-            'data' => new JsExpression('function(params) { return {q:params.term, page: params.page}; }'),
-            'processResults' => new JsExpression($resultsJs),
-            'cache' => true
+    //var salesId= getElementById("sales-id").value;
+    echo $form->field($model, 'id')->widget(Select2::class, [
+        'name' => 'kv-repo-template',
+        'id' => 'focus_first',
+        'language' => 'en',
+        'options' => [
+            'placeholder' => Yii::t('app', 'Search...'),
+            'dir' => 'rtl',
+            'multiple' => true,
         ],
-        'escapeMarkup' => new JsExpression('function (markup) { return markup; }'),
-        'templateResult' => new JsExpression('formatProduct'),
-        'templateSelection' => new JsExpression('formatProductSelection'),
-    ],
-]); 
-?>
-    <?php
-    //  echo $form->field($model, 'id')->widget(\kartik\widgets\Select2::classname(), [
-    //    'id' => 'categoryx',
-    //    'data' => \yii\helpers\ArrayHelper::map($data, 'id', 
-    //     function($model) {
-    //         return $model['name'].' --  '.$model['serialNo'];
-    //     }
-    // ),
-        
-    //     'language' => 'en',
-    //     'options' => ['placeholder' => Yii::t('app', 'Choose Category'),
-    //     'dir' => 'rtl',
-    //     'multiple'=>true,
-    //     ],
-    //     'pluginOptions' => [
-    //         'allowClear' => true 
-    //     ],
-        
-    // ]); 
-    ?> 
+        'pluginOptions' => [
+            'autofocus' => true,
+            'minimumInputLength' => 1,
+            'ajax' => [
+                'url' => Url::to(['/except/itemlist']),
+                'dataType' => 'json',
+                'data' => new JsExpression('function(params) { return {q:params.term, page: params.page}; }'),
+                'processResults' => new JsExpression($resultsJs),
+                'cache' => true
+            ],
+            'escapeMarkup' => new JsExpression('function (markup) { return markup; }'),
+            'templateResult' => new JsExpression('formatProduct'),
+            'templateSelection' => new JsExpression('formatProductSelection'),
+        ],
+    ]);
+    ?>
 
-     <?=
-        $form->field($model, 'min_date')->widget(
-        DatePicker::className(),
+    <?=
+    $form->field($model, 'min_date')->widget(
+        DatePicker::class,
         [
             'language' => 'ar',
-            'clientOptions' => [
-                'autoclose' => true,
-                'format' => 'yyyy-mm-dd',
-                'todayHighlight' => true,
-                'todayBtn' => true,
-            ]
-        ])->label(Yii::t('app', 'Min Date')); 
-        ?>
-        <?= 
-         $form->field($model, 'max_date')->widget(
-        DatePicker::className(),
-        [
-            'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,
                 'todayBtn' => true,
             ]
         ]
-        )->label(Yii::t('app', 'Max Date')); ; 
-        ?>
+    )->label(Yii::t('app', 'Min Date'));
+    ?>
+    <?=
+    $form->field($model, 'max_date')->widget(
+        DatePicker::class,
+        [
+            'language' => 'ar',
+            'pluginOptions' => [
+                'autoclose' => true,
+                'format' => 'yyyy-mm-dd',
+                'todayHighlight' => true,
+                'todayBtn' => true,
+            ]
+        ]
+    )->label(Yii::t('app', 'Max Date'));;
+    ?>
     <?= $form->field($model, 'allData')->checkBox(['checked' => false]) ?>
-     <br><div class="form-group">
-        <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>'.' '.Yii::t('app', 'Run'), ['class' => 'btn btn-success btn-lg']) ?>
-        <?= Html::a('<i class="fa fa-fw fa-eraser"></i>'.' '."Erase", Url::toRoute(['index']), ['class' => 'btn btn-danger btn-lg']) ?>
+    <br>
+    <div class="form-group">
+        <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Run'), ['class' => 'btn btn-success btn-lg']) ?>
+        <?= Html::a('<i class="fa fa-fw fa-eraser"></i>' . ' ' . "Erase", Url::toRoute(['index']), ['class' => 'btn btn-danger btn-lg']) ?>
     </div>
     <?php ActiveForm::end(); ?>
 

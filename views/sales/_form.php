@@ -4,10 +4,9 @@ use app\models\base\Currancy;
 use app\models\CompanyInfo;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use dosamigos\datepicker\DatePicker;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
-
+use kartik\date\DatePicker;
 /* @var $this yii\web\View */
 /* @var $model app\models\Sales */
 /* @var $form yii\widgets\ActiveForm */
@@ -63,21 +62,20 @@ $company = CompanyInfo::find()->one();
                 ],
             ]); ?>
 
-            <?=
-            $form->field($model, 'at')->widget(
-                DatePicker::class,
-                [
-                    'value' => '02-16-2012',
-                    'language' => 'ar',
-                    'clientOptions' => [
-                        'autoclose' => true,
-                        'format' => 'yyyy-mm-dd',
-                        'todayHighlight' => true,
-                        'todayBtn' => true,
-                    ]
+            <?php
+            echo '<label class="form-label">تاريخ الفاتورة</label>';
+            echo  DatePicker::widget([
+                'model' => $model,
+                'attribute' => 'at',
+                'options' => ['placeholder' => 'Enter date ...'],
+                'pluginOptions' => [
+                    'autoclose' => true,
+                    'format' => 'yyyy-mm-dd',
+                    'todayHighlight' => true,
                 ]
-            ) ?>
-
+            ]);
+            ?>
+            <br>
 
             <?php
             if (Yii::$app->user->identity->client <> null) {
@@ -133,20 +131,20 @@ $company = CompanyInfo::find()->one();
 
             ?>
 
-            <?=
-            $form->field($model, 'deserving')->widget(
-                DatePicker::class,
-                [
-                    'value' => '02-16-2012',
-                    'language' => 'ar',
-                    'clientOptions' => [
-                        'autoclose' => true,
-                        'format' => 'yyyy-mm-dd',
-                        'todayHighlight' => true,
-                        'todayBtn' => true,
-                    ]
+            <?php
+            echo '<label class="form-label">تاريخ الاستحقاق</label>';
+
+            echo DatePicker::widget([
+                'model' => $model,
+                'attribute' => 'deserving',
+                'options' => ['placeholder' => 'Enter Deserving ...'],
+                'pluginOptions' => [
+                    'autoclose' => true,
+                    'format' => 'yyyy-mm-dd',
+                    'todayHighlight' => true,
                 ]
-            ) ?>
+            ]);
+            ?>
             <br>
 
             <?php echo $form->field($model, 'wholesale')->checkbox(['checked' => false]); ?>
