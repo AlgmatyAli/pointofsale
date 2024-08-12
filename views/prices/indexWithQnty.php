@@ -45,7 +45,20 @@ $this->registerJs($search);
             'filterInputOptions' => ['placeholder' => 'Category', 'id' => 'grid-prices-search-category']
         ],
 
-        'category0.company',
+        [
+            'attribute' => 'company',
+            'label' => Yii::t('app', 'Company'),
+            'value' => function ($model) {
+                return $model->category0->company;
+            },
+            'filterType' => GridView::FILTER_SELECT2,
+            'filter' => \yii\helpers\ArrayHelper::map(\app\models\Category::find()->asArray()->all(), 'company', 'company'),
+            'filterWidgetOptions' => [
+                'pluginOptions' => ['allowClear' => true],
+            ],
+            'filterInputOptions' => ['placeholder' => 'Company', 'company' => 'grid-prices-search-category']
+        ],
+
 
         'category0.serialNo',
 
