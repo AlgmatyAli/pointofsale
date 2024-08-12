@@ -166,7 +166,7 @@ use yii\widgets\Pjax;
         <div class="col-md-4">
             <?php
             echo '<label class="form-label">تاريخ الفاتورة</label>';
-            echo  DateDatePicker::widget([
+            echo  DatePicker::widget([
                 'model' => $model,
                 'attribute' => 'at',
                 'options' => ['placeholder' => 'Enter date ...'],
