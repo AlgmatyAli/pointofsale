@@ -15,6 +15,7 @@ use yii\behaviors\BlameableBehavior;
  * @property integer $payWay
  * @property integer $branch
  * @property integer $user_insert
+ * @property integer $currancy
  */
 class Ftran extends \yii\db\ActiveRecord
 {
@@ -39,7 +40,7 @@ class Ftran extends \yii\db\ActiveRecord
     {
         return [
             [['date_', 'wared', 'payWay', 'branch'], 'required'],
-            [['date_'], 'safe'],
+            [['date_', 'today'], 'safe'],
             [['wared'], 'number'],
             [['sader', 'payWay', 'branch', 'user_insert'], 'integer'],
             [['description'], 'string', 'max' => 288]
@@ -70,6 +71,7 @@ class Ftran extends \yii\db\ActiveRecord
             'min_date' => Yii::t('app', 'Min Date'),
             'max_date' => Yii::t('app', 'Max Date'),
             'currancy' => Yii::t('app', 'Currancy'),
+            'today' => Yii::t('app', 'Today'),
         ];
     }
 

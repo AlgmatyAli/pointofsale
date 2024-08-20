@@ -29,7 +29,12 @@ use Yii;
  * @property string $created_at
  * @property int|null $user_update
  * @property string|null $update_at
- *
+ * @property int|null $disscount
+ * @property int|null $deleviried
+ * @property int|null $wholesale
+ * @property int|null $currancy
+ * @property int|null $packing $name
+
  * @property Branches $br
  * @property User $carpenter0
  * @property Client $c

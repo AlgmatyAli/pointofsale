@@ -401,6 +401,7 @@ return [
     'Update Sales Prices' => 'تعديل اسعار البيع بالفاتورة',
     'Change Sale Price' => 'تعديل سعر البيع',
     'Post Paid' => 'امكانية الدفع بالاجل',
+    'Today' => 'عرض عمل اليوم',
 ];
 
 ?>

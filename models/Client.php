@@ -26,6 +26,7 @@ use Yii;
  * @property Purchases[] $purchases
  * @property Receipt[] $receipts
  * @property Sales[] $sales
+ * @property int $post_paid
  */
 class Client extends \yii\db\ActiveRecord
 {

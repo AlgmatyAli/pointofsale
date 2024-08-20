@@ -36,13 +36,13 @@ class SalesController extends Controller
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
                 ],
             ],
             'access' => [
-                'class' => \yii\filters\AccessControl::className(),
+                'class' => Yii\filters\AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
@@ -124,7 +124,7 @@ class SalesController extends Controller
     public function actionView($id)
     {
         $model = $this->findModel($id);
-        $providerSalesDetails = new \yii\data\ArrayDataProvider([
+        $providerSalesDetails = new Yii\data\ArrayDataProvider([
             'allModels' => $model->salesDetails,
             'sort' => [
                 'defaultOrder' => [
@@ -354,6 +354,11 @@ class SalesController extends Controller
 
         if ($model->load(Yii::$app->request->post())) {
 
+            if ($model->today != 0) {
+                $model->min_date = date('Y-m-d');
+                $model->max_date = date('Y-m-d');
+            }
+
             if ($model->min_date == null) {
                 echo
                 '<script type="text/javascript"> alert(\'الرجاء تحديد تاريخ الحركة من\');
@@ -367,12 +372,14 @@ class SalesController extends Controller
                         </script>';
             }
 
+
+
             if ($model->user_insert != null) {
                 $sqlSum = " SELECT 
             sum(ftran.sader) as sader, sum(ftran.wared) as wared FROM ftran
             where ftran.date_ < '" . $model->min_date . "' and ftran.outBox =0 and ftran.branch =" . Yii::$app->user->identity->branch . " 
              and currancy = '" . $model->currancy . "' and ftran.user_insert ='" . $model->user_insert . "'";
-                $connection = \Yii::$app->db;
+                $connection = Yii::$app->db;
                 $data = $connection->createCommand($sqlSum);
                 $lastBalance = $data->queryAll();
 
@@ -384,7 +391,7 @@ class SalesController extends Controller
                 $sqlSum = " SELECT 
             sum(ftran.sader) as sader, sum(ftran.wared) as wared FROM ftran
             where ftran.date_ < '" . $model->min_date . "' and ftran.outBox =0 and currancy = '" . $model->currancy . "' and ftran.branch =" . Yii::$app->user->identity->branch . " ";
-                $connection = \Yii::$app->db;
+                $connection = Yii::$app->db;
                 $data = $connection->createCommand($sqlSum);
                 $lastBalance = $data->queryAll();
 
@@ -393,7 +400,7 @@ class SalesController extends Controller
             and ftran.date_  between '" . $model->min_date . "' and '" . $model->max_date . "' and currancy = '" . $model->currancy . "' and ftran.outBox = 0 order by ftran.date_  ";
             }
 
-            $connection = \Yii::$app->db;
+            $connection = Yii::$app->db;
             $data = $connection->createCommand($sql);
             $info = $data->queryAll();
             if ($info == null) {
@@ -430,6 +437,13 @@ class SalesController extends Controller
             $model->payWay = 1;
         }
         if ($model->load(Yii::$app->request->post())) {
+
+            if($model->c->post_paid != 1){
+                if($model->payWay != 0){
+                    Yii::$app->session->setFlash('error', Yii::t('app', "عفوا هذا الزبون لايمكن البيع له بالآجل"));
+                    return $this->redirect(['temp-invoice/create', 'id' => 1]);
+                }
+            }
 
             $debtBalance = Client::find()->select('debt')->where(['=', 'id', $model->clinet])->one();
             $balance = Dept::find()->where(['id' => $model->clinet])->sum('credt');
@@ -790,7 +804,7 @@ class SalesController extends Controller
                 left JOIN category_reservation on salesDetails.category = category_reservation.category
                 where sales.id = " . $id . " and Totalinventory.branch = " . Yii::$app->user->identity->branch . " and Totalinventory.type <> 3 
                 ";
-        $connection = \Yii::$app->db;
+        $connection = Yii::$app->db;
         $data = $connection->createCommand($sql);
         $info = $data->queryAll();
         return $this->render('printBill', [
@@ -858,7 +872,7 @@ class SalesController extends Controller
                 order by salesDetails.category ";
             }
 
-            $connection = \Yii::$app->db;
+            $connection = Yii::$app->db;
             $data = $connection->createCommand($sql);
             $info = $data->queryAll();
             if ($info == null) {
@@ -967,7 +981,7 @@ class SalesController extends Controller
             FROM  emp_salary
             where emp_salary.at  between '" . $model->min_date . "' and '" . $model->max_date . "'";
             }
-            $connection = \Yii::$app->db;
+            $connection = Yii::$app->db;
             $data = $connection->createCommand($sql);
             $info = $data->queryAll();
             if ($info == null) {
@@ -1041,7 +1055,7 @@ class SalesController extends Controller
             $whereBranch = 'branch in (1,2,3,4,5,6,7,8,9)';
         }
 
-        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        Yii::$app->response->format = Yii\web\Response::FORMAT_JSON;
         $out = ['results' => ['id' => '', 'text' => '']];
         if (!is_null($q)) {
             $q = str_replace(' ', '%', $q);
@@ -1049,7 +1063,10 @@ class SalesController extends Controller
             $query = new Query;
             if (Yii::$app->user->identity->client != null) {
                 $secript = [
-                    'category.id', 'category.name AS text', 'company AS company', 'stocks.quantity as quantity',
+                    'category.id',
+                    'category.name AS text',
+                    'company AS company',
+                    'stocks.quantity as quantity',
                     $maxPrice,
                     'serialNo AS serialNo',
                     'place',
@@ -1067,7 +1084,10 @@ class SalesController extends Controller
                     //     $secript = ['category.id, name AS text, company AS company, stocks.quantity as quantity,
                     // maxPrice as maxPrice, costPrice as costPrice, serialNo AS serialNo, minPrice AS minPrice, place, commCode,
                     $secript = [
-                        'category.id', 'category.name AS text', 'company AS company', 'stocks.quantity as quantity',
+                        'category.id',
+                        'category.name AS text',
+                        'company AS company',
+                        'stocks.quantity as quantity',
                         // 'CASE
                         //      WHEN maxPrice >= '. $criteriaـvalue .' THEN round(maxPrice * "' . $rate . '" + maxPrice)
                         //      ELSE maxPrice
@@ -1092,7 +1112,10 @@ class SalesController extends Controller
                     ];
                 } else {
                     $secript = [
-                        'category.id', 'category.name AS text', 'company AS company', 'stocks.quantity as quantity',
+                        'category.id',
+                        'category.name AS text',
+                        'company AS company',
+                        'stocks.quantity as quantity',
                         // 'CASE
                         //     WHEN maxPrice >= '. $criteriaـvalue . ' THEN round(maxPrice * "' . $rate . '" + maxPrice)
                         //     ELSE maxPrice
@@ -1104,7 +1127,8 @@ class SalesController extends Controller
                         //     ELSE minPrice
                         //     END  as minPrice',
                         $minPrice,
-                        'place', 'commCode',
+                        'place',
+                        'commCode',
                         'CASE
                         WHEN `type` =1
                         THEN "متوفر"
@@ -1139,9 +1163,15 @@ class SalesController extends Controller
             $out['results'] = array_values($data);
         } elseif ($id > 0) {
             $out['results'] = [
-                'id' => $id, 'text' => TotalInventory::find($id)->name,
-                'company' => TotalInventory::find($id)->company, 'quantity' => TotalInventory::find($id)->quantity,
-                'maxPrice' => TotalInventory::find($id)->maxPrice, 'minPrice' => TotalInventory::find($id)->minPrice, 'serialNo' => TotalInventory::find($id)->serialNo, 'type' => TotalInventory::find($id)->type, 'commCode' => TotalInventory::find($id)->commCode
+                'id' => $id,
+                'text' => TotalInventory::find($id)->name,
+                'company' => TotalInventory::find($id)->company,
+                'quantity' => TotalInventory::find($id)->quantity,
+                'maxPrice' => TotalInventory::find($id)->maxPrice,
+                'minPrice' => TotalInventory::find($id)->minPrice,
+                'serialNo' => TotalInventory::find($id)->serialNo,
+                'type' => TotalInventory::find($id)->type,
+                'commCode' => TotalInventory::find($id)->commCode
             ];
         }
         return $out;
@@ -1196,7 +1226,8 @@ class SalesController extends Controller
                 }
             }
             $temp_invoice = TempBackSales::deleteAll([
-                'created_by' => Yii::$app->user->identity->id, 'state' => 1
+                'created_by' => Yii::$app->user->identity->id,
+                'state' => 1
             ]);
 
             return $this->redirect(['print', 'id' => $id]);
@@ -1284,7 +1315,7 @@ class SalesController extends Controller
 
         $company = CompanyInfo::find()->one();
         $model = $this->findModel($id);
-        $providerSalesDetails = new \yii\data\ArrayDataProvider([
+        $providerSalesDetails = new Yii\data\ArrayDataProvider([
             'allModels' => $model->salesDetails,
             'pagination' => false,
         ]);
@@ -1381,7 +1412,7 @@ class SalesController extends Controller
             $modelTempInvoice->save(false);
             SalesDetails::deleteAll(['id' => $id]);
             if ($sale->type == 1) {
-                \Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + $data->quantity 
+                Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + $data->quantity 
                 WHERE category=:category
                 and branch = :branch
                 and type = :type")
@@ -1390,7 +1421,7 @@ class SalesController extends Controller
                     ->bindValue(':type', 1)
                     ->execute();
             } elseif ($sale->type == 3) {
-                \Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + $data->quantity 
+                Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + $data->quantity 
                 WHERE category=:category
                 and branch = :branch
                 and type = :type")
@@ -1445,20 +1476,25 @@ class SalesController extends Controller
             $minPrice = 'minPrice';
         }
 
-        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        Yii::$app->response->format = Yii\web\Response::FORMAT_JSON;
         $out = ['results' => ['id' => '', 'text' => '']];
         if (!is_null($q)) {
             $q = str_replace(' ', '%', $q);
             $query = new Query;
             if (Yii::$app->user->identity->client != null) {
                 $secript = [
-                    'category.id', 'category.name AS text', 'company AS company', 'stocks.quantity as quantity',
+                    'category.id',
+                    'category.name AS text',
+                    'company AS company',
+                    'stocks.quantity as quantity',
                     // 'CASE
                     //          WHEN maxPrice >= '. $criteriaـvalue .' THEN round(maxPrice * "' . $rate . '" + maxPrice)
                     //          ELSE maxPrice
                     //          END  as maxPrice',
                     $maxPrice,
-                    'serialNo AS serialNo', 'place', 'commCode',
+                    'serialNo AS serialNo',
+                    'place',
+                    'commCode',
                     'CASE
                 WHEN `type` =1
                 THEN "متوفر"
@@ -1470,19 +1506,24 @@ class SalesController extends Controller
             } else {
                 if (Yii::$app->user->identity->seeCostPrice == 1) {
                     $secript = [
-                        'category.id', 'category.name AS text', 'company AS company', 'stocks.quantity as quantity',
+                        'category.id',
+                        'category.name AS text',
+                        'company AS company',
+                        'stocks.quantity as quantity',
                         // 'CASE
                         //      WHEN maxPrice >= '. $criteriaـvalue .' THEN round(maxPrice * "' . $rate . '" + maxPrice)
                         //      ELSE maxPrice
                         //      END  as maxPrice',
                         $maxPrice,
-                        'costPrice as costPrice', 'serialNo AS serialNo',
+                        'costPrice as costPrice',
+                        'serialNo AS serialNo',
                         // 'CASE
                         //     WHEN minPrice >= '. $criteriaـvalue . ' THEN round(minPrice * "' . $rate . '" + minPrice)
                         //     ELSE minPrice
                         //     END  as minPrice',
                         $minPrice,
-                        'place', 'commCode',
+                        'place',
+                        'commCode',
                         'CASE
             WHEN `type` =1
             THEN "متوفر"
@@ -1493,7 +1534,10 @@ class SalesController extends Controller
                     ];
                 } else {
                     $secript = [
-                        'category.id', 'category.name AS text', 'company AS company', 'stocks.quantity as quantity',
+                        'category.id',
+                        'category.name AS text',
+                        'company AS company',
+                        'stocks.quantity as quantity',
                         // 'CASE
                         //      WHEN maxPrice >= '. $criteriaـvalue .' THEN round(maxPrice * "' . $rate . '" + maxPrice)
                         //      ELSE maxPrice
@@ -1505,7 +1549,8 @@ class SalesController extends Controller
                         //     ELSE minPrice
                         //     END  as minPrice',
                         $minPrice,
-                        'place', 'commCode',
+                        'place',
+                        'commCode',
                         'CASE
             WHEN `type` =1
             THEN "متوفر"
@@ -1534,9 +1579,15 @@ class SalesController extends Controller
             $out['results'] = array_values($data);
         } elseif ($id > 0) {
             $out['results'] = [
-                'id' => $id, 'text' => TotalInventory::find($id)->name,
-                'company' => TotalInventory::find($id)->company, 'quantity' => TotalInventory::find($id)->quantity,
-                'maxPrice' => TotalInventory::find($id)->maxPrice, 'minPrice' => TotalInventory::find($id)->minPrice, 'serialNo' => TotalInventory::find($id)->serialNo, 'type' => TotalInventory::find($id)->type, 'commCode' => TotalInventory::find($id)->commCode
+                'id' => $id,
+                'text' => TotalInventory::find($id)->name,
+                'company' => TotalInventory::find($id)->company,
+                'quantity' => TotalInventory::find($id)->quantity,
+                'maxPrice' => TotalInventory::find($id)->maxPrice,
+                'minPrice' => TotalInventory::find($id)->minPrice,
+                'serialNo' => TotalInventory::find($id)->serialNo,
+                'type' => TotalInventory::find($id)->type,
+                'commCode' => TotalInventory::find($id)->commCode
             ];
         }
         return $out;
@@ -1711,7 +1762,7 @@ class SalesController extends Controller
             'models' => $info,
             'balance' => $balance,
         ]);
-        Yii::$app->response->format = \yii\web\Response::FORMAT_RAW;
+        Yii::$app->response->format = Yii\web\Response::FORMAT_RAW;
 
         // setup kartik\mpdf\Pdf component
         $pdf = new Pdf([

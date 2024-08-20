@@ -69,6 +69,9 @@ use yii\helpers\ArrayHelper;
             ]
         ]
         ); ?>
+
+        <?= $form->field($model, 'today')->checkBox(['checked' => false]) ?>
+
      <br>
 
     <br><div class="form-group">
