@@ -233,6 +233,13 @@ class SalesController extends Controller
         }
 
         if ($model->load(Yii::$app->request->post())) {
+            $post_paid = Client::find()->select('post_paid')->where(['=', 'id', $model->clinet])->one();
+            if ($post_paid != 1) {
+                if ($model->payWay != 0) {
+                    Yii::$app->session->setFlash('error', Yii::t('app', "عفوا هذا الزبون لايمكن البيع له بالآجل"));
+                    return $this->redirect(['temp-invoice/create', 'id' => 1]);
+                }
+            }
             $model->total = SalesDetails::find()->where(['salesId' => $id])->sum('salePrice * quantity');
 
             $debtBalance = Client::find()->select('debt')->where(['=', 'id', $model->clinet])->one();
@@ -439,8 +446,8 @@ class SalesController extends Controller
         if ($model->load(Yii::$app->request->post())) {
             $post_paid = Client::find()->select('post_paid')->where(['=', 'id', $model->clinet])->one();
 
-            if($post_paid != 1){
-                if($model->payWay != 0){
+            if ($post_paid != 1) {
+                if ($model->payWay != 0) {
                     Yii::$app->session->setFlash('error', Yii::t('app', "عفوا هذا الزبون لايمكن البيع له بالآجل"));
                     return $this->redirect(['temp-invoice/create', 'id' => 1]);
                 }
