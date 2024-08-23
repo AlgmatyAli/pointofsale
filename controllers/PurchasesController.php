@@ -326,7 +326,7 @@ class PurchasesController extends Controller
                         $prices = new Prices();
                         $prices->category = $value->category;
                         $prices->costPrice = $total_cost;
-                        $prices->minPrice = $value->salePrice;
+                        $prices->minPrice = $value->salePric_;
                         $prices->minPrice2 = $value->salePrice_2;
                         $prices->minPrice3 = $value->salePrice_3;
                         $prices->maxPrice = $value->salePrice;
