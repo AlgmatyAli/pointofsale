@@ -13,16 +13,16 @@ $this->params['breadcrumbs'][] = $this->title;
 <div class="client-index">
 
     <h1><?= Html::encode($this->title) ?></h1>
+    <hr>
 
-    <p>
-        <?= Html::a(Yii::t('app', 'Create Client'), ['create'], ['class' => 'btn btn-success']) ?>
-    </p>
 
     <?php Pjax::begin(); ?>
-    <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
+    <?php // echo $this->render('_search', ['model' => $searchModel]); 
+    ?>
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
+        'summary'=> '',
         'filterModel' => $searchModel,
         'columns' => [
             ['class' => 'yii\grid\SerialColumn'],

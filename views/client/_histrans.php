@@ -2,7 +2,7 @@
 
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use dosamigos\datepicker\DatePicker;
+use kartik\date\DatePicker;
 use yii\helpers\Url;
 use kartik\depdrop\DepDrop;
 
@@ -26,7 +26,7 @@ use kartik\depdrop\DepDrop;
     ?>
     
     <?php
-    echo $form->field($model, 'id')->widget(DepDrop::classname(), [
+    echo $form->field($model, 'id')->widget(DepDrop::class, [
     'type' => DepDrop::TYPE_SELECT2,
     'options'=>['id'=>'type1-id'],
     'pluginOptions'=>[
@@ -40,10 +40,10 @@ use kartik\depdrop\DepDrop;
 
      <?=
          $form->field($model, 'min_date')->widget(
-        DatePicker::className(),
+        DatePicker::class,
         [
             'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,
@@ -54,10 +54,10 @@ use kartik\depdrop\DepDrop;
         ?>
         <?=
          $form->field($model, 'max_date')->widget(
-        DatePicker::className(),
+        DatePicker::class,
         [
             'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,
