@@ -95,10 +95,8 @@ use kartik\widgets\SwitchInput;
 
     <div class='row'>
         <div class='col-md-6'>
-            <?= $form->field($model, 'terms')->widget(CKEditor::class, [
-                'options' => ['rows' => 6],
-                'preset' => 'basic'
-            ]) ?>
+        <?= $form->field($model, 'terms')->textarea(['rows' => 6]) ?>
+
         </div>
         <div class='col-md-2' style="height: 3%;">
             <?php
