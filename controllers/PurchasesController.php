@@ -301,7 +301,7 @@ class PurchasesController extends Controller
                         $command->execute();
                     }
                     // ====================
-                    $inventory =  Stocks::find()->select('sum(quantity) as quantity')->where('id=' . $value->category)
+                    $inventory =  Stocks::find()->select('sum(quantity) as quantity')->where('category = ' . $value->category)
                         ->andWhere('type = 1')->one();
                     $prices = Prices::find()->where('category = ' . $value->category)->one();
                     //============== calculate avarage of cost
