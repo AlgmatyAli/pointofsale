@@ -83,7 +83,7 @@ class CategoryController extends Controller
                     ],
                     [
                         'allow' => true,
-                        'actions' => ['info'],
+                        'actions' => ['info', 'image'],
                         'roles' => ['info'],
                     ],
                     [
@@ -789,5 +789,18 @@ class CategoryController extends Controller
             'model' => $model,
             'data' => $data
         ]);
+    }
+
+    public function actionImage($id)
+    {
+        $model = Category::find()->where(['id' => $id])->one();
+
+        if ($model->load(Yii::$app->request->post())) {
+            return $this->redirect(Yii::$app->request->referrer);
+        } elseif (Yii::$app->request->isAjax) {
+            return $this->renderAjax('previewImage', [
+                'model' => $model,
+            ]);
+        }
     }
 }

@@ -585,13 +585,13 @@ JS;
                 'class' => 'kartik\grid\EditableColumn',
                 'attribute' => Yii::t('app', 'category'),
                 'label' => Yii::t('app', 'ID'),
-                'contentOptions' => ['style' => 'font-size:14px;'],
-                'headerOptions' => ['style' => 'width:15%'],
+                // 'contentOptions' => ['style' => 'font-size:14px;'],
+                'headerOptions' => ['style' => 'width:5%'],
             ],
 
             [
                 'attribute' => 'category',
-                'headerOptions' => ['style' => 'width:40%'],
+                'headerOptions' => ['style' => 'width:30%'],
                 'value' => function ($model) {
                     return Html::a(Yii::t('app', ' {modelClass}', [
                         'modelClass' => $model->category0->name,
@@ -604,8 +604,8 @@ JS;
                 'class' => 'kartik\grid\EditableColumn',
                 'attribute' => Yii::t('app', 'serial_number'),
                 'label' => Yii::t('app', 'Serial No'),
-                'contentOptions' => ['style' => 'font-size:14px;'],
-                'headerOptions' => ['style' => 'width:15%'],
+                //'contentOptions' => ['style' => 'font-size:14px;'],
+                'headerOptions' => ['style' => 'width:10%'],
                 'value' => 'category0.serialNo',
                 'editableOptions' => [
                     'asPopover' => true,
@@ -616,8 +616,8 @@ JS;
                 'class' => 'kartik\grid\EditableColumn',
                 'attribute' => Yii::t('app', 'serial_number'),
                 'label' => Yii::t('app', 'Comm Code'),
-                'contentOptions' => ['style' => 'font-size:14px;'],
-                'headerOptions' => ['style' => 'width:15%'],
+                //'contentOptions' => ['style' => 'font-size:14px;'],
+                'headerOptions' => ['style' => 'width:10%'],
                 'value' => 'category0.commCode',
                 'editableOptions' => [
                     'asPopover' => true,
@@ -628,8 +628,8 @@ JS;
                 'class' => 'kartik\grid\EditableColumn',
                 'attribute' => 'quantity',
                 'label' => Yii::t('app', 'quantity'),
-                'contentOptions' => ['style' => 'font-size:14px;'],
-                'headerOptions' => ['style' => 'width:15%'],
+                //'contentOptions' => ['style' => 'font-size:14px;'],
+                'headerOptions' => ['style' => 'width:8%'],
                 'editableOptions' => [
                     'asPopover' => true,
                 ],
@@ -640,8 +640,8 @@ JS;
                 'class' => 'kartik\grid\EditableColumn',
                 'attribute' => 'waitQnty',
                 'label' => Yii::t('app', 'Wait Qnty'),
-                'contentOptions' => ['style' => 'font-size:14px;'],
-                'headerOptions' => ['style' => 'width:15%'],
+                //'contentOptions' => ['style' => 'font-size:14px;'],
+                'headerOptions' => ['style' => 'width:8%'],
                 'editableOptions' => [
                     'asPopover' => true,
                 ],
@@ -650,8 +650,8 @@ JS;
             [
                 'class' => 'kartik\grid\EditableColumn',
                 'attribute' => Yii::t('app', 'salePrice'),
-                'contentOptions' => ['style' => 'font-size:14px;'],
-                'headerOptions' => ['style' => 'width:15%'],
+                //'contentOptions' => ['style' => 'font-size:14px;'],
+                'headerOptions' => ['style' => 'width:8%'],
                 'editableOptions' => [
                     'asPopover' => true,
                 ],
@@ -667,7 +667,7 @@ JS;
                 },
                 'headerOptions' => ['class' => 'kartik-sheet-style'],
                 'hAlign' => 'right',
-                'width' => '15%',
+                'width' => '10%',
                 'format' => ['decimal', 3],
                 'mergeHeader' => true,
                 'pageSummary' => true,
@@ -676,8 +676,16 @@ JS;
 
             [
                 'class' => 'yii\grid\ActionColumn',
-                'template' => '<div class="btn-group btn-group-sm" role="group" aria-label="...">{delete}</div>',
+                'template' => '<div class="btn-group btn-group-sm" role="group" aria-label="...">{delete}{image}</div>',
                 'buttons' => [
+                    'image' => function ($url, $model, $key) {
+                        $url = Url::to(['category/image', 'id' => $model['category']]);
+                        return Html::a(
+                            '<span class="glyphicon glyphicon-open"></span>',
+                            $url,
+                            ['class' => 'btn btn-default popupModal']
+                        );
+                    },
                     'delete' => function ($url) {
                         return Html::a('<i class="fa fa-trash"></i>', $url, [
                             'title' => Yii::t('yii', 'Delete'),
