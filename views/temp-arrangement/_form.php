@@ -115,7 +115,7 @@ echo $form->field($model, 'category')->widget(Select2::class, [
         'change' => 'function(event){
            var data_id = event.currentTarget.value;
            $.get("' . Url::to(['except/get-inv']) . '&category="+data_id, function(data){
-               var data = $.parseJSON(data);
+              
                if(data != null){
                $("#temparrangement-realquantity").val(data.quantity);
                }
@@ -123,6 +123,7 @@ echo $form->field($model, 'category')->widget(Select2::class, [
        }',
     ],
 ]);
+//  var data = $.parseJSON(data);
 ?>
 <div class="row">
     <div class="col-md-4">
