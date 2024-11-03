@@ -191,7 +191,7 @@ JS;
                 'change' => 'function(event){
             var data_id = event.currentTarget.value;
             $.get("' . Url::to(['temp-invoice-purchase/get-inv']) . '&category="+data_id, function(data){
-                var data=$.parseJSON(data);
+                
                 if(data != null){
                 $("#tempinvoicepurchase-quantity").val(data.quantity);
                 $("#tempinvoicepurchase-costprice").val(data.costPrice);
@@ -206,6 +206,7 @@ JS;
             ]
 
         ]);
+        //var data=$.parseJSON(data);
         ?>
 
     </div>

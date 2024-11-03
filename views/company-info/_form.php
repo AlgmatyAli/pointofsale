@@ -140,6 +140,14 @@ use kartik\widgets\SwitchInput;
                     'offColor' => 'danger',
                 ]
             ]); ?>
+                        <?php
+            echo $form->field($model, 'zeroQnty')->widget(SwitchInput::class, [
+                'pluginOptions' => [
+                    'size' => 'small',
+                    'onColor' => 'success',
+                    'offColor' => 'danger',
+                ]
+            ]); ?>
         </div>
     </div>
     <?php //echo $form->field($model, 'file')->widget(FileInput::class,['options' => ['accept' => '*/*','id'=>'files'],]);  

@@ -124,7 +124,7 @@ use yii\widgets\Pjax;
     <hr>
     <?= $form->errorSummary($model); ?>
     <div class="row">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <?= $form->field($model, 'type')->dropDownList(['2' => 'مسترجع مبيعات', '1' => 'فاتورة نهائية', '3' => 'فاتورة حجز', '4' => 'فاتورة مبدئية'])->label(yii::t('app', 'Invoice Type')) ?>
             <?php
             if (Yii::$app->user->identity->client <> null) {
@@ -152,18 +152,8 @@ use yii\widgets\Pjax;
             }
             ?>
             <?= $form->field($model, 'notes')->textInput(['maxlength' => true, 'placeholder' => 'Notes']) ?>
-            <?php
-            echo $form->field($model, 'currancy')->widget(Select2::class, [
-                'data' => ArrayHelper::map(Currancy::find()->all(), 'id', 'name'),
-                'language' => 'ar',
-                'pluginOptions' => [
-                    'allowClear' => true,
-                    'multiple' => false,
-                ],
-            ]);
-            ?>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <?php
             echo '<label class="form-label">تاريخ الفاتورة</label>';
             echo  DatePicker::widget([
@@ -203,6 +193,22 @@ use yii\widgets\Pjax;
             ]);
             ?>
 
+
+        </div>
+        <div class="col-md-3">
+            <?= $form->field($model, 'total')->textInput(['placeholder' => 'Total']) ?>
+
+            <?= $form->field($model, 'disscount')->textInput(['placeholder' => 'Disscount']) ?>
+
+            <?php
+            if (Yii::$app->user->identity->client == NULL) {
+                echo $form->field($model, 'paid')->textInput(['placeholder' => 'Paid']);
+            } else {
+                echo $form->field($model, 'paid')->textInput(['placeholder' => 'Paid', 'disabled' => true]);
+            }
+            ?>
+        </div>
+        <div class="col-md-3">
             <?=
             $form->field($model, 'deleviryAt')->widget(
                 DatePicker::class,
@@ -219,18 +225,15 @@ use yii\widgets\Pjax;
                 ]
             )->label('تاريخ التسليم')
             ?>
-        </div>
-        <div class="col-md-4">
-            <?= $form->field($model, 'total')->textInput(['placeholder' => 'Total']) ?>
-
-            <?= $form->field($model, 'disscount')->textInput(['placeholder' => 'Disscount']) ?>
-
             <?php
-            if (Yii::$app->user->identity->client == NULL) {
-                echo $form->field($model, 'paid')->textInput(['placeholder' => 'Paid']);
-            } else {
-                echo $form->field($model, 'paid')->textInput(['placeholder' => 'Paid', 'disabled' => true]);
-            }
+            echo $form->field($model, 'currancy')->widget(Select2::class, [
+                'data' => ArrayHelper::map(Currancy::find()->all(), 'id', 'name'),
+                'language' => 'ar',
+                'pluginOptions' => [
+                    'allowClear' => true,
+                    'multiple' => false,
+                ],
+            ]);
             ?>
             <br>
             <?php echo $form->field($model, 'wholesale')->checkbox(); ?>

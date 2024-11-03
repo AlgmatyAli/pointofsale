@@ -37,9 +37,22 @@ class TempInvoiceController extends Controller
                     [
                         'allow' => true,
                         'actions' => [
-                            'create', 'view', 'get-inv', 'delete', 'updatqyt', 'deleteing',
-                            'save', 'delete-all', 'create-ajax', 'createfast', 'hold', 'holded', 'fast',
-                            'unhold', 'add', 'ajax-comment'
+                            'create',
+                            'view',
+                            'get-inv',
+                            'delete',
+                            'updatqyt',
+                            'deleteing',
+                            'save',
+                            'delete-all',
+                            'create-ajax',
+                            'createfast',
+                            'hold',
+                            'holded',
+                            'fast',
+                            'unhold',
+                            'add',
+                            'ajax-comment'
                         ],
                         'roles' => ['createSales'],
                     ],
@@ -134,10 +147,14 @@ class TempInvoiceController extends Controller
                 } else {
                     $branch = [1, 2, 3];
                 }
+               
                 $data = Stocks::find()
                     ->select([
-                        'max(stocks.category) as category', 'sum(stocks.quantity) as quantity', 'max(prices.costPrice) as costPrice',
-                        'max(prices.minPrice) as minPrice', 'max(prices.maxPrice) as maxPrice'
+                        'max(stocks.category) as category',
+                        'sum(stocks.quantity) as quantity',
+                        'max(prices.costPrice) as costPrice',
+                        'max(prices.minPrice) as minPrice',
+                        'max(prices.maxPrice) as maxPrice'
                     ])
                     ->leftJoin('prices', 'stocks.category = prices.category')
                     ->Where(['stocks.branch' => $branch])
@@ -151,7 +168,11 @@ class TempInvoiceController extends Controller
                     ->andWhere(['=', 'state', 1])
                     ->sum('quantity');
 
+            if ($company->zeroQnty == 0) {
                 $balance = $data->quantity - $sumQnty;
+            }else{
+                $balance = $posted['quantity'];
+            }
 
                 if ($posted['quantity'] >= $balance) {
                     $remaining = $balance;
@@ -194,43 +215,55 @@ class TempInvoiceController extends Controller
         // Code to handle non-Ajax request
         //}
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+
             if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
                 $branch = Yii::$app->user->identity->branch;
             } else {
                 $branch = [1, 2, 3];
             }
+
+            if ($company->zeroQnty == 0) {
+                $zeroQnty = 'stocks.quantity <> 0';
+            }else{
+                $zeroQnty = 'stocks.quantity < 0 OR stocks.quantity > 0 Or stocks.quantity = 0';
+            }
+            
             $item = Stocks::find()
                 ->select([
-                    'max(stocks.category) as id', 'sum(stocks.quantity) as quantity',
-                    'max(prices.costPrice) as costPrice', 'max(prices.minPrice) as minPrice', 'max(prices.maxPrice) as maxPrice'
+                    'max(stocks.category) as id',
+                    'sum(stocks.quantity) as quantity',
+                    'max(prices.costPrice) as costPrice',
+                    'max(prices.minPrice) as minPrice',
+                    'max(prices.maxPrice) as maxPrice'
                 ])
                 ->leftJoin('prices', 'stocks.category = prices.category')
                 ->where(['stocks.category' => $model->category])
-                ->andWhere(['<>', 'stocks.quantity', 0])
+                ->andWhere($zeroQnty)//['<>', 'stocks.quantity', 0])
                 ->andwhere(['in', 'stocks.type', $type])
                 ->andWhere(['in', 'stocks.branch', $branch])
                 ->one();
 
-            $sumQnty = TempInvoice::find()
-                ->where(['category' => $model->category, 'created_by' => Yii::$app->user->identity->id,])
-                ->andWhere(['=', 'state', 1])
-                ->sum('quantity');
+            if ($company->zeroQnty == 0) {
+                $sumQnty = TempInvoice::find()
+                    ->where(['category' => $model->category, 'created_by' => Yii::$app->user->identity->id,])
+                    ->andWhere(['=', 'state', 1])
+                    ->sum('quantity');
 
 
-            $balance = $item->quantity - $sumQnty;
+                $balance = $item->quantity - $sumQnty;
 
-            if ($model->quantity > $balance) {
-                $remaining = $balance;
-            } else {
-                $remaining = $model->quantity;
+                if ($model->quantity > $balance) {
+                    $remaining = $balance;
+                } else {
+                    $remaining = $model->quantity;
+                }
+                $model->quantity = $remaining;
+
+                if ($sumQnty >= $item->quantity) {
+                    Yii::$app->response->format = Response::FORMAT_JSON;
+                    return ['error' => true, 'message' => Yii::t('app', "عفوا لقد تجاوزت الكمية الموجودة لايمكنك الاستمرار")];
+                }
             }
-            $model->quantity = $remaining;
-
-            if ($sumQnty >= $item->quantity) {
-                Yii::$app->response->format = Response::FORMAT_JSON;
-                return ['error' => true, 'message' => Yii::t('app', "عفوا لقد تجاوزت الكمية الموجودة لايمكنك الاستمرار")];
-            }
-
             if ($company->repeatCategory == 0) {
 
                 $exist = TempInvoice::find()
@@ -351,10 +384,8 @@ class TempInvoiceController extends Controller
             if ($model->salePrice < $item->costPrice) {
                 Yii::$app->session->setFlash('error', Yii::t('app', "Sorry The SalePrice You Enter Less Than The MinPrice"));
                 return $this->redirect(['create', 'id' => 1]);
-                //exit;
             } else {
                 $model->category = $item->id;
-                // $model->salePrice = $item->maxPrice;
                 $model->costPrice = $item->costPrice;
                 $model->box = $item->box;
                 $model->state = 1;
@@ -364,15 +395,11 @@ class TempInvoiceController extends Controller
 
             return $this->redirect(['createfast', 'id' => 1]);
         } else {
-            //  $company = CompanyInfo::find()->one();
             return $this->render('createfaster', [
                 'model' => $model,
                 'searchModel' => $searchModel,
                 'dataProvider' => $dataProvider,
                 'company' => $company,
-                // 'data'=>$data
-                // 'category'=>$category,
-                // 'client'=>$client,
             ]);
         }
     }
@@ -481,8 +508,6 @@ class TempInvoiceController extends Controller
                 'searchModel' => $searchModel,
                 'dataProvider' => $dataProvider,
                 'data' => $data
-                // 'category'=>$category,
-                // 'client'=>$client,
             ]);
         }
     }
@@ -519,20 +544,14 @@ class TempInvoiceController extends Controller
 
     public function actionUpdatqyt($id, $qyt)
     {
-        //die(print_r($id));
-
         $item = TempInvoice::find()->where(['id' => $id])->one();
         $item->quantity = $qyt;
         $item->save(false);
-
-
         return true;
     }
 
     public function actionDeleteing($id)
     {
-        //die(print_r($id));
-
         $this->findModel($id)->delete();
 
         return true;
@@ -540,7 +559,6 @@ class TempInvoiceController extends Controller
 
     public function actionDelete($id)
     {
-        //die(print_r($id));
         $this->findModel($id)->delete();
 
         return $this->redirect(['create']);
@@ -563,7 +581,6 @@ class TempInvoiceController extends Controller
     public function actionDeleteAll()
     {
         TempInvoice::deleteAll(['state' => 1, 'created_by' => Yii::$app->user->identity->id]);
-        // $this->findModel($id)->deleteWithRelated();
         return $this->redirect(['create']);
     }
 
@@ -591,7 +608,7 @@ class TempInvoiceController extends Controller
             'cssInline' => '.kv-heading-1{font-size:18px}',
             'options' => ['title' => \Yii::$app->name],
             'methods' => [
-                'SetHeader' => [\Yii::$app->name],
+                'SetHeader' => [Yii::$app->name],
                 'SetFooter' => ['{PAGENO}'],
             ]
         ]);
@@ -651,9 +668,6 @@ class TempInvoiceController extends Controller
         ];
 
         TempInvoice::updateAll(['state' => 2, 'invoice_number' => $temp], $condition);
-
-        // ['=', 'state', 1], 
-        // ['=', 'created_by', Yii::$app->user->identity->id]);
         return $this->redirect(['create']);
     }
 
@@ -671,7 +685,6 @@ class TempInvoiceController extends Controller
         ]);
 
         return $this->renderAjax('holded', [
-            // 'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
         ]);
     }
@@ -734,7 +747,7 @@ class TempInvoiceController extends Controller
 
     public function actionInventory($q = null, $id = null)
     {
-        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        Yii::$app->response->format = Yii\web\Response::FORMAT_JSON;
         $out = ['results' => ['id' => '1', 'text' => 'test']];
         if (!is_null($q)) {
             $query = new Query;
@@ -783,7 +796,6 @@ class TempInvoiceController extends Controller
     {
         $model = new TempInvoice();
         $dataProvider = new ActiveDataProvider([
-            // 'query' => Totalinventory::find()
             'query' => Stocks::find()
                 ->select(
                     ' category.id, max(category.name) as name, sum(stocks.quantity) as quantity, max(category.unit) as unit, max(category.company) as company,
@@ -793,10 +805,7 @@ class TempInvoiceController extends Controller
                 ->leftJoin('category', 'category.id = stocks.category')
                 ->leftJoin('prices', 'category.id = prices.category')
                 ->groupBy('stocks.category, stocks.branch')
-                ->having('sum(stocks.quantity) <>0')
-                //->Where(['branch' => Yii::$app->user->identity->branch,]),
-                ->Where(['category.id' => 23]),
-            //->andWhere(['<>', 'quantity', 0]),
+                ->having('sum(stocks.quantity) <> 0'),
             'sort' => [
                 'defaultOrder' => [
                     'id' => SORT_DESC
@@ -807,25 +816,6 @@ class TempInvoiceController extends Controller
 
 
         if ($model->loadAll(Yii::$app->request->post())) {
-
-            //$select = Yii::$app->request->post('TempInvoice')['checkboxValues'];
-            // die(var_dump($select));
-            // foreach ($select as $id) {
-            //     $prices = Prices::find()->where(['category' => $id])->one();
-            //     $category = Category::find()->where(['id' => $id])->one();
-
-            //     $model = new TempInvoice();
-            //     $model->category = $id;
-
-            //     $model->quantity = 0;
-            //     $model->costPrice = $prices->costPrice;
-            //     $model->salePrice = $prices->maxPrice;
-            //     $model->box = $category->box;
-            //     $model->state = 1;
-
-            //     $model->save(false);
-            // }
-
             $textInputValues = Yii::$app->request->post('TempInvoice')['textInputValues'];
             if (!empty($textInputValues)) {
                 foreach ($textInputValues as $id => $textInputValue) {
@@ -852,30 +842,9 @@ class TempInvoiceController extends Controller
         }
 
         return $this->renderAjax('createFast', [
-            // 'searchModel' => $searchModel,
             'model' => $model,
             'dataProvider' => $dataProvider,
         ]);
-
-        // $select = Yii::$app->request->post('selection');
-
-        // foreach ($select as $id) {
-        //     $prices = Prices::find()->where(['category' => $id])->one();
-        //     $category = Category::find()->where(['id' => $id])->one();
-
-        //     $model = new TempInvoice();
-        //     $model->category = $id;
-
-        //     $model->quantity = 1;
-        //     $model->costPrice = $prices->costPrice;
-        //     $model->salePrice = $prices->maxPrice;
-        //     $model->box = $category->box;
-        //     $model->state = 1;
-
-        //     $model->save(false);
-        // }
-
-        // return $this->redirect(['create']);
     }
 
     public function actionSave($id, $salePrice, $costPrice)
@@ -883,7 +852,6 @@ class TempInvoiceController extends Controller
 
         if (Yii::$app->request->isAjax) {
             $data = Yii::$app->request->post();
-            // die(var_dump((float) $maxPrice));
             $model =  new TempInvoice();
 
             $model->salePrice = (float) $salePrice;

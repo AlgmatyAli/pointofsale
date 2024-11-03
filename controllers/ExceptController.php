@@ -39,8 +39,17 @@ class ExceptController extends Controller
             $q = str_replace(' ', '%', $q);
             $query = new Query;
             $secript = [
-                'category.id', 'category.name AS text', 'company AS company', 'stocks.quantity as quantity',
-                'maxPrice as maxPrice', 'costPrice as costPrice', 'serialNo AS serialNo', 'minPrice AS minPrice', 'place', 'commCode', 'branches.name AS BRNAME'
+                'category.id',
+                'category.name AS text',
+                'company AS company',
+                'stocks.quantity as quantity',
+                'maxPrice as maxPrice',
+                'costPrice as costPrice',
+                'serialNo AS serialNo',
+                'minPrice AS minPrice',
+                'place',
+                'commCode',
+                'branches.name AS BRNAME'
             ];
             $query->select(
                 $secript
@@ -95,8 +104,11 @@ class ExceptController extends Controller
         $value = Stocks::find()
             ->leftJoin('prices', 'stocks.category = prices.category')
             ->select([
-                'stocks.category AS id', 'stocks.quantity as quantity', 'costPrice',
-                $maxPrice, $minPrice,
+                'stocks.category AS id',
+                'stocks.quantity as quantity',
+                'costPrice',
+                $maxPrice,
+                $minPrice,
                 'prices.minPrice2',
                 'prices.minPrice3'
             ])
@@ -104,7 +116,9 @@ class ExceptController extends Controller
             ->andwhere(['stocks.category' => $category])
             ->andwhere(['in', 'type',  [1, 2]])
             ->asArray()->one();
-        echo json::encode($value);
+        //echo json::encode($value);
+        Yii::$app->response->format = Yii\web\Response::FORMAT_JSON;
+        return $value;
     }
 
     public function actionItemlistid($q = null, $id = null)
@@ -115,8 +129,16 @@ class ExceptController extends Controller
             $q = str_replace(' ', '%', $q);
             $query = new Query;
             $secript = [
-                'category.id', 'category.name AS text', 'company AS company', 'stocks.quantity as quantity',
-                'maxPrice as maxPrice', 'costPrice as costPrice', 'serialNo AS serialNo', 'minPrice AS minPrice', 'place', 'commCode',
+                'category.id',
+                'category.name AS text',
+                'company AS company',
+                'stocks.quantity as quantity',
+                'maxPrice as maxPrice',
+                'costPrice as costPrice',
+                'serialNo AS serialNo',
+                'minPrice AS minPrice',
+                'place',
+                'commCode',
                 'CASE 
             WHEN `type` =1 
             THEN "متوفر" 
@@ -139,9 +161,15 @@ class ExceptController extends Controller
             $out['results'] = array_values($data);
         } elseif ($id > 0) {
             $out['results'] = [
-                'id' => $id, 'text' => TotalInventory::find($id)->name,
-                'company' => TotalInventory::find($id)->company, 'quantity' => TotalInventory::find($id)->quantity,
-                'maxPrice' => TotalInventory::find($id)->maxPrice, 'minPrice' => TotalInventory::find($id)->minPrice, 'serialNo' => TotalInventory::find($id)->serialNo, 'type' => TotalInventory::find($id)->type, 'commCode' => TotalInventory::find($id)->commCode
+                'id' => $id,
+                'text' => TotalInventory::find($id)->name,
+                'company' => TotalInventory::find($id)->company,
+                'quantity' => TotalInventory::find($id)->quantity,
+                'maxPrice' => TotalInventory::find($id)->maxPrice,
+                'minPrice' => TotalInventory::find($id)->minPrice,
+                'serialNo' => TotalInventory::find($id)->serialNo,
+                'type' => TotalInventory::find($id)->type,
+                'commCode' => TotalInventory::find($id)->commCode
             ];
         }
         return $out;

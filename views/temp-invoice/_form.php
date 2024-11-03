@@ -236,7 +236,7 @@ JS;
                         'change' => 'function(event){
                 var data_id = event.currentTarget.value;
                 $.get("' . Url::to(['except/get-inv']) . '&category="+data_id, function(data){
-                var data=$.parseJSON(data);
+                
                 if(data != null){
                 let maxPrice = parseFloat(data.maxPrice);
                 maxPrice = Math.round(maxPrice);
@@ -265,7 +265,7 @@ JS;
             if (product.loading) {
                 return product.text;
             }
-         
+            // var data=$.parseJSON(data);
     var markup =
      '<div class="row">' +
      '<div class="col-sm-4">' +
@@ -335,7 +335,7 @@ JS;
                         'change' => 'function(event){
                 var data_id = event.currentTarget.value;
                 $.get("' . Url::to(['except/get-inv']) . '&category="+data_id, function(data){
-                var data=$.parseJSON(data);
+                
                 if(data != null){
                $("#tempinvoice-quantity").val(1);
                $("#tempinvoice-saleprice").val(data.maxPrice);
@@ -346,7 +346,7 @@ JS;
                     ],
                 ]);
             }
-
+            //var data=$.parseJSON(data);
 
             ?>
 

@@ -161,6 +161,13 @@ class SalesController extends Controller
         } else {
             $type = [1, 2];
         }
+
+        if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
+            $branch = Yii::$app->user->identity->branch;
+        } else {
+            $branch = [1, 2, 3];
+        }
+
         $dataProvider = new ActiveDataProvider([
             'query' => SalesDetails::find()->where(['=', 'salesId', $id]),
             'sort' => [
@@ -190,20 +197,56 @@ class SalesController extends Controller
                     $delete->quantity = 0;
                     $delete->save();
                     /**get total inventory */
-                    $stockQ = Stocks::find()
-                        ->Where(['branch' => Yii::$app->user->identity->branch])
-                        ->andwhere(['category' => $result->category])
-                        ->andwhere(['in', 'type', $type])
-                        ->one();
-                    /** get if valeu larger than to requsetd val  */
-                    if ($model->type != 2) {
-                        if ($quantity >= abs($stockQ->quantity)) {
-                            $result->quantity = abs($stockQ->quantity);
-                        } else {
-                            $result->quantity = $quantity;
-                        }
+
+                    if ($company->zeroQnty == 0) {
+                        $zeroQnty = 'stocks.quantity <> 0';
+                    } else {
+                        $zeroQnty = 'stocks.quantity < 0 OR stocks.quantity > 0 Or stocks.quantity = 0';
                     }
-                    $result->save(false);
+                    $stockQ = Stocks::find()
+                        ->select(['max(stocks.category) as id', 'sum(stocks.quantity) as quantity'])
+                        ->leftJoin('prices', 'stocks.category = prices.category')
+                        ->where(['stocks.category' => $result->category])
+                        ->andWhere($zeroQnty)
+                        ->andwhere(['in', 'stocks.type', $type])
+                        ->andWhere(['in', 'stocks.branch', $branch])
+                        ->one();
+
+                    // $stockQ = Stocks::find()
+                    //     ->Where(['branch' => Yii::$app->user->identity->branch])
+                    //     ->andwhere(['category' => $result->category])
+                    //     ->andwhere(['in', 'type', $type])
+                    //     ->one();
+                    /** get if valeu larger than to requsetd val  */
+                    
+                    if ($model->type != 2) {
+                        if ($stockQ != NULL) {
+                            //die();
+                            if ($quantity > abs($stockQ->quantity)) {
+                                if ($company->zeroQnty == 0) {
+                                    $result->quantity = abs($stockQ->quantity);
+                                } else {
+                                    $result->quantity = abs($quantity);
+                                }
+                                $result->save(false);
+                            } 
+                        } else {
+                            $result->quantity = 0;
+                            $result->save(false);
+                            $outMessage = 'تم التخزين بقيمة صفر';
+                        }
+
+                        // if ($company->zeroQnty == 0) {
+                        //     if ($quantity >= abs($stockQ->quantity)) {
+                        //         $result->quantity = abs($stockQ->quantity);
+                        //     } else {
+                        //         $result->quantity = $quantity;
+                        //     }
+                        // } else {
+                        //     $result->quantity = $quantity;
+                        // }
+                    }
+                    //$result->save(false);
                     $sale->total = SalesDetails::find()->where(['salesId' => $result->salesId])
                         ->sum('salePrice * quantity');
                     $sale->save(false);
@@ -234,7 +277,7 @@ class SalesController extends Controller
 
         if ($model->load(Yii::$app->request->post())) {
             $post_paid = Client::find()->select('post_paid')->where(['=', 'id', $model->clinet])->one();
-            
+
             if ($post_paid['post_paid'] != 1) {
                 if ($model->payWay != 0) {
                     Yii::$app->session->setFlash('error', Yii::t('app', "عفوا هذا الزبون لايمكن البيع له بالآجل"));
@@ -505,25 +548,39 @@ class SalesController extends Controller
                                 } else {
                                     $branch = [1, 2, 3];
                                 }
+
+                                if ($company->zeroQnty == 0) {
+                                    $zeroQnty = 'stocks.quantity <> 0';
+                                } else {
+                                    $zeroQnty = 'stocks.quantity < 0 OR stocks.quantity > 0 Or stocks.quantity = 0';
+                                }
                                 $item = Stocks::find()
                                     ->select(['max(stocks.category) as id', 'sum(stocks.quantity) as quantity'])
                                     ->leftJoin('prices', 'stocks.category = prices.category')
                                     ->where(['stocks.category' => $data->category])
-                                    ->andWhere(['<>', 'stocks.quantity', 0])
+                                    ->andWhere($zeroQnty) //['<>', 'stocks.quantity', 0])
                                     ->andwhere(['in', 'stocks.type', $model->type])
                                     ->andWhere(['in', 'stocks.branch', $branch])
                                     ->one();
-
+                                //die('1' . ', ZeroQnty =' . $zeroQnty . ', Items =' . $item->quantity . ', DataQuantity = ' . $data->quantity);
                                 if ($item <> null) {
                                     if ($data->quantity > abs($item->quantity)) {
-                                        $modelDetails->quantity = abs($item->quantity);
+                                        if ($company->zeroQnty == 0) {
+                                            $modelDetails->quantity = abs($item->quantity);
+                                        } else {
+                                            $modelDetails->quantity = abs($data->quantity);
+                                        }
+                                        $modelDetails->save(false);
+                                    } elseif ($data->quantity <= abs($item->quantity)) {
+                                        $modelDetails->quantity = $data->quantity;
                                         $modelDetails->save(false);
                                     } else {
-                                        $modelDetails->quantity = abs($data->quantity);
+                                        $modelDetails->quantity = $data->quantity;
                                         $modelDetails->save(false);
                                     }
                                 } else {
                                     $modelDetails->quantity = 0;
+                                    $modelDetails->save(false);
                                 }
 
                                 if ($model->type == 1) {
@@ -600,25 +657,39 @@ class SalesController extends Controller
                             } else {
                                 $branch = [1, 2, 3];
                             }
+                            if ($company->zeroQnty == 0) {
+                                $zeroQnty = 'stocks.quantity <> 0';
+                            } else {
+                                $zeroQnty = 'stocks.quantity < 0 OR stocks.quantity > 0 Or stocks.quantity = 0';
+                            }
 
                             $item = Stocks::find()
                                 ->select(['max(stocks.category) as id', 'sum(stocks.quantity) as quantity'])
                                 ->leftJoin('prices', 'stocks.category = prices.category')
                                 ->where(['stocks.category' => $data->category])
-                                ->andWhere(['<>', 'stocks.quantity', 0])
+                                ->andWhere($zeroQnty) //['<>', 'stocks.quantity', 0])
                                 ->andwhere(['in', 'stocks.type', $model->type])
                                 ->andWhere(['in', 'stocks.branch', $branch])
                                 ->one();
+                            //die('2' . ', ZeroQnty =' . $zeroQnty . ', Items =' . $item->quantity . ', DataQuantity = ' . $data->quantity);
                             if ($item <> null) {
                                 if ($data->quantity > abs($item->quantity)) {
-                                    $modelDetails->quantity = abs($item->quantity);
+                                    if ($company->zeroQnty == 0) {
+                                        $modelDetails->quantity = abs($item->quantity);
+                                    } else {
+                                        $modelDetails->quantity = abs($data->quantity);
+                                    }
+                                    $modelDetails->save(false);
+                                } elseif ($data->quantity <= abs($item->quantity)) {
+                                    $modelDetails->quantity = $data->quantity;
                                     $modelDetails->save(false);
                                 } else {
-                                    $modelDetails->quantity = abs($data->quantity);
+                                    $modelDetails->quantity = $data->quantity;
                                     $modelDetails->save(false);
                                 }
                             } else {
                                 $modelDetails->quantity = 0;
+                                $modelDetails->save(false);
                             }
                             if ($model->type == 1) {
                                 Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  - $modelDetails->quantity
@@ -688,17 +759,27 @@ class SalesController extends Controller
                         } else {
                             $branch = [1, 2, 3];
                         }
+                        if ($company->zeroQnty == 0) {
+                            $zeroQnty = 'stocks.quantity <> 0';
+                        } else {
+                            $zeroQnty = 'stocks.quantity < 0 OR stocks.quantity > 0 Or stocks.quantity = 0';
+                        }
                         $item = Stocks::find()
                             ->select(['max(stocks.category) as id', 'sum(stocks.quantity) as quantity'])
                             ->leftJoin('prices', 'stocks.category = prices.category')
                             ->where(['stocks.category' => $data->category])
-                            ->andWhere(['<>', 'stocks.quantity', 0])
+                            ->andWhere($zeroQnty) //['<>', 'stocks.quantity', 0])
                             ->andwhere(['in', 'stocks.type', $model->type])
                             ->andWhere(['in', 'stocks.branch', $branch])
                             ->one();
+                        //die('3' . ', ZeroQnty =' . $zeroQnty . ', Items =' . $item->quantity . ', DataQuantity = ' . $data->quantity);
                         if ($item <> null) {
                             if ($data->quantity > abs($item->quantity)) {
-                                $modelDetails->quantity = abs($item->quantity);
+                                if ($company->zeroQnty == 0) {
+                                    $modelDetails->quantity = abs($item->quantity);
+                                } else {
+                                    $modelDetails->quantity = abs($data->quantity);
+                                }
                                 $modelDetails->save(false);
                             } elseif ($data->quantity <= abs($item->quantity)) {
                                 $modelDetails->quantity = $data->quantity;
@@ -1041,6 +1122,12 @@ class SalesController extends Controller
             $criteriaـvalue = 1;
         }
 
+        if ($company->zeroQnty == 0) {
+            $zeroQnty = 'stocks.quantity <> 0';
+        } else {
+            $zeroQnty = 'stocks.quantity < 0 OR stocks.quantity > 0 Or stocks.quantity = 0';
+        }
+
         if ($company->rate != 0) {
             $rate = ($company->rate / 100);
             $maxPrice = 'CASE
@@ -1162,8 +1249,8 @@ class SalesController extends Controller
                 ->orWhere((['like', 'place', $q]))
                 ->orWhere((['like', 'company', $q]))
                 //->andWhere((['=', 'stocks.branch', Yii::$app->user->identity->branch]))
-                ->andWhere($whereBranch)
-                ->andWhere(['<>', 'stocks.quantity', 0])
+                //->andWhere(['<>', 'stocks.quantity', 0])
+                ->andWhere($zeroQnty)
                 ->limit(60)
                 ->orderBy('category.id', 'asc');
             $command = $query->createCommand();

@@ -220,7 +220,7 @@ class ReceiptController extends Controller
     public function actionPrintRecieptReciver($id)
     {
         $client = $this->findModel($id);
-      
+
         if ($client->c->type == 0 || $client->c->type == 2) {
             $balance = Dept::find()->where(['id' => $client->clinet])->sum('credt');
         } else {
@@ -237,50 +237,51 @@ class ReceiptController extends Controller
 
     public function actionGetBalance($client)
     {
-       
+
         $clientType = Client::find()->where(['=', 'id', $client])->one();
         //die(var_dump($clientType['id']));
         //$this->findModel($client);
-        
-        if ($clientType['type'] == 0 || $clientType['type'] == 2){
+
+        if ($clientType['type'] == 0 || $clientType['type'] == 2) {
             $balance = Dept::find()->where(['id' => $client])->sum('credt');
-        }else{
+        } else {
             $balance = DeptSupp::find()->where(['id' => $client])->sum('credt');
         }
-        
-        echo json::encode(@number_format($balance));
+        Yii::$app->response->format = Yii\web\Response::FORMAT_JSON;
+        return $balance;
+        //echo json::encode(@number_format($balance));
     }
 
     public function actionTransferToSafe($receiptId)
     {
         $model = new Safe();
-       
+
         if ($model->load(Yii::$app->request->post())) {
-        $data = Receipt::find()->where(['=', 'id', $receiptId])->one();
-        if($data->type == 1){
-            $type = 2;
-        }else{
-            $type = 1;
-        }
-        $command= Yii::$app->db->createCommand("INSERT INTO safe 
+            $data = Receipt::find()->where(['=', 'id', $receiptId])->one();
+            if ($data->type == 1) {
+                $type = 2;
+            } else {
+                $type = 1;
+            }
+            $command = Yii::$app->db->createCommand("INSERT INTO safe 
          (`branch`, `safeNo`, `value`, `at`, `type`, `why`, `user_insert`, `created_at`)
          VALUES 
          (:branch, :safeNo, :value, :at, :type, :why, :user_insert, :created_at  )");
-          $command->bindValue(':branch', Yii::$app->user->identity->branch);
-          $command->bindValue(':safeNo', $model->safeNo);
-          $command->bindValue(':value', $data->value);
-          $command->bindValue(':at', date('Y-m-d'));
-          $command->bindValue(':type', $type);
-          $command->bindValue(':why', $data->why);
-          $command->bindValue(':user_insert', Yii::$app->user->identity->id);
-          $command->bindValue(':created_at', date('Y-m-d'));
-          $command->execute();
-          return $this->redirect(['safe/index']);
-        }elseif (Yii::$app->request->isAjax) {
+            $command->bindValue(':branch', Yii::$app->user->identity->branch);
+            $command->bindValue(':safeNo', $model->safeNo);
+            $command->bindValue(':value', $data->value);
+            $command->bindValue(':at', date('Y-m-d'));
+            $command->bindValue(':type', $type);
+            $command->bindValue(':why', $data->why);
+            $command->bindValue(':user_insert', Yii::$app->user->identity->id);
+            $command->bindValue(':created_at', date('Y-m-d'));
+            $command->execute();
+            return $this->redirect(['safe/index']);
+        } elseif (Yii::$app->request->isAjax) {
             return $this->renderAjax('transferToSafe', [
                 'model' => $model,
             ]);
-        } else{
+        } else {
             return $this->render('transferToSafe', [
                 'model' => $model,
             ]);

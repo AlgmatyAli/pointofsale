@@ -48,7 +48,7 @@ use yii\helpers\Url;
                     'change' => 'function(event){
                 var client = event.currentTarget.value;
                 $.get("' . Url::to(['receipt/get-balance']) . '&client="+client, function(data){
-                    var data=$.parseJSON(data);
+                    
                     if(data != null){
                     $("#remainingBalance").text(data);
                     }else{
@@ -59,7 +59,7 @@ use yii\helpers\Url;
                 ],
             ]);
             ?>
-
+<!-- //var data=$.parseJSON(data); -->
             <?php
             echo $form->field($model, 'at')->widget(
                 DatePicker::class,
