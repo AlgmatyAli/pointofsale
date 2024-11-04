@@ -141,13 +141,14 @@ class TempInvoiceController extends Controller
             $posted = current($_POST['TempInvoice']);
 
             $post['TempInvoice'] = $posted;
+
             if ($result->load($post)) {
                 if (Yii::$app->user->identity->seeOtherBranchQ == '0') {
                     $branch = Yii::$app->user->identity->branch;
                 } else {
                     $branch = [1, 2, 3];
                 }
-               
+
                 $data = Stocks::find()
                     ->select([
                         'max(stocks.category) as category',
@@ -168,42 +169,46 @@ class TempInvoiceController extends Controller
                     ->andWhere(['=', 'state', 1])
                     ->sum('quantity');
 
-            if ($company->zeroQnty == 0) {
-                $balance = $data->quantity - $sumQnty;
-            }else{
-                $balance = $posted['quantity'];
-            }
-
-                if ($posted['quantity'] >= $balance) {
-                    $remaining = $balance;
-                } else {
-                    $remaining = $posted['quantity'];
-                }
+                //die(var_dump($result->category));
 
                 if (isset($posted['quantity'])) {
-                    $result->quantity = $remaining;
-                    $outMessage = $result->quantity;
-                    $result->save(false);
-                } elseif (isset($posted['serial_number'])) {
-                    $outMessage = $result->serial_number;
-                } else {
-                    if (Yii::$app->user->can('selling_by_costprice')) {
-                        if ($data->costPrice > $result->salePrice) {
-                            $result->salePrice = $data->costPrice;
+                   
+                    if ($company->zeroQnty == 0) {
+                        $balance = $data->quantity - $sumQnty;
+                        if ($posted['quantity'] >= $balance) {
+                            $remaining = $balance;
+                        } else {
+                            $remaining = $posted['quantity'];
                         }
-                    } elseif ($data->minPrice > $result->salePrice) {
-                        $result->salePrice = $data->minPrice;
+                        $result->quantity = $remaining;
+                        $outMessage = $result->quantity;
+                        $result->save(false);
+                        return Json::encode(['output' => $outMessage]);
+                    } else {
+                        $balance = $posted['quantity'];
+                        $outMessage = $balance ;
+                        $result->save(false);
+                        return Json::encode(['output' => $outMessage]);
                     }
-                    if (Yii::$app->user->identity->client <> null) {
-                        $result->waitQnty  = 0;
-                    }
-                    $outMessage = $result->salePrice;
-                    $result->save(false);
                 }
+                if (isset($posted['salePrice'])) {
+                if (Yii::$app->user->can('selling_by_costprice')) {
+                    if ($data->costPrice > $result->salePrice) {
+                        $result->salePrice = $data->costPrice;
+                    }
+                } elseif ($data->minPrice > $result->salePrice) {
+                    $result->salePrice = $data->minPrice;
+                }
+                if (Yii::$app->user->identity->client <> null) {
+                    $result->waitQnty  = 0;
+                }
+                $outMessage = $result->salePrice;
+                $result->save(false);
                 $output = $outMessage;
                 $out = Json::encode(['output' => $output]);
                 return $out;
             }
+        }
         }
         /**
          * في الاعلي اذا كان سعر الكمية المطلوبه أكبر من الكمية الموجوده يتم تغيير الكيه حسب الموجود فقط
@@ -224,10 +229,10 @@ class TempInvoiceController extends Controller
 
             if ($company->zeroQnty == 0) {
                 $zeroQnty = 'stocks.quantity <> 0';
-            }else{
+            } else {
                 $zeroQnty = 'stocks.quantity < 0 OR stocks.quantity > 0 Or stocks.quantity = 0';
             }
-            
+
             $item = Stocks::find()
                 ->select([
                     'max(stocks.category) as id',
@@ -238,7 +243,7 @@ class TempInvoiceController extends Controller
                 ])
                 ->leftJoin('prices', 'stocks.category = prices.category')
                 ->where(['stocks.category' => $model->category])
-                ->andWhere($zeroQnty)//['<>', 'stocks.quantity', 0])
+                ->andWhere($zeroQnty) //['<>', 'stocks.quantity', 0])
                 ->andwhere(['in', 'stocks.type', $type])
                 ->andWhere(['in', 'stocks.branch', $branch])
                 ->one();

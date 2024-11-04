@@ -221,7 +221,6 @@ class SalesController extends Controller
                     
                     if ($model->type != 2) {
                         if ($stockQ != NULL) {
-                            //die();
                             if ($quantity > abs($stockQ->quantity)) {
                                 if ($company->zeroQnty == 0) {
                                     $result->quantity = abs($stockQ->quantity);
@@ -229,7 +228,10 @@ class SalesController extends Controller
                                     $result->quantity = abs($quantity);
                                 }
                                 $result->save(false);
-                            } 
+                            } else{
+                                $result->quantity = abs($quantity);
+                                $result->save(false);
+                            }
                         } else {
                             $result->quantity = 0;
                             $result->save(false);
