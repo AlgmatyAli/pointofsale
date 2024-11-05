@@ -247,3 +247,9 @@ font-size: 20px;
         display: none !important;
     }
  }
+
+ .repBtn{
+    font-size: large;
+    font-style: normal;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+ }

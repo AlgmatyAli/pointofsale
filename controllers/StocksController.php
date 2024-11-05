@@ -199,4 +199,25 @@ class StocksController extends Controller
             return $this->redirect(['/temp-transfer-items/create']);
         }
     }
+
+    public function actionPriceList()
+    {
+        $searchModel = new StocksSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+
+        // $sql = " 
+        // SELECT sum(quantity) quantity, sum(inventory.quantity*prices.costPrice) TotalCost, sum(inventory.quantity*prices.maxPrice) Price 
+        // FROM inventory, prices WHERE inventory.id=prices.category
+        // ";    
+
+        // $connection = Yii::$app->db;
+        // $data = $connection->createCommand($sql);
+        // $info = $data->queryAll();
+        
+        return $this->render('priceList', [
+            'searchModel' => $searchModel,
+            'dataProvider' => $dataProvider,
+            //'infos'=>$info,
+        ]);
+    }
 }
