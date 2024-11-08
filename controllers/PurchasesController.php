@@ -43,7 +43,7 @@ class PurchasesController extends Controller
                     [
                         'allow' => true,
                         'actions' => [
-                            'create', 'view', 'print-bill', 'print-bill-with-out-price',
+                            'create', 'view', 'print-bill', 'print-bill-with-out-price', 'print-d-bill',
                             'print-bill-with-place', 'remove', 'add-purchases', 'date-of-arrival', 'noprice'
                         ],
                         'roles' => ['createPurchases'],
@@ -880,5 +880,31 @@ class PurchasesController extends Controller
         return $this->render('_form_update_details', [
             'dataProvider' => $dataProvider,
         ]);
+    }
+
+    public function actionPrintDBill($id)
+    {
+        if (Yii::$app->user->identity->printPurtchaseInvoice == 1) {
+            $dataProvider = new ActiveDataProvider([
+                'query' => PurchasesDetails::find()
+                    ->select('purchasesDetails.*, category.name, category.serialNo')
+                    ->leftJoin('category', 'category.id = purchasesDetails.category')
+                    ->where(['purchasesDetails.PurchasesId' => $id]),
+
+                'pagination' => [
+                    'pageSize' => false
+                ],
+                'sort' => false,
+
+            ]);
+
+            return $this->render('printDBill', [
+                'model' => $this->findModel($id),
+                'dataProvider' => $dataProvider
+            ]);
+        } else {
+            Yii::$app->session->setFlash('error', Yii::t('app', "Sorry You Do Not Have Permession to Print Invoice"));
+            return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
+        }
     }
 }

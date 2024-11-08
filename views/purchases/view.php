@@ -38,6 +38,8 @@ $this->params['breadcrumbs'][] = $this->title;
         <?php
         if (Yii::$app->user->identity->printPurtchaseInvoice == 1) {
             echo Html::a('<i class="fa fa-fw fa-print"></i>' . ' ' . Yii::t('app', 'Print Bill'), ['print-bill', 'id' => $model->id], ['class' => 'btn btn-success btn-sm']);
+            echo Html::a('<i class="fa fa-fw fa-print"></i>' . ' ' . Yii::t('app', 'Print Bill Dirham'), ['print-d-bill', 'id' => $model->id], ['class' => 'btn btn-success btn-sm']);
+            
         }
         ?>
 

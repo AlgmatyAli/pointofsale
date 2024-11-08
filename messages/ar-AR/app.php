@@ -403,6 +403,8 @@ return [
     'Post Paid' => 'امكانية الدفع بالاجل',
     'Today' => 'عرض عمل اليوم',
     'Zero Qnty' => 'عرض الاصناف المنتهية',
+    'Purchases Invoice By Dirham' => 'فاتورة مشتريات بالدرهم الاماراتي',
+    'Print Bill Dirham' => 'طباعة فاتورة بالدرهم',
 ];
 
 ?>
