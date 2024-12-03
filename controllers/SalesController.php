@@ -46,13 +46,13 @@ class SalesController extends Controller
                 'rules' => [
                     [
                         'allow' => true,
-                        'actions' => ['create', 'view', 'print', 'noprice', 'itemlist', 'deserving', 'done', 'itemlistid', 'print-no-price', 'fast', 'save-pdf', 'delev'],
+                        'actions' => ['create', 'view', 'print', 'noprice', 'itemlist', 'deserving', 'stop-credit', 'done', 'itemlistid', 'print-no-price', 'fast', 'save-pdf', 'delev'],
                         'roles' => ['createSales'],
                     ],
 
                     [
                         'allow' => true,
-                        'actions' => ['update', 'view', 'print', 'noprice', 'remove', 'pdf', 'itemlist', 'deserving', 'done', 'transfer-to-temp-invoice', 'itemlistid', 'print-no-price', 'save-pdf', 'delev'],
+                        'actions' => ['update', 'view', 'print', 'noprice', 'remove', 'pdf', 'itemlist', 'deserving', 'stop-credit', 'done', 'transfer-to-temp-invoice', 'itemlistid', 'print-no-price', 'save-pdf', 'delev'],
                         'roles' => ['updateSales'],
                     ],
 
@@ -1151,10 +1151,10 @@ class SalesController extends Controller
         } else {
             $whereBranch = 'branch in (1,2,3,4,5,6,7,8,9)';
         }
-
         Yii::$app->response->format = Yii\web\Response::FORMAT_JSON;
         $out = ['results' => ['id' => '', 'text' => '']];
         if (!is_null($q)) {
+            //$q = str_replace('-', '', $q);
             $q = str_replace(' ', '%', $q);
             // $q = preg_replace('/' '/', '', $q);
             $query = new Query;
@@ -1245,7 +1245,7 @@ class SalesController extends Controller
                 ->where('category.name like' . "'%" . $q . "%'")
                 //->andWhere('branch=' . Yii::$app->user->Identity->branch)
                 ->andWhere($whereBranch)
-                ->orWhere(['like', 'serialNo', $q])
+                ->orWhere(['like', "REPLACE(serialNo, '-', '')", str_replace('-', '', $q)])
                 ->orWhere(['like', 'commCode', $q])
                 ->orWhere((['like', 'category.id', $q]))
                 ->orWhere((['like', 'place', $q]))
@@ -1981,5 +1981,14 @@ class SalesController extends Controller
         Yii::$app->session->setFlash('success', Yii::t('app', "تمت عملية تغيير حالة الفاتورة بنجاح"));
 
         return $this->redirect(['print', 'id' => $id]);
+    }
+
+    public function actionStopCredit($id)
+    {
+        Client::updateAll(['post_paid' => 0], ['=', 'id', $id]);
+
+        Yii::$app->session->setFlash('success', Yii::t('app', "تمت عملية ايقاف التعامل بالدين بنجاح"));
+
+        return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
     }
 }

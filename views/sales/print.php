@@ -44,7 +44,7 @@ use yii\grid\GridView;
 
     <?= Html::a(
       Yii::t('app', 'Create Client Histrans'),
-      ['histrans', 'client' => $model->clinet, 'allData' => 1, 'type' => 0],
+      ['histrans', 'client' => $model->clinet, 'allData' => 1, 'type' => $model->c->type],
       ['class' => 'btn btn-info']
     ) ?>
 

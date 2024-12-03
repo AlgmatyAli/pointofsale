@@ -425,6 +425,7 @@ JS;
                         'change' => 'function(event){
              var data_id = event.currentTarget.value;
              $.get("' . Url::to(['except/get-inv']) . '&category="+data_id, function(data){
+             alert(data);
             if(data != null){
             $("#tempinvoice-quantity").val(1);
             $("#tempinvoice-saleprice").val(data.maxPrice);

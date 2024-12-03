@@ -66,9 +66,11 @@ use app\models\CompanyInfo;
            <td><?= $model["at"]?></td>
            <td><?= $model["deserving"]?></td>
            <td><?=  Html::a('<i class="fa fa-folder-open"></i>', 
-            ['sales/print', 'id'=> $model["id"]], ['class' => 'btn btn-success'])?></td>
+            ['sales/print', 'id'=> $model["id"]], ['class' => 'btn btn-success  btn-sm'])?></td>
             <td><?=  Html::a('<i class="fa fa-paper-plane"></i>', 
-            ['sales/done', 'id'=> $model["id"]], ['class' => 'btn btn-default'])?></td>
+            ['sales/done', 'id'=> $model["id"]], ['class' => 'btn btn-default  btn-sm'])?></td>
+            <td><?=  Html::a('<i class="fa fa-stop"></i>', 
+            ['sales/stop-credit', 'id'=> $model["client"]], ['class' => 'btn btn-default btn-sm'])?></td>
           </tr>
        </tbody>
        <?php endforeach; ?>
