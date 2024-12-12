@@ -20,18 +20,30 @@ $this->title = Yii::t('app', 'Purchases');
     echo GridView::widget([
         'dataProvider' => $dataProvider,
         'showPageSummary' => true,
-        'summary'=>'',
+        'summary' => '',
         'rowOptions' => function ($searchModel) {
             if ($searchModel->shippingType == '1') {
                 return ['class' => 'danger'];
-            }elseif($searchModel->shippingType == '2'){
+            } elseif ($searchModel->shippingType == '2') {
                 return ['class' => 'warning'];
             }
         },
         'columns' => [
-            // 'total',
-            // 'totalCost',
+            [
+                'class' => 'kartik\grid\ExpandRowColumn',
+                'width' => '50px',
+                'value' => function ($model, $key, $index, $column) {
+                    return GridView::ROW_COLLAPSED;
+                },
+                'detail' => function ($model, $key, $index, $column) {
+                    return Yii::$app->controller->renderPartial('_expand', ['model' => $model]);
+                },
+                'headerOptions' => ['class' => 'kartik-sheet-style'],
+                'expandOneOnly' => true
+            ],
+
             'billId',
+
             [
                 'label' => Yii::t('app', 'C ID'),
                 'format' => 'raw',
@@ -45,12 +57,12 @@ $this->title = Yii::t('app', 'Purchases');
             [
                 'label' => Yii::t('app', 'Pay Way'),
                 'format' => 'raw',
-                   'value'=>function($searchModel) {
-                    if($searchModel->payWay ==0){
+                'value' => function ($searchModel) {
+                    if ($searchModel->payWay == 0) {
                         return 'نقدا';
-                    }elseif($searchModel->payWay ==1){
+                    } elseif ($searchModel->payWay == 1) {
                         return 'آجل';
-                    }elseif($searchModel->payWay ==2){
+                    } elseif ($searchModel->payWay == 2) {
                         return 'دفعة على الحساب';
                     }
                 }
@@ -63,23 +75,23 @@ $this->title = Yii::t('app', 'Purchases');
                     return $data->br->name;
                 }
             ],
-           
+
             [
                 'label' => Yii::t('app', 'Type'),
                 'format' => 'raw',
-                   'value'=>function($searchModel) {
-    
-                    if($searchModel->type ==1){
+                'value' => function ($searchModel) {
+
+                    if ($searchModel->type == 1) {
                         return 'مشتريات';
-                    }elseif($searchModel->type ==2){
+                    } elseif ($searchModel->type == 2) {
                         return 'مسترجع مشتريات';
-                    }elseif($searchModel->type ==3){
+                    } elseif ($searchModel->type == 3) {
                         return 'فاتورة مشتريات معلقة';
                     }
                 }
             ],
 
-            
+
             [
                 'label' => Yii::t('app', 'Total'),
                 'attribute' => 'total',
@@ -99,11 +111,11 @@ $this->title = Yii::t('app', 'Purchases');
             [
                 'class' => 'kartik\grid\FormulaColumn',
                 'contentOptions' => ['style' => 'font-size:14px;'],
-                'header' => Yii::t('app','Total'),
+                'header' => Yii::t('app', 'Total'),
                 'vAlign' => 'middle',
                 'value' => function ($model, $key, $index, $widget) {
                     $p = compact('model', 'key', 'index');
-                    return $widget->col(7, $p) + $widget->col(8, $p);
+                    return $widget->col(8, $p) + $widget->col(9, $p);
                 },
                 'headerOptions' => ['class' => 'kartik-sheet-style'],
                 'hAlign' => 'right',
@@ -112,17 +124,17 @@ $this->title = Yii::t('app', 'Purchases');
                 'mergeHeader' => true,
                 'pageSummary' => true,
                 'footer' => true
-               
+
             ],
 
-            
+
             [
                 'class' => 'yii\grid\ActionColumn',
-                'options'=>['style'=>'width:120px;'],
-                'template'=>'<div class="btn-group btn-group-sm" role="group" aria-label="...">{view}</div>',
-                'buttons'=>[
-                    'view'=>function($url){
-                        return Html::a('<i class="fa fa-eye"></i>',$url,['class'=>'btn btn-default']);
+                'options' => ['style' => 'width:120px;'],
+                'template' => '<div class="btn-group btn-group-sm" role="group" aria-label="...">{view}</div>',
+                'buttons' => [
+                    'view' => function ($url) {
+                        return Html::a('<i class="fa fa-eye"></i>', $url, ['class' => 'btn btn-default']);
                     },
                     // 'update'=>function($url,$searchModel,$key){
                     //     return Html::a('<i class="fa fa-edit"></i>',$url,['class'=>'btn btn-default']);
