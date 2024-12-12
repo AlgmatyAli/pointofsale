@@ -30,6 +30,7 @@ class PurchasesDetails extends \yii\db\ActiveRecord
      * {@inheritdoc}
      */
     public $item_total;
+    public $name, $company, $serialNo;
     public static function tableName()
     {
         return 'purchasesDetails';
@@ -44,7 +45,7 @@ class PurchasesDetails extends \yii\db\ActiveRecord
             [['PurchasesId', 'category', 'quantity', 'costPrice', 'box'], 'required'],
             [['PurchasesId', 'category', 'quantity', 'box'], 'integer'],
             [['costPrice', 'totalCost', 'salePrice', 'salePrice_', 'salePrice_2', 'salePrice_3'], 'number'],
-            [['expire'], 'safe'],
+            [['expire', 'name', 'company', 'serialNo'], 'safe'],
             [['totalCost'], 'string', 'max' => 255],
             [['category'], 'exist', 'skipOnError' => true, 'targetClass' => Category::class, 'targetAttribute' => ['category' => 'id']],
             [['PurchasesId'], 'exist', 'skipOnError' => true, 'targetClass' => Purchases::class, 'targetAttribute' => ['PurchasesId' => 'id']],

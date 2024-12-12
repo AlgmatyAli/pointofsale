@@ -54,13 +54,14 @@ class ExceptController extends Controller
             $query->select(
                 $secript
             )
-                ->from('category')
+                ->from('category') 
                 ->leftJoin('prices', 'prices.category = category.id')
                 ->leftJoin('stocks', 'stocks.category = category.id')
                 ->leftJoin('branches', 'branches.id = stocks.branch')
                 ->where('category.name like' . "'%" . $q . "%'")
                 //->andWhere($whereBranch)
-                ->orWhere(['like', 'category.serialNo', $q])
+                // ->orWhere(['like', 'category.serialNo', $q])
+                ->orWhere(['like', "REPLACE(category.serialNo, '-', '')", str_replace('-', '', $q)])
                 ->orWhere(['like', 'category.commCode', $q])
                 ->orWhere((['like', 'category.id', $q]))
                 ->orWhere((['like', 'category.place', $q]))

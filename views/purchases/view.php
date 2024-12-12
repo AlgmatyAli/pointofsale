@@ -15,7 +15,8 @@ $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="purchases-view">
     <br>
-    <h1><?= Html::encode($this->title) ?></h1><hr><br>
+    <h1><?= Html::encode($this->title) ?></h1>
+    <hr><br>
     <p>
     <div class="btn-group">
         <?php
@@ -39,7 +40,6 @@ $this->params['breadcrumbs'][] = $this->title;
         if (Yii::$app->user->identity->printPurtchaseInvoice == 1) {
             echo Html::a('<i class="fa fa-fw fa-print"></i>' . ' ' . Yii::t('app', 'Print Bill'), ['print-bill', 'id' => $model->id], ['class' => 'btn btn-success btn-sm']);
             echo Html::a('<i class="fa fa-fw fa-print"></i>' . ' ' . Yii::t('app', 'Print Bill Dirham'), ['print-d-bill', 'id' => $model->id], ['class' => 'btn btn-success btn-sm']);
-            
         }
         ?>
 
@@ -52,12 +52,16 @@ $this->params['breadcrumbs'][] = $this->title;
 
         <?= Html::button('<i class="fa fa-fw fa-copy"></i>' . ' ' . Yii::t('app', 'SaveAsNew'), ['value' => Url::to(['purchases/save-as-new', 'oldId' => $model->id]), 'class' => 'btn btn-success btn-sm popup']); ?>
 
-        <?=  Html::a(
-                '<i class="fa fa-fw fa-edit"></i>' . ' ' . Yii::t('app', 'Update Sales Prices'),
-                ['purchases-details', 'id' => $model->id],
-                ['class' => 'btn btn-primary btn-sm']
-            );
-            ?>
+        <?= Html::a(
+            '<i class="fa fa-fw fa-edit"></i>' . ' ' . Yii::t('app', 'Update Sales Prices'),
+            ['purchases-details', 'id' => $model->id],
+            ['class' => 'btn btn-primary btn-sm']
+        );
+        ?>
+
+        <?php echo Html::button('<i class="fa fa-fw fa-fast"></i>' . ' ' . Yii::t('app', 'نقل الاصناف بين الفروع'), ['value' => Url::to(['add-to-transfer-items', 'id' => $model->id]), 'class' => 'btn btn-info btn-sm popup']); ?>
+
+
         <?=
         Html::a('<i class="fa fa-fw fa-trash"></i>' . ' ' . Yii::t('app', 'Delete'), ['delete', 'id' => $model->id], [
             'class' => 'btn btn-warning btn-sm',
@@ -69,6 +73,7 @@ $this->params['breadcrumbs'][] = $this->title;
         ?>
 
         <?= Html::a('<i class="fa fa-fw fa-window-close"></i>' . ' ' . Yii::t('app', 'Back'), Yii::$app->request->referrer, ['class' => 'btn btn-danger btn-sm']) ?>
+
     </div>
     </p>
     <?= DetailView::widget([

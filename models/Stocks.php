@@ -36,7 +36,7 @@ class Stocks extends \yii\db\ActiveRecord
             [['category'], 'integer'],
             [['quantity'], 'number'],
             [['serialNo', 'class', 'company', 'commCode', 'name', 'maxPrice', 'minPrice', 'costPrice', 'minPrice2', 'minPrice3', 'tq', 'branchName'], 'safe'],
-            [['category'], 'exist', 'skipOnError' => true, 'targetClass' => Category::className(), 'targetAttribute' => ['category' => 'id']],
+            [['category'], 'exist', 'skipOnError' => true, 'targetClass' => Category::class, 'targetAttribute' => ['category' => 'id']],
         ];
     }
 
@@ -68,16 +68,16 @@ class Stocks extends \yii\db\ActiveRecord
      */
     public function getCategory0()
     {
-        return $this->hasOne(Category::className(), ['id' => 'category']);
+        return $this->hasOne(Category::class, ['id' => 'category']);
     }
 
     public function getPrices()
     {
-        return $this->hasOne(Prices::className(), ['category' => 'category']);
+        return $this->hasOne(Prices::class, ['category' => 'category']);
     }
 
     public function getBranches0()
     {
-        return $this->hasOne(Branches::className(), ['id' => 'branch']);
+        return $this->hasOne(Branches::class, ['id' => 'branch']);
     }
 }

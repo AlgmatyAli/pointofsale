@@ -76,7 +76,6 @@ use yii\widgets\DetailView;
 
       <?= Html::a(Yii::t('app', 'تقرير بالأصناف الغير مجرودة'), ['/inventory/stock-taking'], ['class' => 'btn btn-default btn-block repBtn']) ?>
 
-      <?= Html::a(Yii::t('app', 'Ftran'), ['/sales/ftran'], ['class' => 'btn btn-default btn-block repBtn']) ?>
     </div>
 
     <div class="col-md-4">

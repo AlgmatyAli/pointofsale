@@ -32,18 +32,23 @@ $this->params['breadcrumbs'][] = $this->title;
             'phone',
             'mobile',
             'address',
-            //'email:email',
-            //'balance',
-            //'type',
-            //'user_insert',
-            //'user_update',
-            //'created_at',
-            //'update_at',
-            //'branch',
-            //'price_group',
             'debt',
 
-            ['class' => 'yii\grid\ActionColumn'],
+            [
+                'class' => 'yii\grid\ActionColumn',
+                'options' => ['style' => 'width:120px;'],
+                'template' => '<div class="btn-group btn-group-sm" role="group" aria-label="...">{view}{update}</div>',
+                'buttons' => [
+                    'view' => function ($url, $searchModel, $key) {
+                        return Html::a('<i class="fa fa-eye"></i>', $url, ['class' => 'btn btn-default']);
+                    },
+                    'update' => function ($url, $searchModel, $key) {
+                        return Html::a('<i class="fa fa-edit"></i>', $url, ['class' => 'btn btn-default']);
+                    },
+
+
+                ]
+            ],
         ],
     ]); ?>
 

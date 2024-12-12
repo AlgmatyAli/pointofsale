@@ -14,13 +14,13 @@ class PurchasesDetailsSearch extends PurchasesDetails
     /**
      * {@inheritdoc}
      */
-    public $clinet,$at;
+    public $clinet,$at, $type;
     public function rules()
     {
         return [
             [['id', 'PurchasesId','clinet', 'category', 'quantity', 'box'], 'integer'],
             [['costPrice', 'salePrice'], 'number'],
-            [['totalCost','at', 'expire'], 'safe'],
+            [['totalCost','at', 'expire', 'type'], 'safe'],
         ];
     }
 
@@ -75,6 +75,7 @@ class PurchasesDetailsSearch extends PurchasesDetails
             'salePrice' => $this->salePrice,
             'box' => $this->box,
             'expire' => $this->expire,
+            'purchases.type' => $this->type,
         ]);
 
         if(!empty($this->at) && strpos($this->at, '-') !== false) {

@@ -1,8 +1,8 @@
 <?php
 
+use kartik\date\DatePicker;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use dosamigos\datepicker\DatePicker;
 use yii\helpers\Url;
 use kartik\depdrop\DepDrop;
 
@@ -43,7 +43,7 @@ use kartik\depdrop\DepDrop;
         DatePicker::className(),
         [
             'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,
@@ -57,7 +57,7 @@ use kartik\depdrop\DepDrop;
         DatePicker::className(),
         [
             'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,

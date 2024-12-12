@@ -1455,7 +1455,7 @@ class SalesController extends Controller
             $sql = " SELECT max(sales.billId) as billId, max(sales.at) as at, max(sales.total) total
             , max(sales.disscount) as disscount, max(sales.paid) as paid, max(sales.deserving) as deserving
             , max(client.name) as clientName, sum(dept.credt) as credt, max(sales.id) as id
-            , max(sales.clinet) as client FROM `sales` 
+            , max(sales.clinet) as client, max(client.post_paid) as post_paid FROM `sales` 
             LEFT JOIN `client` ON client.id = sales.clinet 
             LEFT JOIN `dept` ON client.id = dept.id 
             WHERE sales.deserving - CURRENT_DATE() <= 4 

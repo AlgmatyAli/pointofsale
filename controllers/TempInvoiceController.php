@@ -569,19 +569,6 @@ class TempInvoiceController extends Controller
         return $this->redirect(['create']);
     }
 
-    //     public function actionDeleteAll()
-    // {
-    //     Yii::$app->response->format = Response::FORMAT_JSON;
-
-    //     if (Yii::$app->request->isAjax) {
-    //         // perform delete operation
-    //         // ...
-    //         TempInvoice::deleteAll(['state' => 1, 'created_by' => Yii::$app->user->identity->id]);
-    //         return ['success' => true];
-    //     } else {
-    //         return ['success' => false];
-    //     }
-    // }
 
     public function actionDeleteAll()
     {

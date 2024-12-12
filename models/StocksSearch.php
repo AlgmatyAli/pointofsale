@@ -42,7 +42,7 @@ class StocksSearch extends Stocks
     public function search($params)
     {
         $query = Stocks::find()
-        ->select(' category.id, max(category.name) as name, sum(stocks.quantity) as quantity, max(category.unit) as unit, max(category.company) as company,
+        ->select('category.id, max(category.name) as name, sum(stocks.quantity) as quantity, sum(stocks.type) as type, max(category.unit) as unit, max(category.company) as company,
         max(category.box) as box, max(category.class) as class, max(category.serialNo) as serialNo, branch, max(category.commCode) as commCode
         ,max(maxPrice) as maxPrice, max(costPrice) as costPrice, max(minPrice) as minPrice'
         )
@@ -76,6 +76,7 @@ class StocksSearch extends Stocks
             'serialNo' => $this->serialNo,
             'branch' => $this->branch,
             'costPrice' => $this->costPrice,
+            'stocks.type' => 1,
         ]);
 
         return $dataProvider;

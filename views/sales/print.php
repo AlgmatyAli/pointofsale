@@ -38,7 +38,8 @@ use yii\grid\GridView;
 
     ?>
 
-    <?php //echo Html::button('<i class="fa fa-fw fa-copy"></i>' . ' ' . Yii::t('app', 'SaveAsNew'), ['value' => Url::to(['sales/save-as-new', 'oldId' => $model->id]), 'class' => 'btn btn-info popup']); ?>
+    <?php //echo Html::button('<i class="fa fa-fw fa-copy"></i>' . ' ' . Yii::t('app', 'SaveAsNew'), ['value' => Url::to(['sales/save-as-new', 'oldId' => $model->id]), 'class' => 'btn btn-info popup']); 
+    ?>
 
     <?= Html::a('<i class="fa fa-fw fa-envelope"></i>' . ' ' . Yii::t('app', 'Send By Email'), ['pdf', 'id' => $model->id], ['class' => 'btn btn-warning']) ?>
 
@@ -49,11 +50,15 @@ use yii\grid\GridView;
     ) ?>
 
     <?= Html::a('<i class="fa fa-fw fa-print"></i>' . ' ' . Yii::t('app', 'Save AS PDF'), ['save-pdf', 'id' => $model->id], ['class' => 'btn btn-success']) ?>
-    
-    <?php 
-     if($model->deleviried == 0){
-       echo Html::a(Yii::t('app', 'تغيير حالة الفاتورة'), ['delev', 'id' => $model->id], ['class' => 'btn btn-warning']);
-     }
+
+    <?php
+    if ($model->deleviried == 0) {
+      echo Html::a(Yii::t('app', 'تغيير حالة الفاتورة'), ['delev', 'id' => $model->id], ['class' => 'btn btn-warning']);
+    }
+    ?>
+
+    <?php
+      echo Html::a(Yii::t('app', 'ايقاف الدين على الزبون'), ['stop-credit', 'id' => $model->clinet], ['class' => 'btn btn-primary']);
     ?>
 
     <?= Html::a('<i class="fa fa-fw fa-trash "></i>' . ' ' . Yii::t('app', 'Delete'), ['delete', 'id' => $model->id], [
@@ -124,11 +129,11 @@ use yii\grid\GridView;
             <span><?= $model->at ?></span>
             <span><?= Yii::$app->formatter->asTime($model->created_at) ?></span>
             <span><?php
-                   if($model->deleviryAt == null){
-                   echo '';
-                   }else{
-                   echo $model->deleviryAt;
-                   }
+                  if ($model->deleviryAt == null) {
+                    echo '';
+                  } else {
+                    echo $model->deleviryAt;
+                  }
                   ?></span>
             <span><?php
                   if ($model->type == 1 || $model->type == 3 || $model->type == 4) {
@@ -264,9 +269,9 @@ use yii\grid\GridView;
           <table cellpadding="0" cellspacing="0">
             <tr>
               <th>الاجمـــالي</th>
-              <td><?php echo 
-                 number_format((float) $totalInvoice, 3);
-              //number_format($totalInvoice, 3) . "\n"; //$model->total
+              <td><?php echo
+                  number_format((float) $totalInvoice, 3);
+                  //number_format($totalInvoice, 3) . "\n"; //$model->total
                   ?></td>
               <td></td>
             </tr>

@@ -4,8 +4,7 @@ use yii\helpers\Html;
 use kartik\grid\GridView;
 use yii\widgets\Pjax;
 use app\models\Client;
-use kartik\select2\Select2;
-use dosamigos\datepicker\DatePicker;
+use kartik\date\DatePicker as DateDatePicker;
 
 /* @var $this yii\web\View */
 /* @var $searchModel app\models\ReceiptArchSearch */
@@ -16,25 +15,24 @@ $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="receipt-arch-index">
 
-    <h1><?= Html::encode($this->title) ?></h1><hr>
+    <h1><?= Html::encode($this->title) ?></h1>
+    <hr>
 
 
     <?php Pjax::begin(); ?>
-    <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
+    <?php // echo $this->render('_search', ['model' => $searchModel]); 
+    ?>
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
         'filterModel' => $searchModel,
         'summary' => '',
         'columns' => [
-            //['class' => 'yii\grid\SerialColumn'],
-
-            //'id',
             'rId',
             [
                 'attribute' => 'clinet',
                 'label' => 'Client',
-                'value' => function($model){
+                'value' => function ($model) {
                     return $model->c->name;
                 },
                 'filterType' => GridView::FILTER_SELECT2,
@@ -46,29 +44,20 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
 
             [
-                'attribute'=>'at',
-                        //'value' =>'at',
-                        'filter'=>DatePicker::widget([
-                        'model' => $searchModel,
-                        'attribute'=>'at',
-                        'language' => 'ar',
-                        'clientOptions' => [
-                            'autoclose' => true,
-                            'format' => 'yyyy-mm-dd',
-                            'todayHighlight' => true,
-                            'todayBtn' => true,
-                        ]
-                    ])       
-                ],
-            //'at',
+                'attribute' => 'at',
+                'filter' => DateDatePicker::widget([
+                    'model' => $searchModel,
+                    'attribute' => 'at',
+                    'language' => 'ar',
+                    'pluginOptions' => [
+                        'autoclose' => true,
+                        'format' => 'yyyy-mm-dd',
+                        'todayHighlight' => true,
+                        'todayBtn' => true,
+                    ]
+                ])
+            ],
             'value',
-            //'why',
-            //'payWay',
-            //'type',
-            //'delete_by',
-            //'delete_at',
-
-            //['class' => 'yii\grid\ActionColumn'],
         ],
     ]); ?>
 

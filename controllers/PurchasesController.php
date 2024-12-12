@@ -2,6 +2,7 @@
 
 namespace app\controllers;
 
+use app\models\base\TempTransferItems;
 use app\models\CompanyInfo;
 use Yii;
 use app\models\Purchases;
@@ -16,6 +17,7 @@ use app\models\Prices;
 use app\models\Inventory;
 use app\models\PurchasesDetailsSearch;
 use app\models\Stocks;
+use app\models\TempTransferItemsSearch;
 use yii\filters\AccessControl;
 use yii\helpers\Json;
 
@@ -43,17 +45,33 @@ class PurchasesController extends Controller
                     [
                         'allow' => true,
                         'actions' => [
-                            'create', 'view', 'print-bill', 'print-bill-with-out-price', 'print-d-bill',
-                            'print-bill-with-place', 'remove', 'add-purchases', 'date-of-arrival', 'noprice'
+                            'create',
+                            'view',
+                            'print-bill',
+                            'print-bill-with-out-price',
+                            'print-d-bill',
+                            'print-bill-with-place',
+                            'remove',
+                            'add-purchases',
+                            'date-of-arrival',
+                            'noprice'
                         ],
                         'roles' => ['createPurchases'],
                     ],
                     [
                         'allow' => true,
                         'actions' => [
-                            'update', 'view', 'print-bill', 'print-bill-with-out-price',
-                            'print-bill-with-place', 'remove', 'transfer-to-temp-invoice',
-                            'add-purchases', 'date-of-arrival', 'noprice'
+                            'update',
+                            'view',
+                            'print-bill',
+                            'print-bill-with-out-price',
+                            'print-bill-with-place',
+                            'remove',
+                            'transfer-to-temp-invoice',
+                            'add-purchases',
+                            'date-of-arrival',
+                            'noprice',
+                            'add-to-transfer-items'
                         ],
                         'roles' => ['updatePurchases'],
                     ],
@@ -321,7 +339,7 @@ class PurchasesController extends Controller
                             $total_cost = (floatval($tempCostPrice) + floatval($invetCostPrice)) / (floatval($inventory->quantity + $value->quantity));
                         }
                     }
-                    if($model->changeSalePrice == 1){
+                    if ($model->changeSalePrice == 1) {
                         Prices::deleteAll(['category' => $value->category]);
                         $prices = new Prices();
                         $prices->category = $value->category;
@@ -331,7 +349,7 @@ class PurchasesController extends Controller
                         $prices->minPrice3 = $value->salePrice_3;
                         $prices->maxPrice = $value->salePrice;
                         $prices->save();
-                    }else{
+                    } else {
                         $prices = Prices::find()->where(['category' => $value->category])->one();
                         $prices->costPrice = $total_cost;
                         $prices->save();
@@ -906,5 +924,61 @@ class PurchasesController extends Controller
             Yii::$app->session->setFlash('error', Yii::t('app', "Sorry You Do Not Have Permession to Print Invoice"));
             return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
         }
+    }
+
+    public function actionAddToTransferItems($id)
+    {
+        $model = new Purchases();
+        $dataProvider = new ActiveDataProvider([
+            'query' => PurchasesDetails::find()
+                ->select(
+                    'purchasesDetails.category as id, purchasesDetails.salePrice, purchasesDetails.salePrice_, purchasesDetails.quantity, 
+                    category.name as name, purchasesDetails.totalCost, category.serialNo, category.company'
+                )
+                ->leftJoin('category', 'category.id = purchasesDetails.category')
+                ->where(['purchasesDetails.PurchasesId' => $id]),
+            'sort' => [
+                'defaultOrder' => [
+                    'purchasesDetails.id' => SORT_DESC
+                ]
+            ],
+            'pagination' => ['pageSize' => 70],
+        ]);
+
+
+        if ($model->load(Yii::$app->request->post())) {
+            $textInputValues = Yii::$app->request->post('PurchaseInvoice')['textInputValues'];
+
+            if (!empty($textInputValues)) {
+                foreach ($textInputValues as $id => $textInputValue) {
+                    if (Yii::$app->request->post('selection') && in_array($id, Yii::$app->request->post('selection'))) {
+                        if ($textInputValue <> 0) {
+                            $newModel = new TempTransferItems();
+                            $newModel->category = $id;
+                            $newModel->quantity = $textInputValue;
+                            $newModel->created_by = Yii::$app->user->identity->id;
+                            $newModel->created_at = date('Y-m-d');
+                            $newModel->save(false);
+                        } else {
+                            die('textInputValue == 0');
+                        }
+                    }
+                }
+            }
+
+            $searchModel = new TempTransferItemsSearch();
+            $searchModel->created_by = Yii::$app->user->identity->id;
+            $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+            return $this->redirect([
+                'temp-transfer-items/create',
+                'searchModel' => $searchModel,
+                'dataProvider' => $dataProvider,
+            ]);
+        }
+
+        return $this->renderAjax('createFast', [
+            'model' => $model,
+            'dataProvider' => $dataProvider,
+        ]);
     }
 }

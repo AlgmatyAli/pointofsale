@@ -37,6 +37,11 @@ use yii\widgets\ActiveForm;
                 ]
             ]); ?>
         </div>
+        <div class="col-md-4">
+
+            <?= $form->field($model, 'type')->dropDownList(['1' => 'فاتورة مشتريات', '2' => 'فاتورة مسترجع مشتريات', '3' => 'فاتورة مشتريات معلقة'], ['prompt' => 'نوع الحركـة']) ?>
+
+        </div>
     </div>
     <br>
     <div class="form-group">
