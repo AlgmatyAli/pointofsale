@@ -274,7 +274,9 @@ class UserController extends Controller
 
             return $this->redirect(['view', 'id' => $model->id]);
         } else {
-            $model->client = explode(",", $model->client);
+            if( $model->client != null){
+                $model->client = explode(",", $model->client);
+            }
             return $this->render('update', [
                 'model' => $model,
             ]);

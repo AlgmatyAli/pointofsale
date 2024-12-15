@@ -73,6 +73,15 @@ $this->registerJs($search);
         ],
 
         [
+          'label' => Yii::t('app', 'Cost Price'),
+          'headerOptions' => ['style' => 'width:15%'],
+          'value' => function ($data)
+          {
+            return $data->costPrice;
+          }
+      ],
+
+        [
             'label' => Yii::t('app', 'Max Price'),
             'headerOptions' => ['style' => 'width:15%'],
             'value' => function ($data)

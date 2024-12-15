@@ -582,7 +582,11 @@ class CategoryController extends Controller
     public function actionInfo($id)
     {
         $model = new Category();
-        $modelInfo = Stocks::find()->where(['category' => $id])->one();
+        $modelInfo = Stocks::find()
+        ->select(['category', 'sum(quantity) as quantity'])
+        ->where(['category' => $id])
+        ->groupBy(['category'])
+        ->one();
 
         $dateOfArrival = Purchases::find()
             ->leftJoin('purchasesDetails', 'purchases.id = purchasesDetails.PurchasesId')

@@ -268,14 +268,14 @@ JS;
             // var data=$.parseJSON(data);
     var markup =
      '<div class="row">' +
-     '<div class="col-sm-4">' +
+     '<div class="col-sm-3">' +
        '<b style="margin-center:5px">' + product.text + '</b>' +
      '</div>' +
      '<div class="col-sm-2"><i class="badge badge-primary badge-pill">  سعر التكلفة - </i> '+product.costPrice + '</div>' +
      '<div class="col-sm-2"><i class="badge badge-primary badge-pill">  سعر البيع - </i> <span class="label label-danger">' + product.maxPrice + '</span> </div>' +
      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> سعر البيع الأدنى - </i> ' +product. minPrice + '</div>' +
      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> مكان الصنف - </i> ' + product.place + '</div>' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> - </i> <span class="label label-info"> ' + product.BRNAME + '</div>' +
+     '<div class="col-sm-1"><i class="badge badge-primary badge-pill"> - </i> <span class="label label-info"> ' + product.BRNAME + '</div>' +
      '</div>' +
      '<br>' +
      '<div class="row">' +
@@ -359,13 +359,14 @@ JS;
          }
 var markup =
   '<div class="row">' +
-  '<div class="col-sm-4">' +
+  '<div class="col-sm-3">' +
     '<b style="margin-center:5px">' + product.text + '</b>' +
   '</div>' +
   '<div class="col-sm-2"><i class="badge badge-primary badge-pill">  سعر التكلفة - </i> '+product.costPrice + '</div>' +
   '<div class="col-sm-2"><i class="badge badge-primary badge-pill">  سعر البيع - </i> <span class="label label-danger">' + product.maxPrice + '</span> </div>' +
   '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> سعر البيع الأدنى - </i> ' +product. minPrice + '</div>' +
   '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> مكان الصنف - </i> ' + product.place + '</div>' +
+  '<div class="col-sm-1"><i class="badge badge-primary badge-pill"> - </i> <span class="label label-info"> ' + product.BRNAME + '</div>' +
   '</div>' +
   '<br>' +
   '<div class="row">' +
@@ -425,7 +426,6 @@ JS;
                         'change' => 'function(event){
              var data_id = event.currentTarget.value;
              $.get("' . Url::to(['except/get-inv']) . '&category="+data_id, function(data){
-             alert(data);
             if(data != null){
             $("#tempinvoice-quantity").val(1);
             $("#tempinvoice-saleprice").val(data.maxPrice);

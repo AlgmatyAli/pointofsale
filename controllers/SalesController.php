@@ -1154,9 +1154,7 @@ class SalesController extends Controller
         Yii::$app->response->format = Yii\web\Response::FORMAT_JSON;
         $out = ['results' => ['id' => '', 'text' => '']];
         if (!is_null($q)) {
-            //$q = str_replace('-', '', $q);
             $q = str_replace(' ', '%', $q);
-            // $q = preg_replace('/' '/', '', $q);
             $query = new Query;
             if (Yii::$app->user->identity->client != null) {
                 $secript = [
@@ -1178,24 +1176,14 @@ class SalesController extends Controller
                 ];
             } else {
                 if (Yii::$app->user->identity->seeCostPrice == 1) {
-                    //     $secript = ['category.id, name AS text, company AS company, stocks.quantity as quantity,
-                    // maxPrice as maxPrice, costPrice as costPrice, serialNo AS serialNo, minPrice AS minPrice, place, commCode,
                     $secript = [
                         'category.id',
                         'category.name AS text',
                         'company AS company',
                         'stocks.quantity as quantity',
-                        // 'CASE
-                        //      WHEN maxPrice >= '. $criteriaـvalue .' THEN round(maxPrice * "' . $rate . '" + maxPrice)
-                        //      ELSE maxPrice
-                        //      END  as maxPrice',
                         $maxPrice,
                         'costPrice as costPrice',
                         'serialNo AS serialNo',
-                        // 'CASE
-                        //      WHEN minPrice >= '. $criteriaـvalue .' THEN round(minPrice * "' . $rate . '" + minPrice)
-                        //      ELSE minPrice
-                        //      END  as minPrice',
                         $minPrice,
                         'place',
                         'commCode',
@@ -1213,16 +1201,8 @@ class SalesController extends Controller
                         'category.name AS text',
                         'company AS company',
                         'stocks.quantity as quantity',
-                        // 'CASE
-                        //     WHEN maxPrice >= '. $criteriaـvalue . ' THEN round(maxPrice * "' . $rate . '" + maxPrice)
-                        //     ELSE maxPrice
-                        //     END  as maxPrice',
                         $maxPrice,
                         'serialNo AS serialNo',
-                        // 'CASE
-                        //     WHEN minPrice >= '. $criteriaـvalue . ' THEN round(minPrice * "' . $rate . '" + minPrice)
-                        //     ELSE minPrice
-                        //     END  as minPrice',
                         $minPrice,
                         'place',
                         'commCode',
@@ -1237,21 +1217,17 @@ class SalesController extends Controller
                 }
             }
             $query->select($secript)
-                // ->from('Totalinventory')
                 ->from('stocks')
                 ->leftJoin('category', 'stocks.category = category.id')
                 ->leftJoin('prices', 'prices.category = category.id')
                 ->leftJoin('branches', 'branches.id = stocks.branch')
                 ->where('category.name like' . "'%" . $q . "%'")
-                //->andWhere('branch=' . Yii::$app->user->Identity->branch)
-                ->andWhere($whereBranch)
                 ->orWhere(['like', "REPLACE(serialNo, '-', '')", str_replace('-', '', $q)])
                 ->orWhere(['like', 'commCode', $q])
                 ->orWhere((['like', 'category.id', $q]))
                 ->orWhere((['like', 'place', $q]))
                 ->orWhere((['like', 'company', $q]))
-                //->andWhere((['=', 'stocks.branch', Yii::$app->user->identity->branch]))
-                //->andWhere(['<>', 'stocks.quantity', 0])
+                ->andWhere($whereBranch)
                 ->andWhere($zeroQnty)
                 ->limit(60)
                 ->orderBy('category.id', 'asc');
@@ -1584,20 +1560,16 @@ class SalesController extends Controller
                     'category.name AS text',
                     'company AS company',
                     'stocks.quantity as quantity',
-                    // 'CASE
-                    //          WHEN maxPrice >= '. $criteriaـvalue .' THEN round(maxPrice * "' . $rate . '" + maxPrice)
-                    //          ELSE maxPrice
-                    //          END  as maxPrice',
                     $maxPrice,
                     'serialNo AS serialNo',
                     'place',
                     'commCode',
                     'CASE
-                WHEN `type` =1
-                THEN "متوفر"
-                WHEN `type` =2
-                THEN "متوفر"
-                ELSE "قريبا" END as type',
+                       WHEN `type` =1
+                       THEN "متوفر"
+                       WHEN `type` =2
+                       THEN "متوفر"
+                       ELSE "قريبا" END as type',
                     'branches.name as BRNAME',
                 ];
             } else {
@@ -1607,26 +1579,18 @@ class SalesController extends Controller
                         'category.name AS text',
                         'company AS company',
                         'stocks.quantity as quantity',
-                        // 'CASE
-                        //      WHEN maxPrice >= '. $criteriaـvalue .' THEN round(maxPrice * "' . $rate . '" + maxPrice)
-                        //      ELSE maxPrice
-                        //      END  as maxPrice',
                         $maxPrice,
                         'costPrice as costPrice',
                         'serialNo AS serialNo',
-                        // 'CASE
-                        //     WHEN minPrice >= '. $criteriaـvalue . ' THEN round(minPrice * "' . $rate . '" + minPrice)
-                        //     ELSE minPrice
-                        //     END  as minPrice',
                         $minPrice,
                         'place',
                         'commCode',
                         'CASE
-            WHEN `type` =1
-            THEN "متوفر"
-            WHEN `type` =2
-            THEN "متوفر"
-            ELSE "قريبا" END as type',
+                            WHEN `type` =1
+                            THEN "متوفر"
+                            WHEN `type` =2
+                            THEN "متوفر"
+                            ELSE "قريبا" END as type',
                         'branches.name as BRNAME'
                     ];
                 } else {
@@ -1635,42 +1599,32 @@ class SalesController extends Controller
                         'category.name AS text',
                         'company AS company',
                         'stocks.quantity as quantity',
-                        // 'CASE
-                        //      WHEN maxPrice >= '. $criteriaـvalue .' THEN round(maxPrice * "' . $rate . '" + maxPrice)
-                        //      ELSE maxPrice
-                        //      END  as maxPrice',
                         $maxPrice,
                         'serialNo AS serialNo',
-                        // 'CASE
-                        //     WHEN minPrice >= '. $criteriaـvalue . ' THEN round(minPrice * "' . $rate . '" + minPrice)
-                        //     ELSE minPrice
-                        //     END  as minPrice',
                         $minPrice,
                         'place',
                         'commCode',
                         'CASE
-            WHEN `type` =1
-            THEN "متوفر"
-            WHEN `type` =2
-            THEN "متوفر"
-            ELSE "قريبا" END as type',
-                        'branches.name as BRNAME'
+                            WHEN `type` =1
+                            THEN "متوفر"
+                            WHEN `type` =2
+                            THEN "متوفر"
+                            ELSE "قريبا" END as type',
+                         'branches.name as BRNAME'
                     ];
                 }
             }
             $query->select($secript)
-                ->from('category')
                 ->from('stocks')
                 ->leftJoin('category', 'stocks.category = category.id')
                 ->leftJoin('prices', 'prices.category = category.id')
                 ->leftJoin('branches', 'branches.id = stocks.category')
-                //->andWhere('stocks.branch=' . Yii::$app->user->Identity->branch)
                 ->Where((['=', 'category.id', $q]))
-                //->andWhere((['=', 'stocks.branch', Yii::$app->user->identity->branch]))
                 ->andWhere($whereBranch)
                 ->andWhere(['=',  'category.status', 0])
                 ->andWhere(['!=', 'stocks.quantity', 0])
-                ->limit(60);
+                ->limit(60)
+                ->orderBy('category.id', 'ASC');
             $command = $query->createCommand();
             $data = $command->queryAll();
             $out['results'] = array_values($data);
