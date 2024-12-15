@@ -35,12 +35,6 @@ class m999999_210101_balance_history_v3 extends \yii\db\Migration
         select (sum(`p`.`total`) * -(1)) AS `value`,`p`.`clinet` AS `clinet`,1 AS `1`,`p`.`at` AS `at`,`p`.`notes` AS `notes`,'مسترجع مبيعات	' AS `type`
         ,`c`.`type` AS `client_type` from (( `sales` `p` join  `client` `c`) ) where ((`c`.`id` = `p`.`clinet`)
          and (`p`.`type` = 2) and (`p`.`payWay` = 2)) group by `p`.`clinet`,`p`.`at`,`p`.`notes`
-
-
-
-
-
-
          ");
        
 /*

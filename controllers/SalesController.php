@@ -1207,11 +1207,11 @@ class SalesController extends Controller
                         'place',
                         'commCode',
                         'CASE
-                        WHEN `type` =1
-                        THEN "متوفر"
-                        WHEN `type` =2
-                        THEN "متوفر"
-                        ELSE "قريبا" END as type',
+                             WHEN `type` =1
+                             THEN "متوفر"
+                             WHEN `type` =2
+                             THEN "متوفر"
+                             ELSE "قريبا" END as type',
                         'branches.name AS BRNAME',
                     ];
                 }
@@ -1618,7 +1618,7 @@ class SalesController extends Controller
                 ->from('stocks')
                 ->leftJoin('category', 'stocks.category = category.id')
                 ->leftJoin('prices', 'prices.category = category.id')
-                ->leftJoin('branches', 'branches.id = stocks.category')
+                ->leftJoin('branches', 'branches.id = stocks.branch')
                 ->Where((['=', 'category.id', $q]))
                 ->andWhere($whereBranch)
                 ->andWhere(['=',  'category.status', 0])
