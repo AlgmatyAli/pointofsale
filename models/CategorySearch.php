@@ -48,7 +48,7 @@ class CategorySearch extends Category
         )
         ->leftJoin('category', 'category.id = stocks.category')
         ->leftJoin('branches', 'branches.id = stocks.branch')
-        ->groupBy('stocks.branch, category.id');
+        ->groupBy('stocks.branch, stocks.category');
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
