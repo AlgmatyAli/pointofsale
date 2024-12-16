@@ -948,10 +948,10 @@ class PurchasesController extends Controller
 
         if ($model->load(Yii::$app->request->post())) {
             $textInputValues = Yii::$app->request->post('PurchaseInvoice')['textInputValues'];
-
             if (!empty($textInputValues)) {
                 foreach ($textInputValues as $category => $textInputValue) {
-                    if (Yii::$app->request->post('selection') && in_array($id, Yii::$app->request->post('selection'))) {
+                    if (Yii::$app->request->post('selection') && in_array($category, Yii::$app->request->post('selection'))) {
+                        //die(print_r($textInputValues. '1'));
                         if ($textInputValue <> 0) {
                             $id = TempTransferItems::find()->max('id') + 1;
                             $newModel = new TempTransferItems();
@@ -965,7 +965,7 @@ class PurchasesController extends Controller
                     }
                 }
             }
-
+            //die(var_dump($textInputValues.'2'));
             $searchModel = new TempTransferItemsSearch();
             $searchModel->created_by = Yii::$app->user->identity->id;
             $dataProvider = $searchModel->search(Yii::$app->request->queryParams);

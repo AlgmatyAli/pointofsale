@@ -87,6 +87,18 @@ $this->registerJs($search);
             'footer' => true
         ],
 
+        [
+            'class' => 'yii\grid\ActionColumn',
+            'options'=>['style'=>'width:120px;'],
+            'template'=>'<div class="btn-group btn-group" role="group" aria-label="...">{view}</div>',
+            'buttons'=>[
+                'view' => function ($url, $model, $key) {
+                    return Html::a('<i class="fa fa-eye"></i>', ['purchases/view', 'id' => $model->PurchasesId], [
+                        'class' => 'btn btn-default'
+                    ]);
+                },
+            ]
+        ],
     ];
     ?>
     <?= GridView::widget([
