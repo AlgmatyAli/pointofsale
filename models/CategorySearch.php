@@ -41,16 +41,35 @@ class CategorySearch extends Category
      */
     public function search($params)
     {
-        $query = Category::find()
-        ->select('category.id, name, serialNo, commCode, class, company, place, stocks.quantity')
-        ->leftJoin('stocks', 'category.id = stocks.category');
-
-        // add conditions that should always apply here
+        $query = Stocks::find()
+        ->select('stocks.category, branch, max(category.name) as name, sum(stocks.quantity) as quantity, sum(stocks.type) as type, max(category.unit) as unit, 
+        max(category.company) as company, max(category.box) as box, max(category.class) as class, 
+        max(category.serialNo) as serialNo, max(category.commCode) as commCode'
+        )
+        ->leftJoin('category', 'category.id = stocks.category')
+        ->leftJoin('branches', 'branches.id = stocks.branch')
+        ->groupBy('stocks.branch, category.id');
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
-            'pagination' => [ 'pageSize' => 200 ],
+            'sort' => [
+                'defaultOrder' => ['category' => SORT_ASC]
+            ],
+            'pagination' => false,
+            //'pagination' => ['pageSize' => 200],
         ]);
+
+        // $query = Category::find()
+        // ->select('category.id, category.name, serialNo, commCode, class, company, place, stocks.quantity, branches.name as branch')
+        // ->leftJoin('stocks', 'category.id = stocks.category')
+        // ->leftJoin('branches', 'branches.id = stocks.branch')
+        // ->groupBy('stocks.branch, category.id');
+        // add conditions that should always apply here
+
+        // $dataProvider = new ActiveDataProvider([
+        //     'query' => $query,
+        //     'pagination' => [ 'pageSize' => 200 ],
+        // ]);
 
         $this->load($params);
 
@@ -77,7 +96,7 @@ class CategorySearch extends Category
             'user_update' => $this->user_update,
             'update_at' => $this->update_at,
             'category.commCode' => $this->commCode,
-            
+
         ]);
 
         $query->andFilterWhere(['like', 'category.name', $this->name])
