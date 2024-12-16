@@ -55,8 +55,8 @@ class CategorySearch extends Category
             'sort' => [
                 'defaultOrder' => ['category' => SORT_ASC]
             ],
-            'pagination' => false,
-            //'pagination' => ['pageSize' => 200],
+            //'pagination' => false,
+            'pagination' => ['pageSize' => 200],
         ]);
 
         // $query = Category::find()
