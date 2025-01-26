@@ -19,7 +19,7 @@ use app\models\Employee;
     <div class="row">
       <div class="col-md-2"></div>
       <div class="col-md-4">
-          <?= $form->field($model, 'year')->dropDownList([ '2021' => '2021', '2022' => '2022', '2023' => '2023', '2024' => '2024', '2025' => '2025'], 
+          <?= $form->field($model, 'year')->dropDownList([ '2021' => '2021', '2022' => '2022', '2023' => '2023', '2024' => '2024', '2025' => '2025', '2026' => '2026', '2027' => '2027'], 
             ['prompt' => 'الرجاء اختيار السنـة...']
         ) ?>
       </div>
@@ -58,7 +58,7 @@ use app\models\Employee;
             //. '$.get("' . Url::to(['emp-salary/get-salary']) . '&employee="+employee, function(data){'
 
             //. '$.get("' . Url::to(['emp-salary/get-salary']) . '&employee=+employee", function(data){'
-            . 'var data=$.parseJSON(data);'
+            //. 'var data=$.parseJSON(data);'
             . 'if(data != null){'
             . '$("#empsalary-salary").val(data.salary);'
             . '$("#empsalary-lastpay").val(data.lastpay);'

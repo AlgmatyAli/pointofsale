@@ -262,6 +262,7 @@ class EmpSalaryController extends Controller
 
     public function actionGetSalary($employee, $year, $month)
     {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         $sql = "SELECT max(`employee`.`salary`) AS `salary`, sum(`emp_salary`.`value`) as value,
          max(`emp_salary`.`at`) as at,
 	   (select emp_salary.value from emp_salary where emp_salary.type = 1
@@ -290,6 +291,6 @@ class EmpSalaryController extends Controller
                 $val = $value;
              }
         }
-        echo json::encode($val);
+         return $val;
     }
 }
