@@ -24,7 +24,7 @@ class SalesDetails extends \yii\db\ActiveRecord
     /**
      * {@inheritdoc}
      */
-    public $company, $serialNo, $commCode, $class, $client;
+    public $company, $serialNo, $commCode, $class, $client, $Qtotalinventory, $reservation, $otherQtotalinventory;
     public static function tableName()
     {
         return 'salesDetails';
@@ -39,7 +39,7 @@ class SalesDetails extends \yii\db\ActiveRecord
            // [['salesId', 'category', 'quantity', 'costPrice', 'box'], 'required'],
             [['salesId', 'type','category', 'box'], 'integer'],
             [['quantity', 'costPrice', 'salePrice', 'original_price'], 'number'],
-            [['expire','type','mac_address','serial_number', 'packing', 'waitQnty', 'company', 'serialNo', 'commCode', 'class', 'client'], 'safe'],
+            [['expire','type','mac_address','serial_number', 'packing', 'waitQnty', 'company', 'serialNo', 'commCode', 'class', 'client', 'Qtotalinventory', 'reservation', 'otherQtotalinventory'], 'safe'],
             [['category'], 'exist', 'skipOnError' => true, 'targetClass' => Category::className(), 'targetAttribute' => ['category' => 'id']],
             [['salesId'], 'exist', 'skipOnError' => true, 'targetClass' => Sales::className(), 'targetAttribute' => ['salesId' => 'id']],
         ];

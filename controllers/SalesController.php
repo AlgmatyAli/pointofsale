@@ -881,27 +881,52 @@ class SalesController extends Controller
 
     public function actionNoprice($id)
     {
-        $sql = "select sales.id, sales.at, sales.payWay, sales.total, sales.disscount, sales.paid, sales.type, sales.billId, sales.notes, sales.deleviried,
-                salesDetails.quantity, salesDetails.costPrice, salesDetails.salePrice,
-                Totalinventory.quantity as Qtotalinventory,
-                client.name as client, client.mobile,
-                category.name as category, category.serialNo, category.company, category.commCode,
-                category_reservation.quantity as reservation, category.place as place
-                FROM sales
-                JOIN salesDetails on sales.id = salesDetails.salesId
-                JOIN Totalinventory on salesDetails.category = Totalinventory.id
-                JOIN client on sales.clinet = client.id
-                JOIN category on category.id = salesDetails.category
-                left JOIN category_reservation on salesDetails.category = category_reservation.category
-                where sales.id = " . $id . " and Totalinventory.branch = " . Yii::$app->user->identity->branch . " and Totalinventory.type <> 3 
-                ";
-        $connection = Yii::$app->db;
-        $data = $connection->createCommand($sql);
-        $info = $data->queryAll();
-        return $this->render('printBill', [
-            'infos' => $info,
-            'models' => $info,
+        // $sql = "select sales.id, sales.at, sales.payWay, sales.total, sales.disscount, sales.paid, sales.type, sales.billId, sales.notes, sales.deleviried,
+        //         salesDetails.quantity, salesDetails.costPrice, salesDetails.salePrice,
+        //         Totalinventory.quantity as Qtotalinventory,
+        //         client.name as client, client.mobile,
+        //         category.name as category, category.serialNo, category.company, category.commCode,
+        //         category_reservation.quantity as reservation, category.place as place
+        //         FROM sales
+        //         JOIN salesDetails on sales.id = salesDetails.salesId
+        //         JOIN Totalinventory on salesDetails.category = Totalinventory.id
+        //         JOIN client on sales.clinet = client.id
+        //         JOIN category on category.id = salesDetails.category
+        //         left JOIN category_reservation on salesDetails.category = category_reservation.category
+        //         where sales.id = " . $id . " and Totalinventory.branch = " . Yii::$app->user->identity->branch . " and Totalinventory.type <> 3 
+        //         ";
+        // $connection = Yii::$app->db;
+        // $data = $connection->createCommand($sql);
+        // $info = $data->queryAll();
+        // =======================
+        $company = CompanyInfo::find()->one();
+        $providerSalesDetails = new ActiveDataProvider([
+            'query' => SalesDetails::find()
+            ->select(['salesDetails.id', 'salesDetails.salesId', 'salesDetails.category', 'salesDetails.quantity', 
+            'salesDetails.costPrice', 'salesDetails.salePrice', 'Totalinventory.quantity as Qtotalinventory',
+            'category_reservation.quantity as reservation', '(SELECT quantity from totalinventory where branch <> '.Yii::$app->user->identity->branch.' and type <> 3 and id = salesdetails.category) as otherQtotalinventory '])
+            ->leftJoin('Totalinventory', 'salesDetails.category = Totalinventory.id')
+            ->leftJoin('category_reservation', 'salesDetails.category = category_reservation.category')
+            ->where(['=', 'salesDetails.salesId', $id])
+            ->andWhere(['=', 'Totalinventory.branch', Yii::$app->user->identity->branch])
+            ->andWhere(['<>', 'Totalinventory.type', 3]),
+            'sort' => [
+                'defaultOrder' => [
+                    'id' => SORT_DESC,
+                ],
+            ],
+            'pagination' => false,
         ]);
+        // =======================
+        return $this->render('printBill', [
+            'model' => $this->findModel($id),
+            'providerSalesDetails' => $providerSalesDetails,
+            'company' => $company,
+        ]);
+        // return $this->render('printBill', [
+        //     'infos' => $info,
+        //     'models' => $info,
+        // ]);
     }
 
     public function actionPrintNoPrice($id)
