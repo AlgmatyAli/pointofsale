@@ -904,7 +904,7 @@ class SalesController extends Controller
             'query' => SalesDetails::find()
             ->select(['salesDetails.id', 'salesDetails.salesId', 'salesDetails.category', 'salesDetails.quantity', 
             'salesDetails.costPrice', 'salesDetails.salePrice', 'Totalinventory.quantity as Qtotalinventory',
-            'category_reservation.quantity as reservation', '(SELECT quantity from totalinventory where branch <> '.Yii::$app->user->identity->branch.' and type <> 3 and id = salesdetails.category) as otherQtotalinventory '])
+            'category_reservation.quantity as reservation', '(SELECT quantity from Totalinventory where branch <> '.Yii::$app->user->identity->branch.' and type <> 3 and id = salesdetails.category) as otherQtotalinventory '])
             ->leftJoin('Totalinventory', 'salesDetails.category = Totalinventory.id')
             ->leftJoin('category_reservation', 'salesDetails.category = category_reservation.category')
             ->where(['=', 'salesDetails.salesId', $id])
