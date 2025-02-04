@@ -1,6 +1,7 @@
 <?php
 
 use app\models\base\Currancy;
+use app\models\CompanyInfo;
 use app\models\User;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
@@ -18,31 +19,34 @@ use yii\helpers\ArrayHelper;
 <div class="sales-form">
 
     <?php $form = ActiveForm::begin(); ?>
-    <?=  $form->field($model, 'currancy')->widget(Select2::class, [
-     'data' => ArrayHelper::map(Currancy::find()
-     ->all(),'id', 'name'),
-     'language' => 'ar',
-     'options' => ['placeholder' => 'الرجاء اختيار اسم العملة ...'],
-     'pluginOptions' => [
-         'allowClear' => true,
-         'multiple'=>false,
-     ],
+
+    <?php
+    $currency = CompanyInfo::find()->one();
+    $model->currancy = $currency->currancy;
+    echo $form->field($model, 'currancy')->widget(Select2::class, [
+        'data' => ArrayHelper::map(Currancy::find()->all(), 'id', 'name'),
+        'language' => 'ar',
+        'options' => ['placeholder' => 'الرجاء اختيار اسم العملة ...'],
+        'pluginOptions' => [
+            'allowClear' => true,
+            'multiple' => false,
+        ],
     ]); ?>
 
-   <?=  $form->field($model, 'user_insert')->widget(Select2::class, [
-     'data' => ArrayHelper::map(User::find()
-     ->where(['=', 'isActive', 'active'])
-     ->all(),'id', 'username'),
-     'language' => 'ar',
-     'options' => ['placeholder' => 'الرجاء اختيار اسم المستخدم ...'],
-     'pluginOptions' => [
-         'allowClear' => true,
-         'multiple'=>false,
-     ],
+    <?= $form->field($model, 'user_insert')->widget(Select2::class, [
+        'data' => ArrayHelper::map(User::find()
+            ->where(['=', 'isActive', 'active'])
+            ->all(), 'id', 'username'),
+        'language' => 'ar',
+        'options' => ['placeholder' => 'الرجاء اختيار اسم المستخدم ...'],
+        'pluginOptions' => [
+            'allowClear' => true,
+            'multiple' => false,
+        ],
     ]); ?>
 
-      <?= 
-        $form->field($model, 'min_date')->widget(
+    <?=
+    $form->field($model, 'min_date')->widget(
         DatePicker::class,
         [
             'value' => '02-16-2012',
@@ -54,9 +58,9 @@ use yii\helpers\ArrayHelper;
                 'todayBtn' => true,
             ]
         ]
-            ); ?>
-        <?= 
-        $form->field($model, 'max_date')->widget(
+    ); ?>
+    <?=
+    $form->field($model, 'max_date')->widget(
         DatePicker::class,
         [
             'value' => '02-16-2012',
@@ -68,16 +72,17 @@ use yii\helpers\ArrayHelper;
                 'todayBtn' => true,
             ]
         ]
-        ); ?>
+    ); ?>
 
-        <?= $form->field($model, 'today')->checkBox(['checked' => false]) ?>
+    <?= $form->field($model, 'today')->checkBox(['checked' => false]) ?>
 
-     <br>
+    <br>
 
-    <br><div class="form-group">
-        <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>'.' '.Yii::t('app', 'Run'), ['class' => 'btn btn-success btn-lg']) ?>
-        <?= Html::a('<i class="fa fa-fw fa-eraser"></i>'.' '.Yii::t('app', "Erase"), Url::toRoute(['ftran']), ['class' => 'btn btn-danger btn-lg']) ?>
+    <br>
+    <div class="form-group">
+        <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Run'), ['class' => 'btn btn-success btn-lg']) ?>
+        <?= Html::a('<i class="fa fa-fw fa-eraser"></i>' . ' ' . Yii::t('app', "Erase"), Url::toRoute(['ftran']), ['class' => 'btn btn-danger btn-lg']) ?>
     </div>
-      
+
     <?php ActiveForm::end(); ?>
 </div>

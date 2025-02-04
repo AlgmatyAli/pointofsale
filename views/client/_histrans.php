@@ -1,10 +1,14 @@
 <?php
 
+use app\models\base\Currancy;
+use app\models\CompanyInfo;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use kartik\date\DatePicker;
 use yii\helpers\Url;
 use kartik\depdrop\DepDrop;
+use kartik\select2\Select2;
+use yii\helpers\ArrayHelper;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\ReceiptSearch */
@@ -12,34 +16,47 @@ use kartik\depdrop\DepDrop;
 ?>
 
 <div class="histrans">
-    
+
     <?php $form = ActiveForm::begin(); ?>
 
-   <?php
-   $catList = [
-    0 => 'زبائن',
-    1 => 'موردين',
-    2 => 'كلاهما'
-];
- 
-    echo $form->field($model, 'type')->dropDownList($catList, ['id'=>'type-id', 'prompt' => 'اختيار نوع العرض']);
+    <?php 
+    $currency = CompanyInfo::find()->one();
+    $model->currency = $currency->currancy;
+    echo $form->field($model, 'currency')->widget(Select2::class, [
+        'data' => ArrayHelper::map(Currancy::find()->where('id = (select currancy from company_info)')->all(), 'id', 'name'),
+        'language' => 'ar',
+        'options' => ['placeholder' => 'الرجاء اختيار اسم العملة ...'],
+        'pluginOptions' => [
+            'allowClear' => true,
+            'multiple' => false,
+        ],
+    ]); ?>
+
+    <?php
+    $catList = [
+        0 => 'زبائن',
+        1 => 'موردين',
+        2 => 'كلاهما'
+    ];
+
+    echo $form->field($model, 'type')->dropDownList($catList, ['id' => 'type-id', 'prompt' => 'اختيار نوع العرض']);
     ?>
-    
+
     <?php
     echo $form->field($model, 'id')->widget(DepDrop::class, [
-    'type' => DepDrop::TYPE_SELECT2,
-    'options'=>['id'=>'type1-id'],
-    'pluginOptions'=>[
-        'depends'=>['type-id'],
-        'placeholder'=>'Select...',
-        'url'=>Url::to(['/client/type']),
-        'loadingText' => 'Loading child level 2 ...',
-    ]
+        'type' => DepDrop::TYPE_SELECT2,
+        'options' => ['id' => 'type1-id'],
+        'pluginOptions' => [
+            'depends' => ['type-id'],
+            'placeholder' => 'Select...',
+            'url' => Url::to(['/client/type']),
+            'loadingText' => 'Loading child level 2 ...',
+        ]
     ]);
     ?>
 
-     <?=
-         $form->field($model, 'min_date')->widget(
+    <?=
+    $form->field($model, 'min_date')->widget(
         DatePicker::class,
         [
             'language' => 'ar',
@@ -50,10 +67,10 @@ use kartik\depdrop\DepDrop;
                 'todayBtn' => true,
             ]
         ]
-            );
-        ?>
-        <?=
-         $form->field($model, 'max_date')->widget(
+    );
+    ?>
+    <?=
+    $form->field($model, 'max_date')->widget(
         DatePicker::class,
         [
             'language' => 'ar',
@@ -64,15 +81,16 @@ use kartik\depdrop\DepDrop;
                 'todayBtn' => true,
             ]
         ]
-        );
-        ?>
+    );
+    ?>
 
     <?= $form->field($model, 'allData')->checkBox(['checked' => false]) ?>
 
 
-     <br><div class="form-group">
-        <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>'.' '.Yii::t('app', 'Run'), ['class' => 'btn btn-success btn-lg']) ?>
-        <?= Html::a('<i class="fa fa-fw fa-eraser"></i>'.' '.Yii::t('app', "Erase"), Url::toRoute(['index']), ['class' => 'btn btn-danger btn-lg']) ?>
+    <br>
+    <div class="form-group">
+        <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Run'), ['class' => 'btn btn-success btn-lg']) ?>
+        <?= Html::a('<i class="fa fa-fw fa-eraser"></i>' . ' ' . Yii::t('app', "Erase"), Url::toRoute(['index']), ['class' => 'btn btn-danger btn-lg']) ?>
     </div>
 
     <?php ActiveForm::end(); ?>

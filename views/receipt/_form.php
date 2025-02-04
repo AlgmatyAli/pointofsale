@@ -22,6 +22,19 @@ use yii\helpers\Url;
         <div class="col-lg-3"></div>
         <div class="col-lg-5">
             <?php
+            echo $form->field($model, 'currancy')->widget(Select2::class, [
+                'data' => ArrayHelper::map(Currancy::find()
+                    ->all(), 'id', 'name'),
+                'language' => 'ar',
+                'options' => ['id' => 'currancy', 'placeholder' => 'الرجاء اختيار العملة ...'],
+                'pluginOptions' => [
+                    'allowClear' => false,
+                    'multiple' => false,
+                ],
+            ]);
+            ?>
+
+            <?php
             if ($_GET['type'] == '1') {
                 $data = ArrayHelper::map(Client::find()
                     ->where(['in', 'type', [0, 2]])
@@ -47,7 +60,8 @@ use yii\helpers\Url;
                 'pluginEvents' => [
                     'change' => 'function(event){
                 var client = event.currentTarget.value;
-                $.get("' . Url::to(['receipt/get-balance']) . '&client="+client, function(data){
+                var currancy = $("#currancy").val();
+                $.get("' . Url::to(['receipt/get-balance']) . '&client="+client+"&currancy="+currancy, function(data){
                     
                     if(data != null){
                     $("#remainingBalance").text(data);
@@ -59,7 +73,7 @@ use yii\helpers\Url;
                 ],
             ]);
             ?>
-<!-- //var data=$.parseJSON(data); -->
+            <!-- //var data=$.parseJSON(data); -->
             <?php
             echo $form->field($model, 'at')->widget(
                 DatePicker::class,
@@ -83,17 +97,6 @@ use yii\helpers\Url;
 
             <?= $form->field($model, 'payWay')->dropDownList(['نقدا' => 'نقدا', 'صك' => 'صك', 'بطاقة' => 'بطاقة',], ['prompt' => '']) ?>
 
-            <?php
-            echo $form->field($model, 'currancy')->widget(Select2::class, [
-                'data' => ArrayHelper::map(Currancy::find()
-                    ->all(), 'id', 'name'),
-                'language' => 'ar',
-                'pluginOptions' => [
-                    'allowClear' => false,
-                    'multiple' => false,
-                ],
-            ]);
-            ?>
             <br>
 
             <?= $form->field($model, 'type')->hiddenInput(['readonly' => true, 'value' => $model->isNewRecord ? $_GET['type'] : $model->type])->label(false) ?>

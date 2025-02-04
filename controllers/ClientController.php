@@ -256,7 +256,7 @@ class ClientController extends Controller
                 $model->type = '0,2';
                 $sql = " SELECT dept.id, dept.type as type, MAX(dept.name) as name, SUM(dept.credt) as credt, 
                 MAX(dept.Phone) as phone, max(dept.deserving) as deserving  FROM dept
-                where dept.Type in(".$model->type.")  
+                where dept.Type in(".$model->type.")  and dept.currency in( 0, ".$model->currency.")
                 GROUP BY dept.id, dept.type having SUM(dept.credt)<>0";    
                 $connection = Yii::$app->db;
                 $model = $connection->createCommand($sql);
@@ -277,7 +277,7 @@ class ClientController extends Controller
                 $model->type = '1';
                 $sql = " SELECT dept_supp.id, dept_supp.type as type, MAX(dept_supp.name) as name,  SUM(dept_supp.credt) as credt,
                 MAX(dept_supp.Phone) as phone FROM dept_supp
-                where dept_supp.Type in(".$model->type.")
+                where dept_supp.Type in(".$model->type.") and dept_supp.currency in( 0, ".$model->currency.")
                 GROUP BY dept_supp.id, dept_supp.type having SUM(dept_supp.credt)<>0";
                 $connection = Yii::$app->db;
                 $model = $connection->createCommand($sql);
@@ -341,7 +341,7 @@ class ClientController extends Controller
             max(histrans_client.deleviried) as deleviried
             FROM histrans_client
             where histrans_client.Type in(".$types.") and histrans_client.id = ".$model->id." 
-            and histrans_client.trandate < '".$model->min_date."'  "; 
+            and histrans_client.trandate < '".$model->min_date."' and histrans_client.currency in( 0, ".$model->currency.")"; 
             $connection = Yii::$app->db;
             $data = $connection->createCommand($sqlSum);
             $lastBalance = $data->queryAll();
@@ -349,9 +349,9 @@ class ClientController extends Controller
         
         if($model->type == 1){
         $sqlSum = " SELECT
-            sum(histrans_client.dept) as sader, sum(histrans_client.credt) as wared, max(histrans_client.type) as type FROM histrans_client
-            where histrans_client.Type in(".$model->type.") and histrans_client.id = ".$model->id."
-            and histrans_client.trandate < '".$model->min_date."'  ";
+            sum(histrans_supplier.dept) as sader, sum(histrans_supplier.credt) as wared, max(histrans_supplier.type) as type FROM histrans_supplier
+            where histrans_supplier.Type in(".$model->type.") and histrans_supplier.id = ".$model->id."
+            and histrans_supplier.trandate < '".$model->min_date."' and histrans_supplier.currency in( 0, ".$model->currency.")"; 
             $connection = Yii::$app->db;
             $data = $connection->createCommand($sqlSum);
             $lastBalance = $data->queryAll();
@@ -365,7 +365,7 @@ class ClientController extends Controller
         FROM histrans_client
         where histrans_client.Type in(".$types.") and histrans_client.id = ".$model->id."
         and histrans_client.trandate between '".$model->min_date."' and '".$model->max_date."'
-        and histrans_client.sort <> 1
+        and histrans_client.sort <> 1  and histrans_client.currency in( 0, ".$model->currency.")
         order by  histrans_client.trandate, histrans_client.billId";
        
         }elseif($model->type == 1){
@@ -375,7 +375,7 @@ class ClientController extends Controller
              FROM histrans_supplier
             where histrans_supplier.Type in(".$model->type.") and histrans_supplier.id = ".$model->id." and histrans_supplier.trandate 
             between '".$model->min_date."' and '".$model->max_date."'
-            and histrans_supplier.sort <> 1
+            and histrans_supplier.sort <> 1 and histrans_supplier.currency in( 0, ".$model->currency.")
             order by histrans_supplier.trandate, histrans_supplier.billId";
         }
 

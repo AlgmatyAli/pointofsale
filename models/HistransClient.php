@@ -7,15 +7,18 @@ use Yii;
 /**
  * This is the model class for table "histrans_client".
  *
+ * @property int $sort 
  * @property string $kind
  * @property int $id
  * @property string $name
- * @property string|null $dept
- * @property float|null $credt
- * @property string|null $phone
+ 
  * @property int $type
  * @property int $branch
  * @property string $trandate
+ * @property int $BillId 
+ * @property int $printId 
+ * @property int|null $deleviried 
+ * @property int|null $currency 
  */
 
 class HistransClient extends \yii\db\ActiveRecord
@@ -37,10 +40,16 @@ class HistransClient extends \yii\db\ActiveRecord
     {
         return [
             [['id', 'type', 'branch'], 'integer'],
+            [['dept', 'credt', 'phone', 'deleviried', 'currency'], 'default', 'value' => null],
+            [['printId'], 'default', 'value' => 0],
+            [['trandate'], 'default', 'value' => ''],
+            [['sort', 'id', 'type', 'branch', 'BillId', 'printId', 'deleviried', 'currency'], 'integer'],
             [['credt'], 'number'],
             [['trandate', 'min_date', 'max_date', 'billId', 'allData'], 'safe'],
             [['kind'], 'string', 'max' => 14],
+            [['kind'], 'string', 'max' => 28],
             [['name', 'dept', 'phone'], 'string', 'max' => 255],
+            [['trandate'], 'string', 'max' => 10],
         ];
     }
 
@@ -62,6 +71,10 @@ class HistransClient extends \yii\db\ActiveRecord
             'min_date' => Yii::t('app', 'Min Date'),
             'max_date' => Yii::t('app', 'Max Date'),
             'allData' => Yii::t('app', 'All Data'),
+            'BillId' => Yii::t('app', 'Bill ID'),
+            'printId' => Yii::t('app', 'Print ID'),
+            'deleviried' => Yii::t('app', 'Deleviried'),
+            'currency' => Yii::t('app', 'Currency'),
         ];
     }
 }

@@ -170,7 +170,7 @@ return [
     'Add'=>'اضافة',
     'Print Bill With Prices'=>'طباعة فاتورة بالأسعار',
     'Serial Number'=>'رقم تسلسلي',
-    'Total'=>'الإجمالي',
+    'Currency'=>'العملة',
     'Category'=>'اسم الصنف',
     'Invoice Date'=>'تاريخ الفاتورة',
     'Quantity'=>'الكمية',

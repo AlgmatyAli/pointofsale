@@ -61,7 +61,7 @@ class BalanceHistoryController extends Controller
             }
             
         $sqlSum = " SELECT
-            abs(sum(balance_history.value)) as balance FROM balance_history
+            abs(sum(balance_history.dept)) as balance FROM balance_history
             where balance_history.client_type in(".$model->client_type.")
             and balance_history.clinet = ".$model->clinet."
             and currancy !=1 and balance_history.AT < '".$model->min_date."'  ";
@@ -70,15 +70,15 @@ class BalanceHistoryController extends Controller
             $lastBalance = $data->queryAll();
         
         $sql = " SELECT balance_history.clinet, balance_history.AT as trandate, balance_history.client_type,
-                        balance_history.value as amount, client.name as name, balance_history.why,
-                        CASE
-                          WHEN balance_history.value < 0
-                          THEN abs(balance_history.value)
-                          else 0 END as wared,
-                          CASE
-                          WHEN balance_history.value > 1
-                          THEN abs(balance_history.value)
-                          else 0 END as sader
+                        balance_history.dept as sader, balance_history.credt as wared, client.name as name, balance_history.kind, balance_history.BillId, balance_history.printId, balance_history.deleviried, balance_history.currancy
+                        -- CASE
+                        --   WHEN balance_history.credt < 0
+                        --   THEN abs(balance_history.credt)
+                        --   else 0 END as wared,
+                        --   CASE
+                        --   WHEN balance_history.credt > 1
+                        --   THEN abs(balance_history.credt)
+                        --   else 0 END as sader
 
         FROM balance_history, client
         where balance_history.client_type in(".$model->client_type.") and balance_history.clinet = ".$model->clinet."

@@ -235,21 +235,17 @@ class ReceiptController extends Controller
         ]);
     }
 
-    public function actionGetBalance($client)
+    public function actionGetBalance($client, $currancy)
     {
-
         $clientType = Client::find()->where(['=', 'id', $client])->one();
-        //die(var_dump($clientType['id']));
-        //$this->findModel($client);
 
         if ($clientType['type'] == 0 || $clientType['type'] == 2) {
-            $balance = Dept::find()->where(['id' => $client])->sum('credt');
+            $balance = Dept::find()->where(['id' => $client])->andWhere(['=', 'currency', $currancy])->sum('credt');
         } else {
-            $balance = DeptSupp::find()->where(['id' => $client])->sum('credt');
+            $balance = DeptSupp::find()->where(['id' => $client])->andWhere(['=', 'currency', $currancy])->sum('credt');
         }
         Yii::$app->response->format = Yii\web\Response::FORMAT_JSON;
         return $balance;
-        //echo json::encode(@number_format($balance));
     }
 
     public function actionTransferToSafe($receiptId)
