@@ -7,7 +7,7 @@ use yii\helpers\Html;
 /* @var $model app\models\Balance */
 
 $this->title = Yii::t('app', 'Create Balance');
-$this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Balance'), 'url' => ['index']];
+$this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Balances'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="balance-create">

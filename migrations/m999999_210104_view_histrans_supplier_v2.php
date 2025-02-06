@@ -28,18 +28,20 @@ class m999999_210104_view_histrans_supplier_v2 extends Migration
         0 AS `0`,(  `purchases`.`total` -   `purchases`.`paid`) AS `purchases.total-purchases.paid`,
           `client`.`phone` AS `phone`,  `client`.`type` AS `type`,  `purchases`.
         `branch` AS `branch`,  `purchases`.`billId` AS `billId`,  `purchases`.`at` AS `at`, `purchases`.`id` AS `printId`, `purchases`.`currancy` AS currency from (  `purchases` join   `client`) 
-        where ((  `purchases`.`payWay` in (1,2)) and (  `purchases`.`clinet` =   `client`.`id`) and (  `purchases`.`type` = 1)) 
+        where ((  `purchases`.`payWay` in (1,2)) and (  `purchases`.`clinet` =   `client`.`id`) and (  `purchases`.`type` = 1)) and (purchases.currancy in (select currancy from company_info)) 
         union 
         select 3 AS `3`,'ايصال صرف رقم - ' AS `reciept 2`,  `receipt`.`clinet` AS `clinet`,  `client`.`name` AS `name`,
           `receipt`.`value` AS `value`,0 AS `0`,  `client`.`phone` AS `phone`,  `client`.`type` AS `type`,
           `receipt`.`branch` AS `branch`,  `receipt`.`rId` AS `rId`,  `receipt`.`at` AS `at`, `receipt`.`id` AS `printId`, `receipt`.`currancy`
         from (  `receipt` join   `client`) where ((  `receipt`.`clinet` =   `client`.`id`) and (  `receipt`.`type` = 2)) 
+        and (receipt.currancy in (select currancy from company_info))
         union 
         select 4 AS `4`,'ترجيع مشتريات رقـم - ' AS `back purchases`,  `purchases`.`clinet` AS `clinet`,
           `client`.`name` AS `name`,  `purchases`.`total` AS `total`,0 AS `0`,  `client`.`phone` AS `phone`,
           `client`.`type` AS `type`,  `purchases`.`branch` AS `branch`,  `purchases`.`billId` AS `billId`,
           `purchases`.`at` AS `at`, `purchases`.`id` AS `printId`, `purchases`.`currancy` AS currency from (  `purchases` join   `client`) where ((  `purchases`.`payWay` in (1,2)) 
         and (  `purchases`.`clinet` =   `client`.`id`) and (  `purchases`.`type` = 2) and (  `purchases`.`payWay` = 2))
+        and (purchases.currancy in (select currancy from company_info))
        ");
     }
 

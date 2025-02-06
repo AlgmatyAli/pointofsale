@@ -10,7 +10,7 @@ use app\models\Balance;
 /**
  * app\models\BalanceSearch represents the model behind the search form about `app\models\Balance`.
  */
- class BalanceSearch extends Balance
+class BalanceSearch extends Balance
 {
     /**
      * @inheritdoc
@@ -18,8 +18,9 @@ use app\models\Balance;
     public function rules()
     {
         return [
-            [['value'], 'number'],
-            [['clinet', 'currancy'], 'integer'],
+            [['id', 'type', 'currency'], 'integer'],
+            [['name', 'phone', 'deserving'], 'safe'],
+            [['credt'], 'number'],
         ];
     }
 
@@ -41,15 +42,19 @@ use app\models\Balance;
      */
     public function search($params)
     {
-        $query = Balance::find();
+        $query = Balance::find()
+            ->select(['id, max(name) as name, sum(credt*-1) as credt, max(phone) as phone, currency, max(type) as type, max(deserving) as deserving'])
+            ->where(['<>', 'credt', 0])
+            ->groupBy(['name', 'currency']);
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
-            'sort' =>[
+            'sort' => [
                 'defaultOrder' => [
-                    'clinet' => SORT_ASC
-                ]],
-            'pagination' => false,//[ 'pageSize' => 70 ],
+                    'id' => SORT_ASC
+                ]
+            ],
+            'pagination' => false,
         ]);
 
         $this->load($params);
@@ -61,11 +66,22 @@ use app\models\Balance;
         }
 
         $query->andFilterWhere([
-            'clinet' => $this->clinet,
-            'currancy' => $this->currancy,
+            'id' => $this->id,
+            'credt' => $this->credt,
+            'deserving' => $this->deserving,
+            'currency' => $this->currency,
         ]);
-        $query->andFilterWhere(['<>', 'value', 0]);
-      
+
+        $query->andFilterWhere(['like', 'name', $this->name])
+            ->andFilterWhere(['like', 'phone', $this->phone]);
+
+        if ($this->type == 0 || $this->type == 2) {
+            $query->andFilterWhere(['in', 'type', [0, 2]]);
+        }elseif ($this->type == 1) {
+            $query->andFilterWhere(['=', 'type', 1]);
+        }else{
+            $query->andFilterWhere(['in', 'type', [0, 1, 2]]);
+        }
         return $dataProvider;
     }
 }

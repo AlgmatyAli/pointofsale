@@ -7,8 +7,8 @@ use kartik\grid\GridView;
 /* @var $this yii\web\View */
 /* @var $model app\models\Balance */
 
-$this->title = $model->value;
-$this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Balance'), 'url' => ['index']];
+$this->title = $model->name;
+$this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Balances'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="balance-view">
@@ -34,9 +34,13 @@ $this->params['breadcrumbs'][] = $this->title;
     <div class="row">
 <?php 
     $gridColumn = [
-        'value',
-        'clinet',
-        'currancy',
+        ['attribute' => 'id', 'visible' => false],
+        'name',
+        'credt',
+        'phone',
+        'type',
+        'deserving',
+        'currency',
     ];
     echo DetailView::widget([
         'model' => $model,

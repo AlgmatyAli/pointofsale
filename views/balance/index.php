@@ -8,7 +8,7 @@ use yii\helpers\Html;
 use kartik\export\ExportMenu;
 use kartik\grid\GridView;
 
-$this->title = Yii::t('app', 'Balance');
+$this->title = Yii::t('app', 'Balances');
 $this->params['breadcrumbs'][] = $this->title;
 $search = "$('.search-button').click(function(){
 	$('.search-form').toggle(1000);
@@ -20,65 +20,98 @@ $this->registerJs($search);
 
     <h1><?= Html::encode($this->title) ?></h1>
     <hr>
-    <?php echo $this->render('_search', ['model' => $searchModel]); ?>
+    <?php // echo $this->render('_search', ['model' => $searchModel]); 
+    ?>
 
-
+    <p>
+        <?php //Html::a(Yii::t('app', 'Advance Search'), '#', ['class' => 'btn btn-info search-button']) ?>
+    </p>
+    <br>
     <div class="search-form" style="display:none">
-        <?= $this->render('_search', ['model' => $searchModel]); ?>
+        <?php // $this->render('_search', ['model' => $searchModel]); ?>
     </div>
     <?php
     $gridColumn = [
         ['class' => 'yii\grid\SerialColumn'],
-        'value',
-        'clinet',
-        'currancy',
+        ['attribute' => 'id', 'visible' => false],
         [
-            'class' => 'yii\grid\ActionColumn',
+            'label' => Yii::t('app', 'نوع الحركة'),
+            'format' => 'raw',
+            'attribute' => 'type',
+           'filter' => Html::activeDropDownList(
+                $searchModel,
+                'type',
+                ['0' => 'زبون', '1' => 'مورد', '2' => 'عميل'],
+                ['class' => 'form-control', 'prompt' => 'اختيار نوع الحركة ...']),
+               
+            'value' => function ($data) {
+            if ($data->type == 0) {
+                return 'زبون';
+            }
+            if ($data->type == 1) {
+                return 'مورد';
+            }
+            if ($data->type == 2) {
+                return 'عميل';
+            }
+            }
+        ],
+        'name',
+        [
+            'label' => Yii::t('app', 'الرصيد'),
+            'format' => 'raw',
+            'value' => function ($data) {
+                return $data->credt;
+            }
+        ],
+        [
+            'label' => Yii::t('app', 'Phone'),
+            'format' => 'raw',
+            'value' => function ($data) {
+                return $data->phone;
+            }
+        ],
+        [
+            'label' => Yii::t('app', 'Currency'),
+            'format' => 'raw',
+            'value' => function ($data) {
+                return $data->currancy0->name;
+            }
         ],
     ];
     ?>
-    <?php echo GridView::widget([
+    <?= GridView::widget([
         'dataProvider' => $dataProvider,
-        // 'filterModel' => $searchModel,
+        'filterModel' => $searchModel,
         'summary' => '',
-        'showPageSummary' => true,
+        'columns' => $gridColumn,
         'pjax' => true,
-        'striped' => false,
-        'hover' => true,
-        'toggleDataContainer' => ['class' => 'btn-group mr-2'],
-        'columns' => [
-            ['class' => 'kartik\grid\SerialColumn'],
-
-            [
-                'attribute' => 'client',
-                'label' => 'العمـيل',
-                'width' => '310px',
-                'value' => function ($model, $key, $index, $widget) {
-                    return $model->client0->name;
-                },
-
-                'group' => true,  // enable grouping
-
-            ],
-            [
-                'attribute' => 'value',
-                'format' => ['decimal',3],
-                'width' => '250px',
-                'value' => function ($model) {
-                    return $model->value;
-                }
-            ],
-            
-
-            [
-                'attribute' => 'currancy',
-                'width' => '250px',
-                'value' => function ($model, $key, $index, $widget) {
-                    return $model->currancy0->name;
-                },
-            ],
+        'pjaxSettings' => ['options' => ['id' => 'kv-pjax-container-balance']],
+        'panel' => [
+            'type' => GridView::TYPE_PRIMARY,
+            'heading' => '<span class="glyphicon glyphicon-book"></span>  ' . Html::encode($this->title),
         ],
-    ]);
+        'export' => false,
+        // your toolbar can include the additional full export menu
+        'toolbar' => [
+            '{export}',
+            ExportMenu::widget([
+                'dataProvider' => $dataProvider,
+                'columns' => $gridColumn,
+                'target' => ExportMenu::TARGET_BLANK,
+                'fontAwesome' => true,
+                'dropdownOptions' => [
+                    'label' => 'Full',
+                    'class' => 'btn btn-default',
+                    'itemsBefore' => [
+                        '<li class="dropdown-header">Export All Data</li>',
+                    ],
+                ],
+                'exportConfig' => [
+                    ExportMenu::FORMAT_PDF => false
+                ]
+            ]),
+        ],
+    ]); ?>
 
-    ?>
 </div>

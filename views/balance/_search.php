@@ -2,11 +2,6 @@
 
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use app\models\base\Currancy;
-use app\models\Client;
-use kartik\select2\Select2;
-use yii\helpers\ArrayHelper;
-use yii\helpers\Url;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\BalanceSearch */
@@ -19,44 +14,34 @@ use yii\helpers\Url;
         'action' => ['index'],
         'method' => 'get',
     ]); ?>
-    <div class="row">
-        
 
-        <div class="col-md-4">
+    <?= $form->field($model, 'id', ['template' => '{input}'])->textInput(['style' => 'display:none']); ?>
 
-            <?= $form->field($model, 'clinet')->widget(Select2::class, [
-                'data' => ArrayHelper::map(Client::find()
-                    ->all(), 'id', 'name'),
-                'language' => 'ar',
-                'options' => ['placeholder' => 'الرجاء اختيار اسم العميل ...'],
-                'pluginOptions' => [
-                    'allowClear' => true,
-                    'multiple' => false
-                ],
-            ]);
-            ?>
+    <?php //$form->field($model, 'name')->textInput(['maxlength' => true, 'placeholder' => 'Name']) ?>
 
-        </div>
+    <?php // $form->field($model, 'credt')->textInput(['placeholder' => 'Credt']) ?>
 
-        <div class="col-md-4">
-            <?php
-            echo $form->field($model, 'currancy')->widget(Select2::class, [
-                'data' => ArrayHelper::map(Currancy::find()->all(), 'id', 'name'),
-                'language' => 'ar',
-                'options' => ['placeholder' => '...'],
-                'pluginOptions' => [
-                    'allowClear' => true,
-                    'multiple' => false
-                ],
-            ]);
-            ?>
-        </div>
+    <?php // $form->field($model, 'phone')->textInput(['maxlength' => true, 'placeholder' => 'Phone']) ?>
 
-    </div>
+    <?php // $form->field($model, 'type')->dropDownList(['0' => 'زبائن', '1' => 'موردين']) ?>
+
+    <?php /* echo $form->field($model, 'deserving')->widget(\kartik\datecontrol\DateControl::classname(), [
+        'type' => \kartik\datecontrol\DateControl::FORMAT_DATE,
+        'saveFormat' => 'php:Y-m-d',
+        'ajaxConversion' => true,
+        'options' => [
+            'pluginOptions' => [
+                'placeholder' => Yii::t('app', 'Choose Deserving'),
+                'autoclose' => true
+            ]
+        ],
+    ]); */ ?>
+
+    <?php /* echo $form->field($model, 'currency')->textInput(['placeholder' => 'Currency']) */ ?>
 
     <div class="form-group">
-        <?= Html::submitButton('<i class="fa fa-fw fa-search"></i>' . ' ' . Yii::t('app', 'Search'), ['class' => 'btn btn-primary btn-lg']) ?>
-        <?= Html::a('<i class="fa fa-fw fa-eraser"></i>' . ' ' . Yii::t('app', "Erase"), Url::toRoute(['index']), ['class' => 'btn btn-danger btn-lg']) ?>
+        <?= Html::submitButton(Yii::t('app', 'Search'), ['class' => 'btn btn-primary']) ?>
+        <?= Html::resetButton(Yii::t('app', 'Reset'), ['class' => 'btn btn-default']) ?>
     </div>
 
     <?php ActiveForm::end(); ?>

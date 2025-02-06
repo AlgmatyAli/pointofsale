@@ -17,9 +17,26 @@ class Balance extends BaseBalance
     {
         return array_replace_recursive(parent::rules(),
 	    [
-            [['value'], 'number'],
-            [['clinet', 'currancy'], 'integer']
+            [['id', 'type', 'currency'], 'integer'],
+            [['credt'], 'number'],
+            [['deserving'], 'safe'],
+            [['name', 'phone'], 'string', 'max' => 255]
         ]);
     }
 	
+    /**
+     * @inheritdoc
+     */
+    public function attributeHints()
+    {
+        return [
+            'id' => Yii::t('app', 'ID'),
+            'name' => Yii::t('app', 'Name'),
+            'credt' => Yii::t('app', 'Credt'),
+            'phone' => Yii::t('app', 'Phone'),
+            'type' => Yii::t('app', 'Type'),
+            'deserving' => Yii::t('app', 'Deserving'),
+            'currency' => Yii::t('app', 'Currency'),
+        ];
+    }
 }

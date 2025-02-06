@@ -173,7 +173,7 @@ return [
     'Currency'=>'العملة',
     'Category'=>'اسم الصنف',
     'Invoice Date'=>'تاريخ الفاتورة',
-    'Quantity'=>'الكمية',
+    'Balances'=>'تقرير اجمالي الديون بالعملات الاخرى',
     'Quantity'=>'الكـمية',
     'Sale Price'=>' سعر البيع',
     'Delete All'=>'الغاء ',
