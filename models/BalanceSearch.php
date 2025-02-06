@@ -49,11 +49,11 @@ class BalanceSearch extends Balance
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
-            'sort' => [
-                'defaultOrder' => [
-                    'id' => SORT_ASC
-                ]
-            ],
+            // 'sort' => [
+            //     'defaultOrder' => [
+            //         'id' => SORT_ASC
+            //     ]
+            // ],
             'pagination' => false,
         ]);
 
