@@ -45,15 +45,15 @@ class BalanceSearch extends Balance
         $query = Balance::find()
             ->select(['id, max(name) as name, sum(credt*-1) as credt, max(phone) as phone, currency, max(type) as type, max(deserving) as deserving'])
             ->where(['<>', 'credt', 0])
-            ->groupBy(['name', 'currency']);
+            ->groupBy(['id', 'currency']);
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
-            // 'sort' => [
-            //     'defaultOrder' => [
-            //         'id' => SORT_ASC
-            //     ]
-            // ],
+            'sort' => [
+                'defaultOrder' => [
+                    'id' => SORT_ASC
+                ]
+            ],
             'pagination' => false,
         ]);
 
