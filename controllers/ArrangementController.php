@@ -130,14 +130,25 @@ class ArrangementController extends Controller
                     $stocks->type = 1;
                     $stocks->save(false);
                 } else {
-                    Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + ($data->quantity*$data->type)
+                    if ($data->type == 1) {
+                        Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + ($data->quantity*$data->type)
                  WHERE category=:category
                  and branch = :branch
                  and type = :type")
-                        ->bindValue(':category', $data->category)
-                        ->bindValue(':branch', Yii::$app->user->identity->branch)
-                        ->bindValue(':type', 1)
-                        ->execute();
+                            ->bindValue(':category', $data->category)
+                            ->bindValue(':branch', Yii::$app->user->identity->branch)
+                            ->bindValue(':type', 1)
+                            ->execute();
+                    } else {
+                        Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  - ($data->quantity*$data->type)
+                WHERE category=:category
+                and branch = :branch
+                and type = :type")
+                            ->bindValue(':category', $data->category)
+                            ->bindValue(':branch', Yii::$app->user->identity->branch)
+                            ->bindValue(':type', 1)
+                            ->execute();
+                    }
                 }
             }
             TempArrangement::deleteAll(['created_by' => Yii::$app->user->identity->id, 'state' => 0]);
@@ -232,17 +243,34 @@ class ArrangementController extends Controller
      */
     public function actionDelete($id)
     {
-        $arrangementDetails = ArrangementDetails::find()->where(['=', 'arrangment', $id])->one();
-        $stocks = Stocks::find()->where(['category' => $arrangementDetails->category])
-            ->andWhere(['branch' => Yii::$app->user->identity->branch])->andWhere(['type' => 1])->one();
-        if ($arrangementDetails->type == 1) {
-            $stocks->quantity = $stocks->quantity - $arrangementDetails->quantity;
-            $stocks->save(true);
-        } else {
-            $stocks->quantity = $stocks->quantity + $arrangementDetails->quantity;
-            $stocks->save(true);
-        }
-        ArrangementDetails::deleteAll(['id' => $id]);
+        $arrangementDetails = ArrangementDetails::find()->where(['=', 'arrangement', $id])->all();
+
+        foreach ($arrangementDetails as $key => $value):
+
+            if ($value->type == 1) {
+                Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  - ($value->quantity*$value->type)
+         WHERE category=:category
+         and branch = :branch
+         and type = :type")
+                    ->bindValue(':category', $value->category)
+                    ->bindValue(':branch', Yii::$app->user->identity->branch)
+                    ->bindValue(':type', 1)
+                    ->execute();
+            } else {
+                Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + ($value->quantity*$value->type)
+        WHERE category=:category
+        and branch = :branch
+        and type = :type")
+                    ->bindValue(':category', $value->category)
+                    ->bindValue(':branch', Yii::$app->user->identity->branch)
+                    ->bindValue(':type', 1)
+                    ->execute();
+            }
+
+        endforeach;
+
+        ArrangementDetails::deleteAll(['arrangement' => $id]);
+        Arrangement::deleteAll(['id' => $id]);
         return $this->redirect(['index']);
     }
 

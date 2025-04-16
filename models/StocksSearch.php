@@ -77,7 +77,7 @@ class StocksSearch extends Stocks
             'company' => $this->company,
             'class' => $this->class,
             'serialNo' => $this->serialNo,
-            // 'branch' => $this->branch,
+            'branch' => $this->branch,
             'costPrice' => $this->costPrice,
             'stocks.type' => 1,
         ]);
