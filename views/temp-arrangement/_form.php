@@ -101,7 +101,7 @@ echo $form->field($model, 'category')->widget(Select2::class, [
         'autofocus' => true,
         'minimumInputLength' => 1,
         'ajax' => [
-            'url' => Url::to(['/except/itemlist']),
+            'url' => Url::to(['/temp-arrangement/itemlist']),
             'dataType' => 'json',
             'data' => new JsExpression('function(params) { return {q:params.term, page: params.page}; }'),
             'processResults' => new JsExpression($resultsJs),
@@ -114,7 +114,7 @@ echo $form->field($model, 'category')->widget(Select2::class, [
     'pluginEvents' => [
         'change' => 'function(event){
            var data_id = event.currentTarget.value;
-           $.get("' . Url::to(['except/get-inv']) . '&category="+data_id, function(data){
+           $.get("' . Url::to(['temp-arrangement/get-inv']) . '&category="+data_id, function(data){
               
                if(data != null){
                $("#temparrangement-realquantity").val(data.quantity);

@@ -67,7 +67,7 @@ class ClientSearch extends Client
             'user_update' => $this->user_update,
             'created_at' => $this->created_at,
             'update_at' => $this->update_at,
-            'branch' => Yii::$app->user->identity->branch,
+            // 'branch' => Yii::$app->user->identity->branch,
         ]);
 
         $query->andFilterWhere(['like', 'name', $this->name])

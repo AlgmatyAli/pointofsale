@@ -14,6 +14,8 @@ use Yii;
  * @property int|null $box
  * @property int $type
  * @property string|null $expire
+ * @property int|null $stockTaking
+ * @property int|null $branch
  *
  * @property Category $category0
  * @property Arrangement $arrangement0

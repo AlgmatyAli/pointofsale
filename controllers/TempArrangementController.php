@@ -14,6 +14,9 @@ use yii\helpers\Json;
 use yii\filters\AccessControl;
 use function Complex\abs;
 use app\models\ArrangementDetails;
+use app\models\CompanyInfo;
+use app\models\Stocks;
+use yii\db\Query;
 
 /**
  * TempArrangementController implements the CRUD actions for TempArrangement model.
@@ -24,18 +27,18 @@ class TempArrangementController extends Controller
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['post'],
                 ],
             ],
             'access' => [
-                'class' => AccessControl::className(),
+                'class' => AccessControl::class,
                 //'except' =>  'temp-back-sales/itemlist',
                 'rules' => [
                     [
                         'allow' => true,
-                        'actions' => ['create', 'view', 'delete-all', 'delete'] ,
+                        'actions' => ['create', 'view', 'delete-all', 'delete', 'itemlist', 'get-inv'],
                         'roles' => ['createArrangment'],
                     ],
                 ],
@@ -243,6 +246,102 @@ class TempArrangementController extends Controller
     {
         TempArrangement::deleteAll(['state'=> 0,'created_by' => Yii::$app->user->identity->id]);
         return $this->redirect(['create']);
+    }
+
+    public function actionItemlist($q = null, $id = null)
+    {
+        // if(Yii::$app->user->Identity->seeOtherBranchQ == 0){
+        //     $whereBranch = 'branch='.Yii::$app->user->Identity->branch;
+        // }else{
+        //     $whereBranch = 'branch in (1,2,3,4,5,6,7,8,9)';
+        // }
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $out = ['results' => ['id' => '', 'text' => '']];
+        if (!is_null($q)) {
+            $q = str_replace(' ', '%', $q);
+            $query = new Query;
+            $secript = [
+                'category.id',
+                'category.name AS text',
+                'company AS company',
+                'stocks.quantity as quantity',
+                'maxPrice as maxPrice',
+                'costPrice as costPrice',
+                'serialNo AS serialNo',
+                'minPrice AS minPrice',
+                'place',
+                'commCode',
+                'branches.name AS BRNAME'
+            ];
+            $query->select(
+                $secript
+            )
+                ->from('category') 
+                ->leftJoin('prices', 'prices.category = category.id')
+                ->leftJoin('stocks', 'stocks.category = category.id')
+                ->leftJoin('branches', 'branches.id = stocks.branch')
+                ->where('category.name like' . "'%" . $q . "%'")
+                //->andWhere($whereBranch)
+                // ->orWhere(['like', 'category.serialNo', $q])
+                ->orWhere(['like', "REPLACE(category.serialNo, '-', '')", str_replace('-', '', $q)])
+                ->orWhere(['like', 'category.commCode', $q])
+                ->orWhere((['like', 'category.id', $q]))
+                ->orWhere((['like', 'category.place', $q]))
+                ->orWhere((['like', 'category.company', $q]))
+                ->andWhere(['=', 'stocks.branch', Yii::$app->user->identity->branch])
+                ->andWhere(['=', 'category.status', 0])
+                ->andWhere(['=', 'stocks.type', 1])
+                ->limit(60);
+            $command = $query->createCommand();
+            $data = $command->queryAll();
+            $out['results'] = array_values($data);
+        }
+        return $out;
+    }
+
+    public function actionGetInv($category)
+    {
+        $company = CompanyInfo::find()->one();
+        if ($company->criteriaـvalue != 0) {
+            $criteriaـvalue = $company->criteriaـvalue;
+        } else {
+            $criteriaـvalue = 1;
+        }
+
+        if ($company->rate != 0) {
+            $rate = ($company->rate / 100);
+            $maxPrice = 'CASE
+        WHEN maxPrice >= ' . $criteriaـvalue . ' THEN round(maxPrice * "' . $rate . '" + maxPrice)
+        ELSE maxPrice
+        END  as maxPrice';
+
+            $minPrice = 'CASE
+        WHEN maxPrice >= ' . $criteriaـvalue . ' THEN round(minPrice * "' . $rate . '" + minPrice)
+        ELSE minPrice
+        END  as minPrice';
+        } else {
+            $maxPrice = 'maxPrice';
+            $minPrice = 'minPrice';
+        }
+
+        $value = Stocks::find()
+            ->leftJoin('prices', 'stocks.category = prices.category')
+            ->select([
+                'stocks.category AS id',
+                'stocks.quantity as quantity',
+                'costPrice',
+                $maxPrice,
+                $minPrice,
+                'prices.minPrice2',
+                'prices.minPrice3'
+            ])
+            ->Where(['stocks.branch' => Yii::$app->user->identity->branch])
+            ->andwhere(['stocks.category' => $category])
+            ->andwhere(['in', 'type',  [1]])
+            ->asArray()->one();
+        //echo json::encode($value);
+        Yii::$app->response->format = Yii\web\Response::FORMAT_JSON;
+        return $value;
     }
 
 }

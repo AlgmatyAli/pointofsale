@@ -240,9 +240,9 @@ class ReceiptController extends Controller
         $clientType = Client::find()->where(['=', 'id', $client])->one();
 
         if ($clientType['type'] == 0 || $clientType['type'] == 2) {
-            $balance = Dept::find()->where(['id' => $client])->andWhere(['=', 'currency', $currancy])->sum('credt');
+            $balance = Dept::find()->where(['id' => $client])->andWhere(['in', 'currency', ['0', $currancy]])->sum('credt');
         } else {
-            $balance = DeptSupp::find()->where(['id' => $client])->andWhere(['=', 'currency', $currancy])->sum('credt');
+            $balance = DeptSupp::find()->where(['id' => $client])->andWhere(['in', 'currency', ['0', $currancy]])->sum('credt');
         }
         Yii::$app->response->format = Yii\web\Response::FORMAT_JSON;
         return $balance;

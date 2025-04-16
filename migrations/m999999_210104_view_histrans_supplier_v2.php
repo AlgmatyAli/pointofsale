@@ -22,7 +22,7 @@ class m999999_210104_view_histrans_supplier_v2 extends Migration
         VIEW `histrans_supplier` AS
         select 1 AS `sort`,'رصيد أول المدة' AS `kind`,  `client`.`id` AS `id`,  `client`.`name` AS `name`,0 AS `credt`,
           `client`.`balance` AS `dept`,  `client`.`phone` AS `phone`,  `client`.`type` AS `type`,
-          `client`.`branch` AS `branch`,0 AS `billId`,curdate() AS `trandate`, 0 AS `printId`, 0 AS currency from   `client` 
+          `client`.`branch` AS `branch`,0 AS `billId`,'2020-01-01' AS `trandate`, 0 AS `printId`, 0 AS currency from   `client` 
         union 
         select 2 AS `2`,'فاتورة مشتريات رقـم - ' AS `purchases`,  `purchases`.`clinet` AS `clinet`,  `client`.`name` AS `name`,
         0 AS `0`,(  `purchases`.`total` -   `purchases`.`paid`) AS `purchases.total-purchases.paid`,

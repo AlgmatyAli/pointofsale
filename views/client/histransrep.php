@@ -37,7 +37,7 @@ use app\models\CompanyInfo;
             $balance =  $sumsader - $sumwared ;
           }
           if($model['type'] == 1){
-            $balance =   $sumwared - $sumsader ;
+            $balance =   $sumsader - $sumwared  ;
           }
        ?> 
         <?php endforeach; ?>  

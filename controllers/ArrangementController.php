@@ -97,8 +97,8 @@ class ArrangementController extends Controller
     public function actionCreate()
     {
         $model = new Arrangement();
-       
-          if ($model->load(Yii::$app->request->post())) {
+
+        if ($model->load(Yii::$app->request->post())) {
             $model->branch = Yii::$app->user->identity->branch;
             $model->created_at = date('Y-m-d H:i:s');
             $model->created_by = Yii::$app->user->identity->id;
@@ -106,43 +106,54 @@ class ArrangementController extends Controller
             $id = $model->id;
 
             $temp_arrangement = new TempArrangement();
-            $temp_arrangement = TempArrangement::find()->where(['created_by'=>Yii::$app->user->identity->id, 'state'=> 0])->all();
- 
-                foreach ($temp_arrangement as $data) {
-                 $modelDetails = new ArrangementDetails();
-                 $modelDetails->arrangement = $id;
-                 $modelDetails->category =  $data->category;
-                 $modelDetails->quantity = $data->quantity;
-                 $modelDetails->box = 1;
-                 $modelDetails->type = $data->type;
-                 $modelDetails->stockTaking = $data->stockTaking;
-                 $modelDetails->save(false);
-                  //  die(var_dump($data->category.' '.$data->quantity.' '.Yii::$app->user->identity->branch));
-                 Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + ($data->quantity*$data->type)
+            $temp_arrangement = TempArrangement::find()->where(['created_by' => Yii::$app->user->identity->id, 'state' => 0])->all();
+
+            foreach ($temp_arrangement as $data) {
+                $modelDetails = new ArrangementDetails();
+                $modelDetails->arrangement = $id;
+                $modelDetails->category =  $data->category;
+                $modelDetails->quantity = $data->quantity;
+                $modelDetails->box = 1;
+                $modelDetails->type = $data->type;
+                $modelDetails->stockTaking = $data->stockTaking;
+                $modelDetails->save(false);
+
+                $getStock = Stocks::find()->where(['category' => $data->category])
+                    ->andWhere(['branch' => Yii::$app->user->identity->branch])
+                    ->andWhere(['=', 'type', 1])->one();
+
+                if ($getStock == null) {
+                    $stocks = new Stocks();
+                    $stocks->category = $data->category;
+                    $stocks->branch = Yii::$app->user->identity->branch;
+                    $stocks->quantity = $data->quantity;
+                    $stocks->type = 1;
+                    $stocks->save(false);
+                } else {
+                    Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + ($data->quantity*$data->type)
                  WHERE category=:category
                  and branch = :branch
                  and type = :type")
-                ->bindValue(':category', $data->category)
-                ->bindValue(':branch', Yii::$app->user->identity->branch)
-                ->bindValue(':type', 1)
-                ->execute();
+                        ->bindValue(':category', $data->category)
+                        ->bindValue(':branch', Yii::$app->user->identity->branch)
+                        ->bindValue(':type', 1)
+                        ->execute();
                 }
-                
-                TempArrangement::deleteAll(['created_by'=>Yii::$app->user->identity->id, 'state'=> 0]);
+            }
+            TempArrangement::deleteAll(['created_by' => Yii::$app->user->identity->id, 'state' => 0]);
 
             return $this->redirect(['view', 'id' => $model->id]);
+        } elseif (Yii::$app->request->isAjax) {
+            $model->at = date('Y-m-d');
+            return $this->renderAjax('_form', [
+                'model' => $model,
+            ]);
+        } else {
 
-        }elseif (Yii::$app->request->isAjax){
-        $model->at = date('Y-m-d');
-        return $this->renderAjax('_form', [
-                    'model' => $model,       
-        ]);
-    } else {
-
-        return $this->render('create', [
-            'model' => $model,
-        ]);
-      }
+            return $this->render('create', [
+                'model' => $model,
+            ]);
+        }
     }
 
     /**
@@ -158,49 +169,48 @@ class ArrangementController extends Controller
         $searchModel = new ArrangementDetailsSearch();
         $searchModel->arrangement = $id;
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-        
+
         if (yii::$app->request->post('hasEditable')) {
             $id = Yii::$app->request->post('editableKey');
-            $result=ArrangementDetails::findOne($id);
+            $result = ArrangementDetails::findOne($id);
             $old = ArrangementDetails::find()->where(['id' => $id])->one();
 
-            $out=Json::encode(['output'=>'','message'=>'']);
-            $post=[];
-            $posted=current($_POST['ArrangementDetails']);
+            $out = Json::encode(['output' => '', 'message' => '']);
+            $post = [];
+            $posted = current($_POST['ArrangementDetails']);
             $quantity = $posted['quantity'];
-            $post['ArrangementDetails']=$posted ;
-           // die(var_dump($old->quantity.' '.$quantity.' '.$result->quantity ));
-            if ($result->load($post)){
+            $post['ArrangementDetails'] = $posted;
+            // die(var_dump($old->quantity.' '.$quantity.' '.$result->quantity ));
+            if ($result->load($post)) {
                 $result->save(false);
-                if (isset($posted['quantity'])){
-                   $outMessage =$result->quantity;
-                }else
-                {
-                    $outMessage =$result->type; 
+                if (isset($posted['quantity'])) {
+                    $outMessage = $result->quantity;
+                } else {
+                    $outMessage = $result->type;
                 }
-                
-                    $stocks = Stocks::find()->where(['category' => $result->category])
-                    ->andWhere(['branch'=> Yii::$app->user->identity->branch])
-                    ->andWhere(['type' => 1])->one();
-                    if($old->type == 1){
-                        $stocks->quantity = ($stocks->quantity - $old->quantity);
-                        $stocks->save(true); 
-                        $stocks->quantity = ($stocks->quantity + $quantity);
-                        $stocks->save(true); 
-                    }else{
-                        $stocks->quantity = ($stocks->quantity + $old->quantity);
-                        $stocks->save(true); 
-                        $stocks->quantity = ($stocks->quantity - $quantity);
-                        $stocks->save(true); 
-                    }                  
-                
-                $output=$outMessage;
 
-                $out=Json::encode(['output'=>$output]);
-                
+                $stocks = Stocks::find()->where(['category' => $result->category])
+                    ->andWhere(['branch' => Yii::$app->user->identity->branch])
+                    ->andWhere(['type' => 1])->one();
+                if ($old->type == 1) {
+                    $stocks->quantity = ($stocks->quantity - $old->quantity);
+                    $stocks->save(true);
+                    $stocks->quantity = ($stocks->quantity + $quantity);
+                    $stocks->save(true);
+                } else {
+                    $stocks->quantity = ($stocks->quantity + $old->quantity);
+                    $stocks->save(true);
+                    $stocks->quantity = ($stocks->quantity - $quantity);
+                    $stocks->save(true);
+                }
+
+                $output = $outMessage;
+
+                $out = Json::encode(['output' => $output]);
+
                 return $out;
             }
-         }
+        }
 
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
             return $this->redirect(['view', 'id' => $model->id]);
@@ -222,16 +232,16 @@ class ArrangementController extends Controller
      */
     public function actionDelete($id)
     {
-        $arrangementDetails = ArrangementDetails::find()->where(['=', 'id', $id])->one();
+        $arrangementDetails = ArrangementDetails::find()->where(['=', 'arrangment', $id])->one();
         $stocks = Stocks::find()->where(['category' => $arrangementDetails->category])
-        ->andWhere(['branch'=> Yii::$app->user->identity->branch])->andWhere(['type' => 1])->one();
-        if($arrangementDetails->type == 1){
+            ->andWhere(['branch' => Yii::$app->user->identity->branch])->andWhere(['type' => 1])->one();
+        if ($arrangementDetails->type == 1) {
             $stocks->quantity = $stocks->quantity - $arrangementDetails->quantity;
-            $stocks->save(true); 
-        }else{
+            $stocks->save(true);
+        } else {
             $stocks->quantity = $stocks->quantity + $arrangementDetails->quantity;
-            $stocks->save(true); 
-        } 
+            $stocks->save(true);
+        }
         ArrangementDetails::deleteAll(['id' => $id]);
         return $this->redirect(['index']);
     }
@@ -253,46 +263,46 @@ class ArrangementController extends Controller
     }
 
     public function actionPrint($id)
-    {        
+    {
         $dataProvider = new ActiveDataProvider([
             'query' => ArrangementDetails::find()
-            ->select('arrangementDetails.*, category.name, category.serialNo')
-            ->leftJoin('category', 'category.id = arrangementDetails.category')
-            ->where(['arrangementDetails.arrangement' => $id])
-            ->orderBy('category.name'),
-                     
+                ->select('arrangementDetails.*, category.name, category.serialNo')
+                ->leftJoin('category', 'category.id = arrangementDetails.category')
+                ->where(['arrangementDetails.arrangement' => $id])
+                ->orderBy('category.name'),
+
             'pagination' => ['pageSize' => false],
-                'sort'=>false,
-            
+            'sort' => false,
+
         ]);
-        
+
         return $this->render('print', [
             'model' => $this->findModel($id),
             'dataProvider' => $dataProvider
-        
+
         ]);
     }
 
     public function actionStockPrint($id)
     {
-            
+
         $dataProvider = new ActiveDataProvider([
             'query' => ArrangementDetails::find()
-            ->select('arrangementDetails.*, category.name, category.serialNo, category.company')
-            ->leftJoin('category', 'category.id = arrangementDetails.category')
-            ->where(['arrangementDetails.arrangement' => $id])
-            ->andWhere(['arrangementDetails.stockTaking' => 1])
-            ->orderBy('category.name'),
-                     
+                ->select('arrangementDetails.*, category.name, category.serialNo, category.company')
+                ->leftJoin('category', 'category.id = arrangementDetails.category')
+                ->where(['arrangementDetails.arrangement' => $id])
+                ->andWhere(['arrangementDetails.stockTaking' => 1])
+                ->orderBy('category.name'),
+
             'pagination' => ['pageSize' => false],
-                'sort'=>false,
-            
+            'sort' => false,
+
         ]);
-        
+
         return $this->render('stockPrint', [
             'model' => $this->findModel($id),
             'dataProvider' => $dataProvider
-        
+
         ]);
     }
 
@@ -305,57 +315,57 @@ class ArrangementController extends Controller
     {
         //            DATE_FORMAT(arrangement.at, '%Y') AS year,
 
-    //      $model = new Arrangement();
-    //     if ($model->load(Yii::$app->request->post())) {
-    //     $dataProvider = new ActiveDataProvider([
-    //         'query' => ArrangementDetails::find()
-    //         ->select("rrangement.at, category.name, arrangementDetails.quantity, 
-    //         category.serialNo, category.company")
-    //         ->joinWith('arrangement0', 'arrangement.id = arrangementDetails.arrangement')
-    //         ->leftJoin('category', 'category.id = arrangementDetails.category')
-    //         ->where(['arrangementDetails.stockTaking' => 1])
-    //         ->andWhere("DATE_FORMAT(arrangement.at, '%Y')  =  ".$model->at."")
-    //         ->orderBy('category.id'),
-                     
-    //         'pagination' => ['pageSize' => false],
-    //             'sort'=>false,
-            
-    //     ]);
-    //     return $this->render('stockTakingRep', [
-    //         'dataProvider' => $dataProvider
-    //      ]);  
-    // }
-    //   return $this->render('stockTaking', [
-    //         'model' => $model,
-    //     ]);
+        //      $model = new Arrangement();
+        //     if ($model->load(Yii::$app->request->post())) {
+        //     $dataProvider = new ActiveDataProvider([
+        //         'query' => ArrangementDetails::find()
+        //         ->select("rrangement.at, category.name, arrangementDetails.quantity, 
+        //         category.serialNo, category.company")
+        //         ->joinWith('arrangement0', 'arrangement.id = arrangementDetails.arrangement')
+        //         ->leftJoin('category', 'category.id = arrangementDetails.category')
+        //         ->where(['arrangementDetails.stockTaking' => 1])
+        //         ->andWhere("DATE_FORMAT(arrangement.at, '%Y')  =  ".$model->at."")
+        //         ->orderBy('category.id'),
+
+        //         'pagination' => ['pageSize' => false],
+        //             'sort'=>false,
+
+        //     ]);
+        //     return $this->render('stockTakingRep', [
+        //         'dataProvider' => $dataProvider
+        //      ]);  
+        // }
+        //   return $this->render('stockTaking', [
+        //         'model' => $model,
+        //     ]);
 
         $model = new Arrangement();
         if ($model->load(Yii::$app->request->post())) {
-            
-        $sql = " select at, category.name, arrangementDetails.quantity, DATE_FORMAT(arrangement.at, '%Y')year,
+
+            $sql = " select at, category.name, arrangementDetails.quantity, DATE_FORMAT(arrangement.at, '%Y')year,
         category.serialNo, category.company, arrangementDetails.type
         FROM arrangementDetails, arrangement, category
         where arrangement.id=arrangementDetails.arrangement 
-        and DATE_FORMAT(arrangement.at, '%Y')  =  ".$model->at." and stockTaking =1 
+        and DATE_FORMAT(arrangement.at, '%Y')  =  " . $model->at . " and stockTaking =1 
         and arrangementDetails.category = category.id
-        order by  arrangement.id" ;    
-    
+        order by  arrangement.id";
+
 
             $connection = \Yii::$app->db;
             $data = $connection->createCommand($sql);
             $info = $data->queryAll();
-             if ($info == null){
+            if ($info == null) {
                 echo '<script type="text/javascript"> 
                 alert("عفوا لايوجد بيانات للعرض");
                 window.location.href="?r=arrangement/stock-taking"
                 </script>';
-             }
-             return $this->render('stockTakingRep', [
+            }
+            return $this->render('stockTakingRep', [
                 'models' => $info,
                 'year' => $model->at,
-            ]);  
+            ]);
         }
- 
+
         return $this->render('stockTaking', [
             'model' => $model,
         ]);

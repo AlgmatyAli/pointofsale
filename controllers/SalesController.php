@@ -868,7 +868,7 @@ class SalesController extends Controller
             ],
             'pagination' => false,
         ]);
-
+        	
         $balance = Dept::find()->where(['id' => $model->clinet])->sum('credt');
         return $this->render('print', [
             'model' => $this->findModel($id),
