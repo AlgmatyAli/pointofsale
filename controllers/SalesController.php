@@ -76,7 +76,7 @@ class SalesController extends Controller
 
                     [
                         'allow' => true,
-                        'actions' => ['profit', 'net-profit', 'wait-qnty', 'wait-qnty-client'],
+                        'actions' => ['profit', 'net-profit', 'wait-qnty', 'wait-qnty-client', 'summation-sales'],
                         'roles' => ['profit'],
                     ],
 
@@ -218,7 +218,7 @@ class SalesController extends Controller
                     //     ->andwhere(['in', 'type', $type])
                     //     ->one();
                     /** get if valeu larger than to requsetd val  */
-                    
+
                     if ($model->type != 2) {
                         if ($stockQ != NULL) {
                             if ($quantity > abs($stockQ->quantity)) {
@@ -228,7 +228,7 @@ class SalesController extends Controller
                                     $result->quantity = abs($quantity);
                                 }
                                 $result->save(false);
-                            } else{
+                            } else {
                                 $result->quantity = abs($quantity);
                                 $result->save(false);
                             }
@@ -868,7 +868,7 @@ class SalesController extends Controller
             ],
             'pagination' => false,
         ]);
-        	
+
         $balance = Dept::find()->where(['id' => $model->clinet])->sum('credt');
         return $this->render('print', [
             'model' => $this->findModel($id),
@@ -902,14 +902,22 @@ class SalesController extends Controller
         $company = CompanyInfo::find()->one();
         $providerSalesDetails = new ActiveDataProvider([
             'query' => SalesDetails::find()
-            ->select(['salesDetails.id', 'salesDetails.salesId', 'salesDetails.category', 'salesDetails.quantity', 
-            'salesDetails.costPrice', 'salesDetails.salePrice', 'Totalinventory.quantity as Qtotalinventory',
-            'category_reservation.quantity as reservation', '(SELECT quantity from Totalinventory where branch <> '.Yii::$app->user->identity->branch.' and type <> 3 and id = salesDetails.category) as otherQtotalinventory '])
-            ->leftJoin('Totalinventory', 'salesDetails.category = Totalinventory.id')
-            ->leftJoin('category_reservation', 'salesDetails.category = category_reservation.category')
-            ->where(['=', 'salesDetails.salesId', $id])
-            ->andWhere(['=', 'Totalinventory.branch', Yii::$app->user->identity->branch])
-            ->andWhere(['<>', 'Totalinventory.type', 3]),
+                ->select([
+                    'salesDetails.id',
+                    'salesDetails.salesId',
+                    'salesDetails.category',
+                    'salesDetails.quantity',
+                    'salesDetails.costPrice',
+                    'salesDetails.salePrice',
+                    'Totalinventory.quantity as Qtotalinventory',
+                    'category_reservation.quantity as reservation',
+                    '(SELECT quantity from Totalinventory where branch <> ' . Yii::$app->user->identity->branch . ' and type <> 3 and id = salesDetails.category) as otherQtotalinventory '
+                ])
+                ->leftJoin('Totalinventory', 'salesDetails.category = Totalinventory.id')
+                ->leftJoin('category_reservation', 'salesDetails.category = category_reservation.category')
+                ->where(['=', 'salesDetails.salesId', $id])
+                ->andWhere(['=', 'Totalinventory.branch', Yii::$app->user->identity->branch])
+                ->andWhere(['<>', 'Totalinventory.type', 3]),
             'sort' => [
                 'defaultOrder' => [
                     'id' => SORT_DESC,
@@ -1635,7 +1643,7 @@ class SalesController extends Controller
                             WHEN `type` =2
                             THEN "متوفر"
                             ELSE "قريبا" END as type',
-                         'branches.name as BRNAME'
+                        'branches.name as BRNAME'
                     ];
                 }
             }
@@ -1969,5 +1977,50 @@ class SalesController extends Controller
         Yii::$app->session->setFlash('success', Yii::t('app', "تمت عملية ايقاف التعامل بالدين بنجاح"));
 
         return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
+    }
+
+    public function actionSummationSales()
+    {
+        $model = new Sales();
+        if ($model->load(Yii::$app->request->post())) {
+            $sql = " SELECT 'اجمالي المبيعات' as DESCRIBTION, sum(sales.total) as total, sum(sales.total - sales.disscount) as NET, sum(sales.disscount) as disscount FROM sales
+            where user_insert = '" . $model->user_insert . "' and sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "' and currancy = '" . $model->currancy . "' and sales.type = 1 
+            UNION
+                    SELECT 'اجمالي مسترجع المبيعات' as DESCRIBTION, sum(sales.total), sum(sales.total - sales.disscount)*-1 as NET, sum(sales.disscount) as disscount FROM sales
+            where user_insert = '" . $model->user_insert . "' and sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "' and currancy = '" . $model->currancy . "' and sales.type = 2";
+
+
+            $connection = Yii::$app->db;
+            $data = $connection->createCommand($sql);
+            $info = $data->queryAll();
+            if ($info == null) {
+                die("Sorry no thing to preview");
+            }
+
+
+            // $query1 = Sales::find()->where(['between', 'at', $model->min_date, $model->max_date])
+            //     ->andWhere(['user_insert' => $model->user_insert])
+            //     ->andWhere(['currancy' => $model->currancy])
+            //     ->andWhere(['type' => 1])->all();
+            // $query2 = Sales::find()->where(['between', 'at', $model->min_date, $model->max_date])
+            //     ->andWhere(['user_insert' => $model->user_insert])
+            //     ->andWhere(['currancy' => $model->currancy])
+            //     ->andWhere(['type' => 2])->all();
+
+            return $this->render('summation', [
+                'models' => $info,
+                'model' => $model,
+                'min_date' => $model->min_date,
+                'max_date' =>  $model->max_date,
+                'coun' => 1,
+                'count' => 0,
+                'total' => 0,
+                'disscount' => 0,
+            ]);
+        } else {
+            return $this->render('_summation', [
+                'model' => $model,
+            ]);
+        }
     }
 }

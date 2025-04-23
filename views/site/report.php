@@ -16,6 +16,8 @@ use yii\widgets\DetailView;
     <div class="col-md-4">
       <?= Html::a(Yii::t('app', 'تقرير عن المبيعات'), ['/sales/index'], ['class' => 'btn btn-default btn-block repBtn repBtn']) ?>
 
+      <?= Html::a(Yii::t('app', 'تقرير عن المبيعات حسب الموظف'), ['/sales/summation-sales'], ['class' => 'btn btn-default btn-block repBtn repBtn']) ?>
+
       <?= Html::a(Yii::t('app', 'كشف حساب صنف '), ['/category/histrans'], ['class' => 'btn btn-default btn-block repBtn repBtn']) ?>
 
       <?= Html::a(Yii::t('app', 'كشف حساب صنف حسب العميل '), ['/category/histrans-by-client'], ['class' => 'btn btn-default btn-block repBtn repBtn']) ?>
@@ -24,7 +26,7 @@ use yii\widgets\DetailView;
 
       <?= Html::a(Yii::t('app', 'تقرير باجمالي الديون'),  ['/client/credts', 'type' => '0,1,2'], ['class' => 'btn btn-default btn-block repBtn']) ?>
 
-      <?= Html::a(Yii::t('app', 'جرد الأصناف '), ['/stocks/index'], ['class' => 'btn btn-default btn-block repBtn']) ?>
+      <?= Html::a(Yii::t('app', 'جرد الأصناف '), ['/stocks/index'], ['class' => 'btn btn-default btn-block repBtn repBtn']) ?>
 
       <?= Html::a(Yii::t('app', 'تقرير المشتريات'), ['/purchases/index', 'type' => 1], ['class' => 'btn btn-default btn-block repBtn']) ?>
 
