@@ -53,7 +53,6 @@ use app\models\CompanyInfo;
                 foreach ($models as $model):
                     $count = $count + 1;
                     $total += $model["NET"];
-                    $disscount += $model["disscount"];
                 ?>
 
                     <tbody>
@@ -64,13 +63,6 @@ use app\models\CompanyInfo;
                         </tr>
                     </tbody>
                 <?php endforeach; ?>
-
-                <tr>
-                    <td></td>
-                    <td>اجمالي الخصومات</td>
-                    <td><?php echo number_format( $disscount, 3) . "\n"; ?></td>
-                </tr>
-
                 <tr>
                     <td></td>
                     <td>الصافي</td>

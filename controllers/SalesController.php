@@ -1982,13 +1982,42 @@ class SalesController extends Controller
     public function actionSummationSales()
     {
         $model = new Sales();
-        if ($model->load(Yii::$app->request->post())) {
-            $sql = " SELECT 'اجمالي المبيعات' as DESCRIBTION, sum(sales.total) as total, sum(sales.total - sales.disscount) as NET, sum(sales.disscount) as disscount FROM sales
-            where user_insert = '" . $model->user_insert . "' and sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "' and currancy = '" . $model->currancy . "' and sales.type = 1 
-            UNION
-                    SELECT 'اجمالي مسترجع المبيعات' as DESCRIBTION, sum(sales.total), sum(sales.total - sales.disscount)*-1 as NET, sum(sales.disscount) as disscount FROM sales
-            where user_insert = '" . $model->user_insert . "' and sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "' and currancy = '" . $model->currancy . "' and sales.type = 2";
 
+        if ($model->load(Yii::$app->request->post())) {
+
+            if ($model->user_insert == null) {
+                echo
+                '<script type="text/javascript"> alert(\'الرجاء تحديد اسم الموظف\');
+                        window.location.href="?r=sales%2Fftran";
+                        </script>';
+            }
+
+            if ($model->min_date == null) {
+                echo
+                '<script type="text/javascript"> alert(\'الرجاء تحديد تاريخ الحركة من\');
+                        window.location.href="?r=sales%2Fftran";
+                        </script>';
+            }
+            if ($model->max_date == null) {
+                echo
+                '<script type="text/javascript"> alert(\'الرجاء تحديد تاريخ الحركة إلى\');
+                        window.location.href="?r=sales%2Fftran";
+                        </script>';
+            }
+
+            $sql = "SELECT 'ارباح المبيعات' AS DESCRIBTION, sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity) AS total
+            , sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity) AS NET
+            FROM  sales, salesDetails
+            WHERE sales.id = salesDetails.salesId
+            and sales.type = 1
+            and sales.currancy = ".$model->currancy." and sales.user_insert = " . $model->user_insert . " and  sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "'
+            UNION
+            SELECT     'مسترجع المبيعات', sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity),
+            sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity) *-1
+            FROM  sales, salesDetails
+            WHERE sales.id = salesDetails.salesId
+            and sales.type = 2
+            and sales.currancy = ".$model->currancy." and sales.user_insert = " . $model->user_insert . " and sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "' ";
 
             $connection = Yii::$app->db;
             $data = $connection->createCommand($sql);
@@ -1996,16 +2025,6 @@ class SalesController extends Controller
             if ($info == null) {
                 die("Sorry no thing to preview");
             }
-
-
-            // $query1 = Sales::find()->where(['between', 'at', $model->min_date, $model->max_date])
-            //     ->andWhere(['user_insert' => $model->user_insert])
-            //     ->andWhere(['currancy' => $model->currancy])
-            //     ->andWhere(['type' => 1])->all();
-            // $query2 = Sales::find()->where(['between', 'at', $model->min_date, $model->max_date])
-            //     ->andWhere(['user_insert' => $model->user_insert])
-            //     ->andWhere(['currancy' => $model->currancy])
-            //     ->andWhere(['type' => 2])->all();
 
             return $this->render('summation', [
                 'models' => $info,
@@ -2017,10 +2036,10 @@ class SalesController extends Controller
                 'total' => 0,
                 'disscount' => 0,
             ]);
-        } else {
-            return $this->render('_summation', [
-                'model' => $model,
-            ]);
         }
+
+        return $this->render('_summation', [
+            'model' => $model,
+        ]);
     }
 }
