@@ -146,8 +146,13 @@ class PurchasesController extends Controller
      */
     public function actionView($id)
     {
+        $searchModel = new PurchasesDetailsSearch();
+        $searchModel->PurchasesId = $id;
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+        
         return $this->render('view', [
-            'model' => $this->findModel($id)
+            'model' => $this->findModel($id),
+            'dataProvider' => $dataProvider,
         ]);
     }
 
@@ -402,6 +407,7 @@ class PurchasesController extends Controller
     public function actionDelete($id)
     {
         $purchasesDetails = PurchasesDetails::find()->where(['PurchasesId' => $id])->all();
+
         $purchases = Purchases::find()->where(['id' => $id])->one();
         foreach ($purchasesDetails as $data) {
             if ($purchases->type == 1) {
@@ -567,14 +573,6 @@ class PurchasesController extends Controller
                             ->bindValue(':type', 1)
                             ->execute();
                     }
-                    //  Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + $value->quantity
-                    //  WHERE category=:category
-                    //  and branch = :branch
-                    //  and type = :type")
-                    //     ->bindValue(':category', $value->category)
-                    //     ->bindValue(':branch', Yii::$app->user->identity->branch)
-                    //     ->bindValue(':type', 1)
-                    //     ->execute();
                 } elseif ($model->type == 2) {
                     $exsit = Stocks::find()->where(['=', 'branch', Yii::$app->user->identity->branch])
                         ->andWhere(['=', 'category', $value->category])
@@ -598,14 +596,6 @@ class PurchasesController extends Controller
                             ->bindValue(':type', 1)
                             ->execute();
                     }
-                    // Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  - $value->quantity
-                    // WHERE category=:category
-                    // and branch = :branch
-                    // and type = :type")
-                    //     ->bindValue(':category', $value->category)
-                    //     ->bindValue(':branch', Yii::$app->user->identity->branch)
-                    //     ->bindValue(':type', 1)
-                    //     ->execute();
                 } elseif ($model->type == 3) {
                     $exsit = Stocks::find()->where(['=', 'branch', Yii::$app->user->identity->branch])
                         ->andWhere(['=', 'category', $value->category])
@@ -951,7 +941,6 @@ class PurchasesController extends Controller
             if (!empty($textInputValues)) {
                 foreach ($textInputValues as $category => $textInputValue) {
                     if (Yii::$app->request->post('selection') && in_array($category, Yii::$app->request->post('selection'))) {
-                        //die(print_r($textInputValues. '1'));
                         if ($textInputValue <> 0) {
                             $id = TempTransferItems::find()->max('id') + 1;
                             $newModel = new TempTransferItems();
@@ -961,11 +950,10 @@ class PurchasesController extends Controller
                             $newModel->created_by = Yii::$app->user->identity->id;
                             $newModel->created_at = date('Y-m-d');
                             $newModel->save(false);
-                        } 
+                        }
                     }
                 }
             }
-            //die(var_dump($textInputValues.'2'));
             $searchModel = new TempTransferItemsSearch();
             $searchModel->created_by = Yii::$app->user->identity->id;
             $dataProvider = $searchModel->search(Yii::$app->request->queryParams);

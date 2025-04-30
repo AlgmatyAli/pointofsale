@@ -3,63 +3,42 @@
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 
-/* @var $this yii\web\View */
-/* @var $model app\models\CurrancySearch */
-/* @var $form yii\widgets\ActiveForm */
+/** @var yii\web\View $this */
+/** @var app\models\CurrancyDataSearch $model */
+/** @var yii\widgets\ActiveForm $form */
 ?>
 
-<div class="form-currancy-search">
+<div class="currancy-search">
 
     <?php $form = ActiveForm::begin([
         'action' => ['index'],
         'method' => 'get',
-    ]); ?>
-
-    <?= $form->field($model, 'id')->textInput(['placeholder' => 'Id']) ?>
-
-    <?= $form->field($model, 'name')->textInput(['maxlength' => true, 'placeholder' => 'Name']) ?>
-
-    <?= $form->field($model, 'code')->textInput(['maxlength' => true, 'placeholder' => 'Code']) ?>
-
-    <?= $form->field($model, 'user_insert')->widget(\kartik\widgets\Select2::classname(), [
-        'data' => \yii\helpers\ArrayHelper::map(\app\models\User::find()->orderBy('id')->asArray()->all(), 'id', 'username'),
-        'options' => ['placeholder' => Yii::t('app', 'Choose User')],
-        'pluginOptions' => [
-            'allowClear' => true
-        ],
-    ]); ?>
-
-    <?= $form->field($model, 'user_update')->widget(\kartik\widgets\Select2::classname(), [
-        'data' => \yii\helpers\ArrayHelper::map(\app\models\User::find()->orderBy('id')->asArray()->all(), 'id', 'username'),
-        'options' => ['placeholder' => Yii::t('app', 'Choose User')],
-        'pluginOptions' => [
-            'allowClear' => true
-        ],
-    ]); ?>
-
-    <?php /* echo $form->field($model, 'update_at')->widget(\kartik\datecontrol\DateControl::classname(), [
-        'type' => \kartik\datecontrol\DateControl::FORMAT_DATE,
-        'saveFormat' => 'php:Y-m-d',
-        'ajaxConversion' => true,
         'options' => [
-            'pluginOptions' => [
-                'placeholder' => Yii::t('app', 'Choose Update At'),
-                'autoclose' => true
-            ]
+            'data-pjax' => 1
         ],
-    ]); */ ?>
+    ]); ?>
 
-    <?php /* echo $form->field($model, 'purchases')->widget(\kartik\widgets\Select2::classname(), [
-        'data' => \yii\helpers\ArrayHelper::map(\app\models\Purchases::find()->orderBy('id')->asArray()->all(), 'id', 'id'),
-        'options' => ['placeholder' => Yii::t('app', 'Choose Purchases')],
-        'pluginOptions' => [
-            'allowClear' => true
-        ],
-    ]); */ ?>
+    <?= $form->field($model, 'id') ?>
+
+    <?= $form->field($model, 'name') ?>
+
+    <?= $form->field($model, 'code') ?>
+
+    <?= $form->field($model, 'user_insert') ?>
+
+    <?= $form->field($model, 'created_at') ?>
+
+    <?php // echo $form->field($model, 'user_update') ?>
+
+    <?php // echo $form->field($model, 'update_at') ?>
+
+    <?php // echo $form->field($model, 'created_by') ?>
+
+    <?php // echo $form->field($model, 'updated_by') ?>
 
     <div class="form-group">
         <?= Html::submitButton(Yii::t('app', 'Search'), ['class' => 'btn btn-primary']) ?>
-        <?= Html::resetButton(Yii::t('app', 'Reset'), ['class' => 'btn btn-default']) ?>
+        <?= Html::resetButton(Yii::t('app', 'Reset'), ['class' => 'btn btn-outline-secondary']) ?>
     </div>
 
     <?php ActiveForm::end(); ?>

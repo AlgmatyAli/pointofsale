@@ -14,30 +14,30 @@ class m190127_093518_add_auth_itemes extends Migration
     {
         $auth = Yii::$app->authManager;
 
-         $admin = $auth->createRole('مدير');
-         $admin->type=1;
-         $auth->add($admin);
+        $admin = $auth->createRole('مدير');
+        $admin->type = 1;
+        $auth->add($admin);
 
-         $helper = $auth->createRole('مساعد');
-         $helper->type=3;
-         $auth->add($helper);
+        $helper = $auth->createRole('مساعد');
+        $helper->type = 3;
+        $auth->add($helper);
 
         // add "" permission 
         $createClient = $auth->createPermission('createClient');
         $createClient->description = 'تسجيل العملاء';
         $auth->add($createClient);
 
-         // add "" permission
-         $updatClient = $auth->createPermission('updatClient');
-         $updatClient->description = 'تعديل عميل';
-         $auth->add($updatClient);
+        // add "" permission
+        $updatClient = $auth->createPermission('updatClient');
+        $updatClient->description = 'تعديل عميل';
+        $auth->add($updatClient);
 
-          // add "" permission
+        // add "" permission
         $deleteClient = $auth->createPermission('deleteClient');
         $deleteClient->description = 'حذف عميل';
         $auth->add($deleteClient);
 
-          // add "" permission
+        // add "" permission
         $indexClient = $auth->createPermission('indexClient');
         $indexClient->description = 'تقرير العملاء';
         $auth->add($indexClient);
@@ -51,7 +51,7 @@ class m190127_093518_add_auth_itemes extends Migration
         $clientHistrans = $auth->createPermission('clientHistrans');
         $clientHistrans->description = 'عرض كشف حساب عميل';
         $auth->add($clientHistrans);
-  
+
         // add "" permission
         $createUsers = $auth->createPermission('createUsers');
         $createUsers->description = 'تسجيل مستخدم';
@@ -82,26 +82,26 @@ class m190127_093518_add_auth_itemes extends Migration
         $companyInfo->description = 'ادارة بيانات المؤسسة';
         $auth->add($companyInfo);
 
-         // add "" permission
-         $createBranches = $auth->createPermission('createBranches');
-         $createBranches->description = 'تسجيل فرع';
-         $auth->add($createBranches);
- 
-         // add "" permission
-         $updateBranches = $auth->createPermission('updateBranches');
-         $updateBranches->description = 'تعديل فرع';
-         $auth->add($updateBranches);
- 
-         // add "" permission
-         $deleteBranches = $auth->createPermission('deleteBranches');
-         $deleteBranches->description = 'حدف فرع';
-         $auth->add($deleteBranches);
- 
-         // add "" permission
-         $indexBranches = $auth->createPermission('indexBranches');
-         $indexBranches->description = 'شاشة الفروع';
-         $auth->add($indexBranches);
- 
+        // add "" permission
+        $createBranches = $auth->createPermission('createBranches');
+        $createBranches->description = 'تسجيل فرع';
+        $auth->add($createBranches);
+
+        // add "" permission
+        $updateBranches = $auth->createPermission('updateBranches');
+        $updateBranches->description = 'تعديل فرع';
+        $auth->add($updateBranches);
+
+        // add "" permission
+        $deleteBranches = $auth->createPermission('deleteBranches');
+        $deleteBranches->description = 'حدف فرع';
+        $auth->add($deleteBranches);
+
+        // add "" permission
+        $indexBranches = $auth->createPermission('indexBranches');
+        $indexBranches->description = 'شاشة الفروع';
+        $auth->add($indexBranches);
+
         // add "" permission
         $createItems = $auth->createPermission('createItems');
         $createItems->description = 'تسجيل بنود المصاريف';
@@ -117,10 +117,10 @@ class m190127_093518_add_auth_itemes extends Migration
         $deleteItems->description = 'حدف بنود المصاريف';
         $auth->add($deleteItems);
 
-         // add "" permission
-         $indexItems = $auth->createPermission('indexItems');
-         $indexItems->description = 'شاشة بنود المصاريف';
-         $auth->add($indexItems);
+        // add "" permission
+        $indexItems = $auth->createPermission('indexItems');
+        $indexItems->description = 'شاشة بنود المصاريف';
+        $auth->add($indexItems);
 
         // add "" permission
         $createCategory = $auth->createPermission('createCategory');
@@ -176,7 +176,7 @@ class m190127_093518_add_auth_itemes extends Migration
         $createExpenses = $auth->createPermission('createExpenses');
         $createExpenses->description = 'تسجيل المصروفات';
         $auth->add($createExpenses);
- 
+
         // add "" permission
         $updateExpenses = $auth->createPermission('updateExpenses');
         $updateExpenses->description = 'تعديل المصروفات';
@@ -208,7 +208,7 @@ class m190127_093518_add_auth_itemes extends Migration
         $indexReciept = $auth->createPermission('indexReciept');
         $indexReciept->description = 'تقرير عن ايصالات ';
         $auth->add($indexReciept);
-        
+
         // add "" permission
         $inventory = $auth->createPermission('inventory');
         $inventory->description = 'تقرير بالجرد';
@@ -278,53 +278,53 @@ class m190127_093518_add_auth_itemes extends Migration
         $indexArrangment = $auth->createPermission('indexArrangment');
         $indexArrangment->description = 'تقرير تسوية جرد';
         $auth->add($indexArrangment);
-        
-         // add "" permission
-         $createPurchases = $auth->createPermission('createPurchases');
-         $createPurchases->description = 'تسجيل المشتريات';
-         $auth->add($createPurchases);
- 
-         // add "" permission
-         $updatePurchases = $auth->createPermission('updatePurchases');
-         $updatePurchases->description = 'تعديل المشتريات';
-         $auth->add($updatePurchases);
- 
-         // add "" permission
-         $deletePurchases = $auth->createPermission('deletePurchases');
-         $deletePurchases->description = 'الغاء المشتريات';
-         $auth->add($deletePurchases);
- 
-         // add "" permission
-         $indexPurchases = $auth->createPermission('indexPurchases');
-         $indexPurchases->description = 'تقرير عن المشتريات';
-         $auth->add($indexPurchases);
 
-         // add "" permission
-         $SavePurchasesAsNew = $auth->createPermission('SavePurchasesAsNew');
-         $SavePurchasesAsNew->description = 'نسخ فاتورة المشتريات';
-         $auth->add($SavePurchasesAsNew);
+        // add "" permission
+        $createPurchases = $auth->createPermission('createPurchases');
+        $createPurchases->description = 'تسجيل المشتريات';
+        $auth->add($createPurchases);
 
-          // add "" permission
-         $createSales = $auth->createPermission('createSales');
-         $createSales->description = 'تسجيل المبيعات';
-         $auth->add($createSales);
- 
-         // add "" permission
-         $updateSales = $auth->createPermission('updateSales');
-         $updateSales->description = 'تعديل المبيعات';
-         $auth->add($updateSales);
- 
-         // add "" permission
-         $deleteSales = $auth->createPermission('deleteSales');
-         $deleteSales->description = 'حذف المبيعات';
-         $auth->add($deleteSales);
+        // add "" permission
+        $updatePurchases = $auth->createPermission('updatePurchases');
+        $updatePurchases->description = 'تعديل المشتريات';
+        $auth->add($updatePurchases);
+
+        // add "" permission
+        $deletePurchases = $auth->createPermission('deletePurchases');
+        $deletePurchases->description = 'الغاء المشتريات';
+        $auth->add($deletePurchases);
+
+        // add "" permission
+        $indexPurchases = $auth->createPermission('indexPurchases');
+        $indexPurchases->description = 'تقرير عن المشتريات';
+        $auth->add($indexPurchases);
+
+        // add "" permission
+        $SavePurchasesAsNew = $auth->createPermission('SavePurchasesAsNew');
+        $SavePurchasesAsNew->description = 'نسخ فاتورة المشتريات';
+        $auth->add($SavePurchasesAsNew);
+
+        // add "" permission
+        $createSales = $auth->createPermission('createSales');
+        $createSales->description = 'تسجيل المبيعات';
+        $auth->add($createSales);
+
+        // add "" permission
+        $updateSales = $auth->createPermission('updateSales');
+        $updateSales->description = 'تعديل المبيعات';
+        $auth->add($updateSales);
+
+        // add "" permission
+        $deleteSales = $auth->createPermission('deleteSales');
+        $deleteSales->description = 'حذف المبيعات';
+        $auth->add($deleteSales);
 
         // add "" permission
         $indexSales = $auth->createPermission('indexSales');
         $indexSales->description = 'تقرير عن المبيعات';
         $auth->add($indexSales);
 
-         // add "" permission
+        // add "" permission
         $ftran = $auth->createPermission('ftran');
         $ftran->description = 'تقرير الحركة اليومية';
         $auth->add($ftran);
@@ -340,53 +340,181 @@ class m190127_093518_add_auth_itemes extends Migration
         $auth->add($saveSalesAsNew);
 
         // add "" permission
-       $createBackPurchase = $auth->createPermission('createBackSales');
-       $createBackPurchase->description = 'تسجيل مسترجع مبيعات';
-       $auth->add($createBackPurchase);
+        $createBackPurchase = $auth->createPermission('createBackSales');
+        $createBackPurchase->description = 'تسجيل مسترجع مبيعات';
+        $auth->add($createBackPurchase);
 
-   
-       // add "" permission
-       $createSafe = $auth->createPermission('createSafe');
-       $createSafe->description = 'تسجيل حركة الخزينة';
-       $auth->add($createSafe);
-   
-       // add "" permission
-       $updateSafe = $auth->createPermission('updateSafe');
-       $updateSafe->description = 'تعديل حركة الخزينة';
-       $auth->add($updateSafe);
-   
-       // add "" permission
-       $deleteSafe = $auth->createPermission('deleteSafe');
-       $deleteSafe->description = 'حذف حركة خزينة';
-       $auth->add($deleteSafe);
-    
-       // add "" permission
-       $indexSafe = $auth->createPermission('indexSafe');
-       $indexSafe->description = 'تقرير حركة الخزينة';
-       $auth->add($indexSafe);
-   
+
+        // add "" permission
+        $createSafe = $auth->createPermission('createSafe');
+        $createSafe->description = 'تسجيل حركة الخزينة';
+        $auth->add($createSafe);
+
+        // add "" permission
+        $updateSafe = $auth->createPermission('updateSafe');
+        $updateSafe->description = 'تعديل حركة الخزينة';
+        $auth->add($updateSafe);
+
+        // add "" permission
+        $deleteSafe = $auth->createPermission('deleteSafe');
+        $deleteSafe->description = 'حذف حركة خزينة';
+        $auth->add($deleteSafe);
+
+        // add "" permission
+        $indexSafe = $auth->createPermission('indexSafe');
+        $indexSafe->description = 'تقرير حركة الخزينة';
+        $auth->add($indexSafe);
+
         // add "" permission
         $createTransfer = $auth->createPermission('createTransfer');
         $createTransfer->description = 'تسجيل المقاصة';
         $auth->add($createTransfer);
-    
+
         // add "" permission
         $updateTransfer = $auth->createPermission('updateTransfer');
         $updateTransfer->description = 'تعديل المقاصة';
         $auth->add($updateTransfer);
-    
+
         // add "" permission
         $deleteTransfer = $auth->createPermission('deleteTransfer');
         $deleteTransfer->description = 'حذف المقاصة';
         $auth->add($deleteTransfer);
-    
+
         // add "" permission
         $indexTransfer = $auth->createPermission('indexTransfer');
         $indexTransfer->description = 'تقرير عن المقاصة';
-        $auth->add($indexTransfer); 
+        $auth->add($indexTransfer);
+
+        // add "" permission 
+        $createSalary = $auth->createPermission('createSalary');
+        $createSalary->description = 'تسجيل المرتبات';
+        $auth->add($createSalary);
+
+        // add "" permission
+        $updatSalary = $auth->createPermission('updateSalary');
+        $updatSalary->description = 'تعديل المرتبات';
+        $auth->add($updatSalary);
+
+        // add "" permission
+        $deleteSalary = $auth->createPermission('deleteSalary');
+        $deleteSalary->description = 'حذف المرتبات';
+        $auth->add($deleteSalary);
+
+        // add "" permission
+        $indexSalary = $auth->createPermission('indexSalary');
+        $indexSalary->description = 'شاشة المرتبات';
+        $auth->add($indexSalary);
+
+        // add "" permission 
+        $createEmployee = $auth->createPermission('createEmployee');
+        $createEmployee->description = 'تسجيل بيانات الموظفين';
+        $auth->add($createEmployee);
+
+        // add "" permission
+        $updateEmployee = $auth->createPermission('updatEmployee');
+        $updateEmployee->description = 'تعديل بيانات الموظفين ';
+        $auth->add($updateEmployee);
+
+        // add "" permission
+        $deleteEmployee = $auth->createPermission('deleteEmployee');
+        $deleteEmployee->description = 'حذف بيانات الموظفين';
+        $auth->add($deleteEmployee);
+
+        // add "" permission
+        $indexEmployee = $auth->createPermission('indexEmployee');
+        $indexEmployee->description = 'شاشة الموظفين';
+        $auth->add($indexEmployee);
+
+        // add "" permission 
+        $userCanSeeStockLessThanZero = $auth->createPermission('userCanSeeStockLessThanZero');
+        $userCanSeeStockLessThanZero->description = 'عرض الكميات الاقل من الصفر';
+        $auth->add($userCanSeeStockLessThanZero);
+
+        // Assign permissions to roles
+        $auth->addChild($admin, $createClient);
+        $auth->addChild($admin, $updatClient);
+        $auth->addChild($admin, $deleteClient);
+        $auth->addChild($admin, $indexClient);
+        $auth->addChild($admin, $clientDepts);
+        $auth->addChild($admin, $clientHistrans);
+        $auth->addChild($admin, $createUsers);
+        $auth->addChild($admin, $updateUsers);
+        $auth->addChild($admin, $deleteUsers);
+        $auth->addChild($admin, $indexUsers);
+        $auth->addChild($admin, $changePassword);
+        $auth->addChild($admin, $companyInfo);
+        $auth->addChild($admin, $createBranches);
+        $auth->addChild($admin, $updateBranches);
+        $auth->addChild($admin, $deleteBranches);
+        $auth->addChild($admin, $indexBranches);
+        $auth->addChild($admin, $createItems);
+        $auth->addChild($admin, $updateItems);
+        $auth->addChild($admin, $deleteItems);
+        $auth->addChild($admin, $indexItems);
+        $auth->addChild($admin, $createCategory);
+        $auth->addChild($admin, $updateCategory);
+        $auth->addChild($admin, $deleteCategory);
+        $auth->addChild($admin, $indexCategory);
+        $auth->addChild($admin, $categoryHistrans);
+        $auth->addChild($admin, $reOrder);
+        $auth->addChild($admin, $moreRequest);
+        $auth->addChild($admin, $barcodePrint);
+        $auth->addChild($admin, $info);
+        $auth->addChild($admin, $createExpenses);
+        $auth->addChild($admin, $updateExpenses);
+        $auth->addChild($admin, $deleteExpenses);
+        $auth->addChild($admin, $indexExpenses);
+        $auth->addChild($admin, $createReciept);
+        $auth->addChild($admin, $updateReciept);
+        $auth->addChild($admin, $deleteReciept);
+        $auth->addChild($admin, $indexReciept);
+        $auth->addChild($admin, $inventory);
+        $auth->addChild($admin, $prices);
+        $auth->addChild($admin, $createTransferItems);
+        $auth->addChild($admin, $updateTransferItems);
+        $auth->addChild($admin, $deleteTransferItems);
+        $auth->addChild($admin, $indexTransferItems);
+        $auth->addChild($admin, $createReorder);
+        $auth->addChild($admin, $updateReorder);
+        $auth->addChild($admin, $deleteReorder);
+        $auth->addChild($admin, $indexReorder);
+        $auth->addChild($admin, $createArrangment);
+        $auth->addChild($admin, $updateArrangment);
+        $auth->addChild($admin, $deleteArrangment);
+        $auth->addChild($admin, $indexArrangment);
+        $auth->addChild($admin, $createPurchases);
+        $auth->addChild($admin, $updatePurchases);
+        $auth->addChild($admin, $deletePurchases);
+        $auth->addChild($admin, $indexPurchases);
+        $auth->addChild($admin, $SavePurchasesAsNew);
+        $auth->addChild($admin, $createSales);
+        $auth->addChild($admin, $updateSales);
+        $auth->addChild($admin, $deleteSales);
+        $auth->addChild($admin, $indexSales);
+        $auth->addChild($admin, $ftran);
+        $auth->addChild($admin, $profit);
+        $auth->addChild($admin, $saveSalesAsNew);
+        $auth->addChild($admin, $createBackPurchase);
+        $auth->addChild($admin, $createSafe);
+        $auth->addChild($admin, $updateSafe);
+        $auth->addChild($admin, $deleteSafe);
+        $auth->addChild($admin, $indexSafe);
+        $auth->addChild($admin, $createTransfer);
+        $auth->addChild($admin, $updateTransfer);
+        $auth->addChild($admin, $deleteTransfer);
+        $auth->addChild($admin, $indexTransfer);
+        $auth->addChild($admin, $createSalary);
+        $auth->addChild($admin, $updatSalary);
+        $auth->addChild($admin, $deleteSalary);
+        $auth->addChild($admin, $indexSalary);
+        $auth->addChild($admin, $createEmployee);
+        $auth->addChild($admin, $updateEmployee);
+        $auth->addChild($admin, $deleteEmployee);
+        $auth->addChild($admin, $indexEmployee);
+        $auth->addChild($admin, $userCanSeeStockLessThanZero);
     }
 
-    
+
 
     /**
      * {@inheritdoc}

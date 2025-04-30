@@ -8,10 +8,8 @@ use app\models\TempBackSalesSearch;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
-use app\models\Totalinventory;
 use app\models\Category;
 use app\models\Inventory;
-use yii\db\Query;
 use yii\helpers\Json;
 use yii\filters\AccessControl;
 /**
@@ -23,13 +21,13 @@ class TempBackSalesController extends Controller
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['post'],
                 ],
             ], 
             'access' => [
-                'class' => AccessControl::className(),
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
@@ -265,8 +263,6 @@ class TempBackSalesController extends Controller
     public function actionDeleteAll()
     {
         TempBackSales::deleteAll(['state'=>1,'created_by' => Yii::$app->user->identity->id]);
-
-        // $this->findModel($id)->deleteWithRelated();
         return $this->redirect(['create']);
     }
 }

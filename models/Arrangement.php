@@ -14,6 +14,9 @@ use Yii;
  * @property string|null $created_at
  * @property int|null $updated_by
  * @property string|null $updated_at
+ * @property string|null $stockTaking
+ * @property string|null $branch
+ * @property string|null $type
  *
  * @property User $createdBy
  * @property User $updatedBy

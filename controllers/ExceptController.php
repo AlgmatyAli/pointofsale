@@ -6,11 +6,9 @@ use Yii;
 
 use yii\web\Controller;
 use yii\filters\VerbFilter;
-use app\models\Totalinventory;
 use app\models\CompanyInfo;
 use app\models\Stocks;
 use yii\db\Query;
-use yii\helpers\Json;
 
 class ExceptController extends Controller
 {
@@ -54,7 +52,7 @@ class ExceptController extends Controller
             $query->select(
                 $secript
             )
-                ->from('category') 
+                ->from('category')
                 ->leftJoin('prices', 'prices.category = category.id')
                 ->leftJoin('stocks', 'stocks.category = category.id')
                 ->leftJoin('branches', 'branches.id = stocks.branch')
@@ -117,7 +115,6 @@ class ExceptController extends Controller
             ->andwhere(['stocks.category' => $category])
             ->andwhere(['in', 'type',  [1, 2]])
             ->asArray()->one();
-        //echo json::encode($value);
         Yii::$app->response->format = Yii\web\Response::FORMAT_JSON;
         return $value;
     }
@@ -160,19 +157,20 @@ class ExceptController extends Controller
             $command = $query->createCommand();
             $data = $command->queryAll();
             $out['results'] = array_values($data);
-        } elseif ($id > 0) {
-            $out['results'] = [
-                'id' => $id,
-                'text' => TotalInventory::find($id)->name,
-                'company' => TotalInventory::find($id)->company,
-                'quantity' => TotalInventory::find($id)->quantity,
-                'maxPrice' => TotalInventory::find($id)->maxPrice,
-                'minPrice' => TotalInventory::find($id)->minPrice,
-                'serialNo' => TotalInventory::find($id)->serialNo,
-                'type' => TotalInventory::find($id)->type,
-                'commCode' => TotalInventory::find($id)->commCode
-            ];
         }
+        // elseif ($id > 0) {
+        //     $out['results'] = [
+        //         'id' => $id,
+        //         'text' => TotalInventory::find($id)->name,
+        //         'company' => TotalInventory::find($id)->company,
+        //         'quantity' => TotalInventory::find($id)->quantity,
+        //         'maxPrice' => TotalInventory::find($id)->maxPrice,
+        //         'minPrice' => TotalInventory::find($id)->minPrice,
+        //         'serialNo' => TotalInventory::find($id)->serialNo,
+        //         'type' => TotalInventory::find($id)->type,
+        //         'commCode' => TotalInventory::find($id)->commCode
+        //     ];
+        // }
         return $out;
     }
 }

@@ -8,15 +8,11 @@ use app\models\UserSearch;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
-use yii\helpers\ArrayHelper;
-use yii\db\ActiveRecord;
-use yii\data\ActiveDataProvider;
 use app\models\PasswordForm;
 use yii\filters\AccessControl;
 use yii\web\UploadedFile;
 use app\models\AuthItem;
 use app\models\AuthAssignment;
-use app\models\AuthItemChild;
 use Exception;
 
 /**
@@ -31,14 +27,14 @@ class UserController extends Controller
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
                 ],
             ],
 
             'access' => [
-                'class' => AccessControl::className(),
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
@@ -125,18 +121,10 @@ class UserController extends Controller
                             echo '<script type="text/javascript"> alert(\'تم تعديل كلمة السر الخاصة بك بنجاح\');
                         window.location.href="index";
                         </script>';
-                            // Yii::$app->getSession()->setFlash(
-                            //     'success','Password changed'
-                            // );
-                            // return $this->redirect(['index']);
                         } else {
                             echo '<script type="text/javascript"> alert(\'لم يتم تعديل كلمة السر الخاصة بك الرجاء اعادة المحاولة\');
                         window.location.href="index.php";
                         </script>';
-                            // Yii::$app->getSession()->setFlash(
-                            //     'error','Password not changed'
-                            // );
-                            // return $this->redirect(['index']);
                         }
                     } catch (Exception $e) {
                         Yii::$app->getSession()->setFlash(
@@ -185,7 +173,7 @@ class UserController extends Controller
                 return $this->render('create', ['model' => $model]);
             } else {
                 $model->createedDate = date('y-m-d');
-                $orignPass = $model->password;
+                // $orignPass = $model->password;
                 $pass = md5($model->password);
                 $model->password = $pass;
                 if (!is_dir("img/users")) {
@@ -237,7 +225,6 @@ class UserController extends Controller
      */
     public function actionUpdate($id)
     {
-        //$model = $this->findModel($id);
         $model = User::find()->where(['id' => $id])->one();
 
         if ($model->load(Yii::$app->request->post())) {
@@ -264,7 +251,7 @@ class UserController extends Controller
             //=========================
             $user_type = $model->permission;
             $authItem = AuthItem::find()->where(['type' => $user_type])->One();
-            \Yii::$app->db->createCommand()->delete('auth_assignment', ['user_id' => $id])->execute();
+            Yii::$app->db->createCommand()->delete('auth_assignment', ['user_id' => $id])->execute();
 
             $AuthAssignment = new AuthAssignment();
             $AuthAssignment->item_name = $authItem->name;
@@ -274,7 +261,7 @@ class UserController extends Controller
 
             return $this->redirect(['view', 'id' => $model->id]);
         } else {
-            if( $model->client != null){
+            if ($model->client != null) {
                 $model->client = explode(",", $model->client);
             }
             return $this->render('update', [

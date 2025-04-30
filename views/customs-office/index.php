@@ -1,7 +1,7 @@
 <?php
 
 use app\models\CustomsDeclaration;
-use dosamigos\datepicker\DatePicker;
+use kartik\date\DatePicker;
 use yii\helpers\Html;
 use yii\grid\GridView;
 use yii\helpers\ArrayHelper;
@@ -83,8 +83,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     'model' => $searchModel,
                     'attribute' => 'at',
                     'language' => 'ar',
-                    // 'convertFormat'=>false,
-                    'clientOptions' => [
+                    'pluginOptions' => [
                         'autoclose' => true,
                         'format' => 'yyyy-mm-dd',
                         'todayHighlight' => true,

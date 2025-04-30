@@ -2,48 +2,43 @@
 
 use yii\helpers\Html;
 use yii\widgets\DetailView;
-use kartik\grid\GridView;
 
-/* @var $this yii\web\View */
-/* @var $model app\models\Currancy */
+/** @var yii\web\View $this */
+/** @var app\models\Currancy $model */
 
 $this->title = $model->name;
-$this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Currancy'), 'url' => ['index']];
+$this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Currancies'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
+\yii\web\YiiAsset::register($this);
 ?>
 <div class="currancy-view">
 
-    <div class="row">
-        <div class="col-sm-9">
-            <h2><?= Yii::t('app', 'Currancy') . ' ' . Html::encode($this->title) ?></h2>
-        </div>
-        <div class="col-sm-3" style="margin-top: 15px">
+    <h1><?= Html::encode($this->title) ?></h1>
 
-            <?= Html::a(Yii::t('app', 'Update'), ['update', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
-            <?= Html::a(Yii::t('app', 'Delete'), ['delete', 'id' => $model->id], [
-                'class' => 'btn btn-danger',
-                'data' => [
-                    'confirm' => Yii::t('app', 'Are you sure you want to delete this item?'),
-                    'method' => 'post',
-                ],
-            ])
-            ?>
-        </div>
-    </div>
+    <p>
+        <?= Html::a(Yii::t('app', 'Update'), ['update', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
+        <?= Html::a(Yii::t('app', 'Delete'), ['delete', 'id' => $model->id], [
+            'class' => 'btn btn-danger',
+            'data' => [
+                'confirm' => Yii::t('app', 'Are you sure you want to delete this item?'),
+                'method' => 'post',
+            ],
+        ]) ?>
+    </p>
 
-    <div class="row">
-        <?php
-        $gridColumn = [
-            ['attribute' => 'id', 'visible' => false],
+    <?= DetailView::widget([
+        'model' => $model,
+        'attributes' => [
+            'id',
             'name',
             'code',
-
-        ];
-        echo DetailView::widget([
-            'model' => $model,
-            'attributes' => $gridColumn
-        ]);
-        ?>
-    </div>
+            'user_insert',
+            'created_at',
+            'user_update',
+            'update_at',
+            'created_by',
+            'updated_by',
+        ],
+    ]) ?>
 
 </div>

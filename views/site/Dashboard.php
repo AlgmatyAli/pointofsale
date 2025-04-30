@@ -19,7 +19,6 @@ use yii\widgets\DetailView;
            <?= Html::a(Yii::t('app',  'تعريف الصلاحيات والادونات'), ['auth-item/index'], ['class' => 'btn btn-default btn-block']) ?>
            <?= Html::a(Yii::t('app',  'تسجيل الفروع '),['/branches'], ['class' => 'btn btn-default btn-block']) ?>
            <?= Html::a(Yii::t('app',  'تسجيل بنود المصاريف'),  ['/items'], ['class' => 'btn btn-default btn-block']) ?>
-           <?= Html::a(Yii::t('app',  'Agents'),  ['/agent'], ['class' => 'btn btn-default btn-block']) ?>
            <?= Html::a(Yii::t('app',  'Prices Update'),  ['/prices/create1'], ['class' => 'btn btn-default btn-block']) ?>
                 </div>
        <div class="col-md-6">

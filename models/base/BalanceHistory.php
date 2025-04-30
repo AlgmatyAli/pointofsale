@@ -3,6 +3,7 @@
 namespace app\models\base;
 
 use app\models\Client;
+use app\models\Currancy;
 use Yii;
 use yii\behaviors\BlameableBehavior;
 
@@ -15,6 +16,7 @@ use yii\behaviors\BlameableBehavior;
  * @property string $at
  * @property string $why
  * @property string $type
+ * @property string $client_type
  */
 class BalanceHistory extends \yii\db\ActiveRecord
 {
@@ -83,7 +85,7 @@ class BalanceHistory extends \yii\db\ActiveRecord
     {
         return [
             'blameable' => [
-                'class' => BlameableBehavior::className(),
+                'class' => BlameableBehavior::class,
                 'createdByAttribute' => 'created_by',
                 'updatedByAttribute' => 'updated_by',
             ],
@@ -91,12 +93,12 @@ class BalanceHistory extends \yii\db\ActiveRecord
     }
     public function getClient0()
     {
-        return $this->hasOne(Client::className(), ['id' => 'clinet']);
+        return $this->hasOne(Client::class, ['id' => 'clinet']);
     }
 
     public function getCurrancy0()
     {
-        return $this->hasOne(Currancy::className(), ['id' => 'currancy']);
+        return $this->hasOne(Currancy::class, ['id' => 'currancy']);
     }
 
     /**

@@ -1,6 +1,6 @@
 <?php
 
-use app\models\base\Currancy;
+use app\models\Currancy;
 use app\models\Client;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;

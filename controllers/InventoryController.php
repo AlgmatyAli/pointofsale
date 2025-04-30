@@ -6,10 +6,9 @@ use Yii;
 use app\models\Inventory;
 use app\models\InventorySearch;
 use app\models\InventorySearch_;
-use yii\web\Controller;
-use yii\web\NotFoundHttpException;
-use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
+use yii\web\Controller;
+use yii\filters\VerbFilter;
 
 /**
  * InventoryController implements the CRUD actions for Inventory model.
@@ -20,13 +19,13 @@ class InventoryController extends Controller
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['post'],
                 ],
             ],
             'access' => [
-                'class' => \yii\filters\AccessControl::className(),
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
@@ -53,32 +52,30 @@ class InventoryController extends Controller
         $sql = " 
         SELECT sum(quantity) quantity, sum(inventory.quantity*prices.costPrice) TotalCost, sum(inventory.quantity*prices.maxPrice) Price 
         FROM inventory, prices WHERE inventory.id=prices.category
-        ";    
+        ";
 
-        $connection = \Yii::$app->db;
+        $connection = Yii::$app->db;
         $data = $connection->createCommand($sql);
         $info = $data->queryAll();
 
         $sql = " 
         SELECT sum(quantity) quantity, sum(inventory.quantity*prices.costPrice) TotalCost, sum(inventory.quantity*prices.maxPrice) Price 
         FROM inventory, prices WHERE inventory.id=prices.category and inventory.type = 3
-        ";    
+        ";
 
-        $connection = \Yii::$app->db;
+        $connection = Yii::$app->db;
         $data = $connection->createCommand($sql);
         $inventory = $data->queryAll();
-      
-        // var_dump($info);
-        // die();
+
         return $this->render('index', [
             'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
-            'infos'=>$info,
-            'inventory' =>$inventory,
+            'infos' => $info,
+            'inventory' => $inventory,
             'count' => 0,
-            'TotalCost'=> 0,
-            'totalCostWOHangOut' =>0,
-            'price' =>0,
+            'TotalCost' => 0,
+            'totalCostWOHangOut' => 0,
+            'price' => 0,
         ]);
     }
 
@@ -90,7 +87,7 @@ class InventoryController extends Controller
     {
         $searchModel = new InventorySearch();
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-        
+
         return $this->render('list', [
             'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
@@ -102,19 +99,9 @@ class InventoryController extends Controller
         $searchModel = new InventorySearch_();
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
-        // $sql = " 
-        // SELECT sum(quantity) quantity, sum(inventory.quantity*prices.costPrice) TotalCost, sum(inventory.quantity*prices.maxPrice) Price 
-        // FROM inventory, prices WHERE inventory.id=prices.category
-        // ";    
-
-        // $connection = Yii::$app->db;
-        // $data = $connection->createCommand($sql);
-        // $info = $data->queryAll();
-        
         return $this->render('priceList', [
             'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
-            //'infos'=>$info,
         ]);
     }
 
@@ -122,30 +109,30 @@ class InventoryController extends Controller
     {
         $model = new Inventory();
         if ($model->load(Yii::$app->request->post())) {
-            
-        $sql = " select inventory.id, sum(inventory.quantity)as quantity, max(inventory.name)as name, 
+
+            $sql = " select inventory.id, sum(inventory.quantity)as quantity, max(inventory.name)as name, 
         max(inventory.serialNo) as serialNo, max(inventory.company) as company FROM inventory 
         where inventory.id not in (select category from arrangementDetails, arrangement 
         where arrangement.id = arrangementDetails.arrangement 
         and arrangementDetails.stockTaking = 1
-        and DATE_FORMAT(arrangement.at, '%Y') = ".$model->at." ) 
-        GROUP by id HAVING sum(inventory.quantity) <> 0" ;    
-    
-        $connection = \Yii::$app->db;
-        $data = $connection->createCommand($sql);
-        $info = $data->queryAll();
-         if ($info == null){
-            echo '<script type="text/javascript"> 
+        and DATE_FORMAT(arrangement.at, '%Y') = " . $model->at . " ) 
+        GROUP by id HAVING sum(inventory.quantity) <> 0";
+
+            $connection = Yii::$app->db;
+            $data = $connection->createCommand($sql);
+            $info = $data->queryAll();
+            if ($info == null) {
+                echo '<script type="text/javascript"> 
             alert("عفوا لايوجد بيانات للعرض");
             window.location.href="?r=arrangement/stock-taking"
             </script>';
-         }
-         return $this->render('stockTakingRep', [
-            'models' => $info,
-            'year' => $model->at,
-        ]);  
+            }
+            return $this->render('stockTakingRep', [
+                'models' => $info,
+                'year' => $model->at,
+            ]);
         }
- 
+
         return $this->render('stockTaking', [
             'model' => $model,
         ]);

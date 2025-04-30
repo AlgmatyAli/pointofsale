@@ -1,6 +1,6 @@
 <?php
 
-use app\models\base\Currancy;
+use app\models\Currancy;
 use app\models\CompanyInfo;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
@@ -50,17 +50,6 @@ $company = CompanyInfo::find()->one();
                 ]);
             }
             ?>
-
-            <?= $form->field($model, 'agent')->widget(\kartik\widgets\Select2::class, [
-                'data' =>  ArrayHelper::map(\app\models\Agent::find()
-                    ->where(['in', 'branch', [Yii::$app->user->identity->branch]])
-                    //->andWhere(['branch' => Yii::$app->user->identity->branch])
-                    ->orderBy('id')->asArray()->all(), 'id', 'name'),
-                'options' => ['placeholder' => 'إختر ...'],
-                'pluginOptions' => [
-                    'allowClear' => true
-                ],
-            ]); ?>
 
             <?php
             echo '<label class="form-label">تاريخ الفاتورة</label>';

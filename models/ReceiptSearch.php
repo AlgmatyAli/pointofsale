@@ -6,6 +6,7 @@ use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use app\models\Receipt;
 use Yii;
+
 /**
  * ReceiptSearch represents the model behind the search form of `app\models\Receipt`.
  */
@@ -17,8 +18,8 @@ class ReceiptSearch extends Receipt
     public function rules()
     {
         return [
-            [['id', 'rId', 'clinet', 'type', 'agent','user_insert', 'user_update', 'branch'], 'safe'],
-            [['at', 'why', 'payWay', 'created_at', 'agent','update_at', 'tafqet'], 'safe'],
+            [['id', 'rId', 'clinet', 'type', 'user_insert', 'user_update', 'branch'], 'safe'],
+            [['at', 'why', 'payWay', 'created_at', 'update_at', 'tafqet'], 'safe'],
             [['value'], 'number'],
         ];
     }
@@ -47,11 +48,12 @@ class ReceiptSearch extends Receipt
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
-            'sort' =>[
+            'sort' => [
                 'defaultOrder' => [
                     'id' => SORT_DESC
-                ]],
-            'pagination' => [ 'pageSize' => 200 ],
+                ]
+            ],
+            'pagination' => ['pageSize' => 200],
         ]);
 
         $this->load($params);
@@ -67,11 +69,9 @@ class ReceiptSearch extends Receipt
             'id' => $this->id,
             'rId' => $this->rId,
             'clinet' => $this->clinet,
-           // 'at' => $this->at,
             'value' => $this->value,
             'type' => $this->type,
             'user_insert' => $this->user_insert,
-            'agent' => $this->agent,
             'created_at' => $this->created_at,
             'user_update' => $this->user_update,
             'update_at' => $this->update_at,
@@ -81,11 +81,10 @@ class ReceiptSearch extends Receipt
         $query->andFilterWhere(['like', 'why', $this->why])
             ->andFilterWhere(['like', 'payWay', $this->payWay]);
 
-            if(!empty($this->at) && strpos($this->at, '-') !== false) {
-                list($min_date, $max_date) = explode(' - ', $this->at);
+        if (!empty($this->at) && strpos($this->at, '-') !== false) {
+            list($min_date, $max_date) = explode(' - ', $this->at);
             $query->andFilterWhere(['between', 'at', $min_date, $max_date]);
-            
-            }
+        }
 
         return $dataProvider;
     }

@@ -18,7 +18,6 @@ class m999999_070505_category_reservation extends Migration
         ALGORITHM = UNDEFINED 
 
         SQL SECURITY DEFINER                        
-
         VIEW `category_reservation` AS
         SELECT salesDetails.category, sum(salesDetails.quantity)quantity, max(salesDetails.salesId)salesId FROM sales
         JOIN salesDetails on sales.id = salesDetails.salesId

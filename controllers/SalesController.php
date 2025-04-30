@@ -88,7 +88,7 @@ class SalesController extends Controller
 
                     [
                         'allow' => true,
-                        'actions' => ['back-create'],
+                        'actions' => ['back-create', 'back-items'],
                         'roles' => ['createBackSales'],
                     ],
 
@@ -754,7 +754,6 @@ class SalesController extends Controller
                     $modelDetails->type = $data->type;
                     $modelDetails->original_price = $data->salePrice;
                     $modelDetails->serial_number = $data->serial_number;
-                    $modelDetails->mac_address = $data->mac_address;
                     if ($model->type != 4) {
                         if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
                             $branch = Yii::$app->user->identity->branch;
@@ -2005,15 +2004,15 @@ class SalesController extends Controller
                         </script>';
             }
 
-            $sql = "SELECT 'ارباح المبيعات' AS DESCRIBTION, sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity) AS total
-            , sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity) AS NET
+            $sql = "SELECT 'ارباح المبيعات' AS DESCRIBTION, ifNull(sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity),0) AS total
+            , ifNull(sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity),0) AS NET
             FROM  sales, salesDetails
             WHERE sales.id = salesDetails.salesId
             and sales.type = 1
             and sales.currancy = ".$model->currancy." and sales.user_insert = " . $model->user_insert . " and  sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "'
             UNION
-            SELECT     'مسترجع المبيعات', sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity),
-            sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity) *-1
+            SELECT     'مسترجع المبيعات', ifNull(sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity),0),
+            ifNull(sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity) *-1,0)
             FROM  sales, salesDetails
             WHERE sales.id = salesDetails.salesId
             and sales.type = 2
@@ -2041,5 +2040,22 @@ class SalesController extends Controller
         return $this->render('_summation', [
             'model' => $model,
         ]);
+    }
+
+    public function actionBackItems($id)
+    {
+        $model = salesDetails::find()->where(['=', 'id', $id])->one();
+        $tempInvoice = new TempBackSales();
+        $tempInvoice->category = $model->category;
+        $tempInvoice->quantity = $model->quantity;
+        $tempInvoice->costPrice = $model->costPrice;
+        $tempInvoice->salePrice = $model->salePrice;
+        $tempInvoice->box = $model->box;
+        $tempInvoice->state = 1;
+        $tempInvoice->created_by = Yii::$app->user->identity->id;
+        $tempInvoice->created_at = date('Y-m-d H:i:s');
+        $tempInvoice->save(false);
+       
+         return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
     }
 }

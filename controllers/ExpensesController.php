@@ -22,14 +22,14 @@ class ExpensesController extends Controller
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
                 ],
             ],
 
             'access' => [
-                'class' => AccessControl::className(),
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
@@ -170,12 +170,5 @@ class ExpensesController extends Controller
         return $this->render('printRecipt', [
             'model' => $this->findModel($id),
         ]);
-    }
-
-    public function validateAttribute($model)
-    {
-        if (!in_array($model->$attribute, ['USA', 'Web'])) {
-            $this->addError($model, $attribute, 'The country must be either "USA" or "Web".');
-        }
     }
 }

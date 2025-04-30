@@ -3,10 +3,9 @@
 namespace app\controllers;
 
 use Yii;
-use app\models\Ftran;
 use app\models\FtranSearch;
+use yii\filters\AccessControl;
 use yii\web\Controller;
-use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 
 /**
@@ -18,13 +17,13 @@ class FtranController extends Controller
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['post'],
                 ],
             ],
             'access' => [
-                'class' => \yii\filters\AccessControl::className(),
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,

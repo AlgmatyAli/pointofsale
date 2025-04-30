@@ -169,8 +169,6 @@ class TempInvoiceController extends Controller
                     ->andWhere(['=', 'state', 1])
                     ->sum('quantity');
 
-                //die(var_dump($result->category));
-
                 if (isset($posted['quantity'])) {
                    
                     if ($company->zeroQnty == 0) {
@@ -339,16 +337,10 @@ class TempInvoiceController extends Controller
             $type = [1, 2];
         }
 
-        $data = Totalinventory::find()
-            ->Where(['branch' => Yii::$app->user->identity->branch])
-            ->andwhere(['in', 'type', $type])
-            ->all();
-
         $searchModel = new TempInvoiceSearch();
         $searchModel->created_by = Yii::$app->user->identity->id;
         $searchModel->state = 1;
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-
 
         /**
          * في الاعلي اذا كان سعر الكمية المطلوبه أكبر من الكمية الموجوده يتم تغيير الكيه حسب الموجود فقط 
@@ -683,8 +675,6 @@ class TempInvoiceController extends Controller
 
     public function actionUnhold($id)
     {
-        $temp  = TempInvoice::find()->where(['=', 'invoice_number', $id]);
-
         $data =  TempInvoice::find()
             ->where(['state' => 1])
             ->andWhere(['created_by' => Yii::$app->user->identity->id])->one();

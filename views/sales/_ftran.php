@@ -1,6 +1,6 @@
 <?php
 
-use app\models\base\Currancy;
+use app\models\Currancy;
 use app\models\CompanyInfo;
 use app\models\User;
 use yii\helpers\Html;

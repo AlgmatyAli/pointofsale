@@ -2,13 +2,13 @@
 
 use yii\helpers\Html;
 
-/* @var $this yii\web\View */
-/* @var $model app\models\Currancy */
+/** @var yii\web\View $this */
+/** @var app\models\Currancy $model */
 
-$this->title = Yii::t('app', 'Update {modelClass}: ', [
-    'modelClass' => 'Currancy',
-]) . ' ' . $model->name;
-$this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Currancy'), 'url' => ['index']];
+$this->title = Yii::t('app', 'Update Currancy: {name}', [
+    'name' => $model->name,
+]);
+$this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Currancies'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = ['label' => $model->name, 'url' => ['view', 'id' => $model->id]];
 $this->params['breadcrumbs'][] = Yii::t('app', 'Update');
 ?>

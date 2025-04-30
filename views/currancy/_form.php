@@ -3,36 +3,33 @@
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 
-/* @var $this yii\web\View */
-/* @var $model app\models\Currancy */
-/* @var $form yii\widgets\ActiveForm */
-
-\mootensai\components\JsBlock::widget([
-    'viewFile' => '_script',
-    'pos' => \yii\web\View::POS_END,
-    'viewParams' => [
-        'class' => 'Receipt',
-        'relID' => 'receipt',
-        'value' => \yii\helpers\Json::encode($model->receipts),
-        'isNewRecord' => ($model->isNewRecord) ? 1 : 0
-    ]
-]);
+/** @var yii\web\View $this */
+/** @var app\models\Currancy $model */
+/** @var yii\widgets\ActiveForm $form */
 ?>
 
 <div class="currancy-form">
 
     <?php $form = ActiveForm::begin(); ?>
 
-    <?= $form->errorSummary($model); ?>
+    <?= $form->field($model, 'name')->textInput(['maxlength' => true]) ?>
 
-    <?= $form->field($model, 'id', ['template' => '{input}'])->textInput(['style' => 'display:none']); ?>
+    <?= $form->field($model, 'code')->textInput(['maxlength' => true]) ?>
 
-    <?= $form->field($model, 'name')->textInput(['maxlength' => true, 'placeholder' => 'Name']) ?>
+    <?= $form->field($model, 'user_insert')->textInput() ?>
 
-    <?= $form->field($model, 'code')->textInput(['maxlength' => true, 'placeholder' => 'Code']) ?>
+    <?= $form->field($model, 'created_at')->textInput() ?>
+
+    <?= $form->field($model, 'user_update')->textInput() ?>
+
+    <?= $form->field($model, 'update_at')->textInput() ?>
+
+    <?= $form->field($model, 'created_by')->textInput() ?>
+
+    <?= $form->field($model, 'updated_by')->textInput() ?>
 
     <div class="form-group">
-        <?= Html::submitButton($model->isNewRecord ? Yii::t('app', 'Create') : Yii::t('app', 'Update'), ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']) ?>
+        <?= Html::submitButton(Yii::t('app', 'Save'), ['class' => 'btn btn-success']) ?>
     </div>
 
     <?php ActiveForm::end(); ?>

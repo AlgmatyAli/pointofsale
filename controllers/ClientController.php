@@ -8,10 +8,8 @@ use app\models\ClientSearch;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
-use app\models\DeptSupp;
 use app\models\Dept;
 use app\models\HistransClient;
-use yii\filters\AccessControl;
 
 /**
  * ClientController implements the CRUD actions for Client model.
@@ -25,14 +23,14 @@ class ClientController extends Controller
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
                 ],
             ],
 
             'access' => [
-                'class' => \yii\filters\AccessControl::className(),
+                'class' => \yii\filters\AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
@@ -60,7 +58,7 @@ class ClientController extends Controller
                         'actions' => ['credts'],
                         'roles' => ['clientDepts'],
                     ],
-                    [ 
+                    [
                         'allow' => true,
                         'actions' => ['histrans', 'type'],
                         'roles' => ['clientHistrans'],
@@ -85,7 +83,7 @@ class ClientController extends Controller
         ]);
     }
 
-    
+
     /**
      * Lists all Client models.
      * @return mixed
@@ -115,11 +113,11 @@ class ClientController extends Controller
         ]);
         $providerCredit = new \yii\data\ArrayDataProvider([
             'allModels' => $model->credit,
-            
+
         ]);
         $providerDebit = new \yii\data\ArrayDataProvider([
             'allModels' => $model->debit,
-        ]); 
+        ]);
         $providerSales = new \yii\data\ArrayDataProvider([
             'allModels' => $model->sales,
         ]);
@@ -132,7 +130,7 @@ class ClientController extends Controller
             'providerCredit' => $providerCredit,
             'providerDebit' => $providerDebit,
             'providerSales' => $providerSales,
-            'providerInitsales'=>$providerInitsales,
+            'providerInitsales' => $providerInitsales,
         ]);
     }
     /**
@@ -145,19 +143,17 @@ class ClientController extends Controller
         $model = new Client();
 
         if ($model->load(Yii::$app->request->post())) {
-            $model->created_at	 = date('Y-m-d H:i:s');
+            $model->created_at     = date('Y-m-d H:i:s');
             $model->user_insert = Yii::$app->user->id;
             $model->branch = Yii::$app->user->identity->branch;
             $model->save();
-            
+
             return $this->redirect(['view', 'id' => $model->id]);
-            
         }
 
         return $this->render('create', [
             'model' => $model,
         ]);
-        
     }
 
     /**
@@ -172,7 +168,7 @@ class ClientController extends Controller
         $model = $this->findModel($id);
 
         if ($model->load(Yii::$app->request->post())) {
-            $model->update_at	 = date('Y-m-d H:i:s');
+            $model->update_at     = date('Y-m-d H:i:s');
             $model->user_update = Yii::$app->user->id;
             $model->branch = Yii::$app->user->identity->branch;
             $model->save();
@@ -224,21 +220,21 @@ class ClientController extends Controller
         $model = new Client();
 
         if ($model->load(Yii::$app->request->post())) {
-            $model->created_at	 = date('Y-m-d H:i:s');
+            $model->created_at     = date('Y-m-d H:i:s');
             $model->user_insert = Yii::$app->user->id;
             $model->branch = Yii::$app->user->identity->branch;
             $model->save();
-           
+
             return $this->redirect(Yii::$app->request->referrer);
-        }elseif (Yii::$app->request->isAjax) {
+        } elseif (Yii::$app->request->isAjax) {
             return $this->renderAjax('_form', [
-                        'model' => $model,
+                'model' => $model,
             ]);
         } else {
 
-        return $this->render('create', [
-            'model' => $model,
-        ]);
+            return $this->render('create', [
+                'model' => $model,
+            ]);
         }
     }
 
@@ -251,67 +247,50 @@ class ClientController extends Controller
     {
         $model = new Dept();
         if ($model->load(Yii::$app->request->post())) {
-        
-        if($model->type == 0){
+
+            if ($model->type == 0) {
                 $model->type = '0,2';
                 $sql = " SELECT dept.id, dept.type as type, MAX(dept.name) as name, SUM(dept.credt) as credt, 
                 MAX(dept.Phone) as phone, max(dept.deserving) as deserving  FROM dept
-                where dept.Type in(".$model->type.")  and dept.currency in( 0, ".$model->currency.")
-                GROUP BY dept.id, dept.type having SUM(dept.credt)<>0";    
+                where dept.Type in(" . $model->type . ")  and dept.currency in( 0, " . $model->currency . ")
+                GROUP BY dept.id, dept.type having SUM(dept.credt)<>0";
                 $connection = Yii::$app->db;
                 $model = $connection->createCommand($sql);
                 $info = $model->queryAll();
-                 if ($info == null){
-                    Yii::$app->session->setFlash('error', Yii::t('app',"There is Nothing to Show !"));
+                if ($info == null) {
+                    Yii::$app->session->setFlash('error', Yii::t('app', "There is Nothing to Show !"));
                     return $this->redirect(Yii::$app->request->referrer);
-                 }
-    
-                 return $this->render('creditsrep', [
+                }
+
+                return $this->render('creditsrep', [
                     'models' => $info,
-                    'dept'=>0,
-                    'credt'=>0,
-                    'coun'=>1,
-                    'count'=>0,
-                ]);  
-        }elseif($model->type == 1){
+                    'dept' => 0,
+                    'credt' => 0,
+                    'coun' => 1,
+                    'count' => 0,
+                ]);
+            } elseif ($model->type == 1) {
                 $model->type = '1';
                 $sql = " SELECT dept_supp.id, dept_supp.type as type, MAX(dept_supp.name) as name,  SUM(dept_supp.credt) as credt,
                 MAX(dept_supp.Phone) as phone FROM dept_supp
-                where dept_supp.Type in(".$model->type.") and dept_supp.currency in( 0, ".$model->currency.")
+                where dept_supp.Type in(" . $model->type . ") and dept_supp.currency in( 0, " . $model->currency . ")
                 GROUP BY dept_supp.id, dept_supp.type having SUM(dept_supp.credt)<>0";
                 $connection = Yii::$app->db;
                 $model = $connection->createCommand($sql);
                 $info = $model->queryAll();
-                 if ($info == null){
-                    Yii::$app->session->setFlash('error', Yii::t('app',"There is Nothing to Show !"));
+                if ($info == null) {
+                    Yii::$app->session->setFlash('error', Yii::t('app', "There is Nothing to Show !"));
                     return $this->redirect(Yii::$app->request->referrer);
-                 }
-    
-                 return $this->render('creditsrep', [
+                }
+
+                return $this->render('creditsrep', [
                     'models' => $info,
-                    'dept'=>0,
-                    'credt'=>0,
-                    'coun'=>1,
-                    'count'=>0,
-                ]);  
-            } 
-
-
-            // $connection = Yii::$app->db;
-            // $model = $connection->createCommand($sql);
-            // $info = $model->queryAll();
-            //  if ($info == null){
-            //     Yii::$app->session->setFlash('error', Yii::t('app',"There is Nothing to Show !"));
-            //     return $this->redirect(Yii::$app->request->referrer);
-            //  }
-
-            //  return $this->render('creditsrep', [
-            //     'models' => $info,
-            //     'dept'=>0,
-            //     'credt'=>0,
-            //     'coun'=>1,
-            //     'count'=>0,
-            // ]);  
+                    'dept' => 0,
+                    'credt' => 0,
+                    'coun' => 1,
+                    'count' => 0,
+                ]);
+            }
         }
         return $this->render('credits', [
             'model' => $model,
@@ -323,74 +302,71 @@ class ClientController extends Controller
      * If creation is successful, the browser will be redirected to the 'view' page.
      * @return mixed
      */
-    public function actionHistrans()  
+    public function actionHistrans()
     {
         $model = new HistransClient();
         if ($model->load(Yii::$app->request->post())) {
-            //$lastBalance =0;
-            
-            if($model->allData != 0){
+            if ($model->allData != 0) {
                 $model->min_date = '2020-01-30';
                 $model->max_date = date('Y-m-d');
             }
-            
-        if($model->type == 0 || $model->type == 2){ 
-            $types = '0,2';
-            $sqlSum = " SELECT 
+
+            if ($model->type == 0 || $model->type == 2) {
+                $types = '0,2';
+                $sqlSum = " SELECT 
             sum(histrans_client.dept) as sader, sum(histrans_client.credt) as wared, max(histrans_client.type) as type,
             max(histrans_client.deleviried) as deleviried
             FROM histrans_client
-            where histrans_client.Type in(".$types.") and histrans_client.id = ".$model->id." 
-            and histrans_client.trandate < '".$model->min_date."' and histrans_client.currency in( 0, ".$model->currency.")"; 
-            $connection = Yii::$app->db;
-            $data = $connection->createCommand($sqlSum);
-            $lastBalance = $data->queryAll();
-        } 
-        
-        if($model->type == 1){
-        $sqlSum = " SELECT
+            where histrans_client.Type in(" . $types . ") and histrans_client.id = " . $model->id . " 
+            and histrans_client.trandate < '" . $model->min_date . "' and histrans_client.currency in( 0, " . $model->currency . ")";
+                $connection = Yii::$app->db;
+                $data = $connection->createCommand($sqlSum);
+                $lastBalance = $data->queryAll();
+            }
+
+            if ($model->type == 1) {
+                $sqlSum = " SELECT
             sum(histrans_supplier.dept) as sader, sum(histrans_supplier.credt) as wared, max(histrans_supplier.type) as type FROM histrans_supplier
-            where histrans_supplier.Type in(".$model->type.") and histrans_supplier.id = ".$model->id."
-            and histrans_supplier.trandate < '".$model->min_date."' and histrans_supplier.currency in( 0, ".$model->currency.")"; 
-            $connection = Yii::$app->db;
-            $data = $connection->createCommand($sqlSum);
-            $lastBalance = $data->queryAll();
-        }
-        
-        if($model->type == 0 || $model->type == 2){
-        $types = '0,2';
-        $sql = " SELECT histrans_client.id, histrans_client.trandate, histrans_client.name as name,
+            where histrans_supplier.Type in(" . $model->type . ") and histrans_supplier.id = " . $model->id . "
+            and histrans_supplier.trandate < '" . $model->min_date . "' and histrans_supplier.currency in( 0, " . $model->currency . ")";
+                $connection = Yii::$app->db;
+                $data = $connection->createCommand($sqlSum);
+                $lastBalance = $data->queryAll();
+            }
+
+            if ($model->type == 0 || $model->type == 2) {
+                $types = '0,2';
+                $sql = " SELECT histrans_client.id, histrans_client.trandate, histrans_client.name as name,
         histrans_client.dept as sader, histrans_client.billId as billId, histrans_client.kind as kind,
         histrans_client.credt as wared, histrans_client.printId as printId, histrans_client.type as type, histrans_client.deleviried as deleviried
         FROM histrans_client
-        where histrans_client.Type in(".$types.") and histrans_client.id = ".$model->id."
-        and histrans_client.trandate between '".$model->min_date."' and '".$model->max_date."'
-        and histrans_client.sort <> 1  and histrans_client.currency in( 0, ".$model->currency.")
+        where histrans_client.Type in(" . $types . ") and histrans_client.id = " . $model->id . "
+        and histrans_client.trandate between '" . $model->min_date . "' and '" . $model->max_date . "'
+        and histrans_client.sort <> 1  and histrans_client.currency in( 0, " . $model->currency . ")
         order by  histrans_client.trandate, histrans_client.billId";
-       
-        }elseif($model->type == 1){
-            $sql = " SELECT histrans_supplier.id, histrans_supplier.kind, histrans_supplier.trandate, histrans_supplier.name as name, 
+            } elseif ($model->type == 1) {
+                $sql = " SELECT histrans_supplier.id, histrans_supplier.kind, histrans_supplier.trandate, histrans_supplier.name as name, 
             histrans_supplier.dept as wared, histrans_supplier.credt as sader, histrans_supplier.billId as billId,
             histrans_supplier.printId as printId, histrans_supplier.type as type
              FROM histrans_supplier
-            where histrans_supplier.Type in(".$model->type.") and histrans_supplier.id = ".$model->id." and histrans_supplier.trandate 
-            between '".$model->min_date."' and '".$model->max_date."'
-            and histrans_supplier.sort <> 1 and histrans_supplier.currency in( 0, ".$model->currency.")
+            where histrans_supplier.Type in(" . $model->type . ") and histrans_supplier.id = " . $model->id . " and histrans_supplier.trandate 
+            between '" . $model->min_date . "' and '" . $model->max_date . "'
+            and histrans_supplier.sort <> 1 and histrans_supplier.currency in( 0, " . $model->currency . ")
             order by histrans_supplier.trandate, histrans_supplier.billId";
-        }
+            }
 
             $connection = Yii::$app->db;
             $data = $connection->createCommand($sql);
             $info = $data->queryAll();
-            
+
             if (count($info) === 0) {
-                Yii::$app->session->setFlash('error', Yii::t('app',"Pardon There is no data to view"));
+                Yii::$app->session->setFlash('error', Yii::t('app', "Pardon There is no data to view"));
                 return $this->redirect(['histrans', 'model' => $model]);
-             }
-             return $this->render('histransrep', [
+            }
+            return $this->render('histransrep', [
                 'models' => $info,
                 'min_date' => $model->min_date,
-                'max_date'=>$model->max_date,
+                'max_date' => $model->max_date,
                 'sumwared' => 0,
                 'sumsader' => 0,
                 'sum' => 0,
@@ -399,7 +375,7 @@ class ClientController extends Controller
                 'lastBalance' => $lastBalance,
                 'balance' => 0,
                 'id' => null,
-                'deleviried' =>0,
+                'deleviried' => 0,
             ]);
         }
 
@@ -410,7 +386,6 @@ class ClientController extends Controller
 
     public function actionType()
     {
-        
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         $out = [];
         if (isset($_POST['depdrop_parents'])) {
@@ -418,37 +393,27 @@ class ClientController extends Controller
             if ($parents != null) {
                 $type_id = $parents[0];
                 $out = self::getClient($type_id);
-                // the getSubCatList function will query the database based on the
-                // cat_id and return an array like below:
-                // [
-                //    ['id'=>'<sub-cat-id-1>', 'name'=>'<sub-cat-name1>'],
-                //    ['id'=>'<sub-cat_id_2>', 'name'=>'<sub-cat-name2>']
-                // ]
-               // $selected = self::getClient($type_id);
-                return ['output'=>$out, 'selected'=>'$selected'];
-                die($type_id);
+                return ['output' => $out, 'selected' => '$selected'];
             }
         }
-        return ['output'=>'', 'selected'=>'select Client'];
+        return ['output' => '', 'selected' => 'select Client'];
     }
 
     public function getClient($type_id)
     {
-        if(Yii::$app->user->identity->client == null){
-            $data= Client::find()
-            ->where(['type'=>$type_id])
-            //->andWhere(['branch' => Yii::$app->user->identity->branch])
-            ->select(['id','name'])->asArray()->all();
-             return $data;
-        }else{
-            $data= Client::find()
-           ->where(['type'=>$type_id])
-           //->andWhere(['branch' => Yii::$app->user->identity->branch])
-           ->andWhere(['in', 'id', explode(',', Yii::$app->user->identity->client)])
-           ->select(['id','name'])->asArray()->all();
+        if (Yii::$app->user->identity->client == null) {
+            $data = Client::find()
+                ->where(['type' => $type_id])
+                //->andWhere(['branch' => Yii::$app->user->identity->branch])
+                ->select(['id', 'name'])->asArray()->all();
+            return $data;
+        } else {
+            $data = Client::find()
+                ->where(['type' => $type_id])
+                //->andWhere(['branch' => Yii::$app->user->identity->branch])
+                ->andWhere(['in', 'id', explode(',', Yii::$app->user->identity->client)])
+                ->select(['id', 'name'])->asArray()->all();
             return $data;
         }
-            
     }
-     
 }

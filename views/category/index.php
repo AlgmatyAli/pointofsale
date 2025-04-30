@@ -26,8 +26,16 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <?php
     $gridColumn = [
-        ['class' => 'yii\grid\SerialColumn'],
-        'category',
+        // ['class' => 'yii\grid\SerialColumn'],
+        [
+            'label' => Yii::t('app', 'ID'),
+            'attribute' => 'id',
+            'headerOptions' => ['style' => 'width:5%'],
+            'value' => function ($data) {
+                return $data->category;
+            }
+
+        ],
         [
             'label' => Yii::t('app', 'Name'),
             'headerOptions' => ['style' => 'width:25%'],
@@ -39,7 +47,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 return [
                     //'mergeColumns' => [[5, 6]], // columns to merge in summary
                     'content' => [             // content to show in each summary cell
-                        5 => 'مجموع الكمية ',
+                        5 => 'المجموع',
                         6 => GridView::F_SUM,
                     ],
 
@@ -63,6 +71,16 @@ $this->params['breadcrumbs'][] = $this->title;
         ],
 
         [
+            'label' => Yii::t('app', 'Class'),
+            'attribute' => 'id',
+            'headerOptions' => ['style' => 'width:8%'],
+            'value' => function ($data) {
+                return $data->class;
+            }
+
+        ],
+
+        [
             'label' => Yii::t('app', 'Serial No'),
             'headerOptions' => ['style' => 'width:10%'],
             'value' => function ($data) {
@@ -80,10 +98,18 @@ $this->params['breadcrumbs'][] = $this->title;
 
         ],
 
-        'company',
+        [
+            'attribute' => 'company',
+            'headerOptions' => ['style' => 'width:8%'],
+            'value' => function ($data) {
+                return $data->company;
+            }
+
+        ],
 
         [
             'label' => Yii::t('app', 'quantity'),
+            'headerOptions' => ['style' => 'width:5%'],
             'value' => function ($data) {
                 return $data->quantity;
             }
@@ -95,6 +121,15 @@ $this->params['breadcrumbs'][] = $this->title;
             'headerOptions' => ['style' => 'width:10%'],
             'value' => function ($data) {
                 return $data->branches0->name;
+            },
+        ],
+
+        [
+            'label' => Yii::t('app', 'Status'),
+            'attribute' => 'status',
+            'headerOptions' => ['style' => 'width:10%'],
+            'value' => function ($model) {
+                return $model->status == 0 ? 'مفعل' : 'غير مفعل';
             },
         ],
 
@@ -121,7 +156,7 @@ $this->params['breadcrumbs'][] = $this->title;
         'pjax' => true,
         'pjaxSettings' => ['options' => ['id' => 'kv-pjax-container-inventory']],
         'panel' => [
-            'type' => GridView::TYPE_PRIMARY,
+            'type' => GridView::TYPE_DEFAULT,
             'heading' => '<span class="glyphicon glyphicon-book"></span>  ' . Html::encode($this->title . ' ' . date('Y-m-d')),
         ],
         // your toolbar can include the additional full export menu

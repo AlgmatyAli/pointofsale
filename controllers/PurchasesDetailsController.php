@@ -182,68 +182,64 @@ class PurchasesDetailsController extends Controller
         throw new NotFoundHttpException(Yii::t('app', 'The requested page does not exist.'));
     }
 
-    public function actionAddPurchases($categoryid,$purchasesId)
+    public function actionAddPurchases($categoryid, $purchasesId)
     {
         $model = new PurchasesDetails();
 
         // if ($model->load(Yii::$app->request->post())){
-            
-            $category = new Category();
-           
-            $category =Stocks::find()
-            ->joinWith('prices')
-            ->where(['prices.category'=>$categoryid])->one();
-         
-            $temp = PurchasesDetails::find()->where([
-                'category'=>$category,
-                'PurchasesId'=>$purchasesId,
-                ])->one();
 
-                $purchase = Purchases::find()->where(['id'=>$purchasesId])->one();
-                    if (!isset($temp)) {
-                        $model->quantity = 1;
-                        $model->salePrice = $category->prices->maxPrice;
-                        $model->salePrice_ = $category->prices->minPrice;
-                        $model->salePrice_2 = $category->prices->minPrice2;
-                        $model->salePrice_3 = $category->prices->minPrice3; 
-                        $model->costPrice = $category->prices->costPrice;
-                        $model->totalCost = $category->prices->costPrice;
-                        $model->box = 1;//$category->box;
-                        $model->PurchasesId= $purchasesId;
-                        $model->category = $categoryid;
-                        $model->save(false);                    
-                    }else{
-                        $temp->quantity= $temp->quantity + 1;
-                        $model->salePrice = $category->prices->maxPrice;
-                        $model->salePrice_ = $category->prices->minPrice;
-                        $model->salePrice_2 = $category->prices->minPrice2;
-                        $model->salePrice_3 = $category->prices->minPrice3; 
-                        $model->costPrice = $category->prices->costPrice;
-                        $model->totalCost = $category->prices->costPrice;
-                        $model->box = 1;//$category->box;
-                        $model->PurchasesId= $purchasesId;
-                        $model->category = $categoryid;
-                        $model->save(false); 
-                    }
-                    // ========
-                    //     $stocks = Stocks::find()->where(['category' => $categoryid])
-                    //     ->andWhere(['branch' => Yii::$app->user->identity->branch])
-                    //     ->andWhere(['type' => $purchase->type])->one();
-                    // if ($purchase->type == 3) {
-                    //     $stocks->quantity = ($stocks->quantity - $temp->quantity);
-                    //     $stocks->save(true);
-                    // } elseif ($purchase->type == 1 || $purchase->type == 2) {
-                    //     $stocks->quantity = ($stocks->quantity + $temp->quantity);
-                    //     $stocks->save(true);
-                    // }
-                    // =========
-                    $purchase = Purchases::find()->where(['id'=>$purchasesId])->one();
-                    $purchase->total = $purchase->total + ($model->quantity * $model->costPrice);
-                    $purchase->save(false);
-            return $this->redirect(['purchases/update','id' => $purchasesId ]);
-        {
-            return $this->redirect(['purchases/update','id' => $purchasesId
-            ]);
+        $category = new Category();
+
+        $category = Stocks::find()
+            ->joinWith('prices')
+            ->where(['prices.category' => $categoryid])->one();
+
+        $temp = PurchasesDetails::find()->where([
+            'category' => $category,
+            'PurchasesId' => $purchasesId,
+        ])->one();
+
+        $purchase = Purchases::find()->where(['id' => $purchasesId])->one();
+        if (!isset($temp)) {
+            $model->quantity = 1;
+            $model->salePrice = $category->prices->maxPrice;
+            $model->salePrice_ = $category->prices->minPrice;
+            $model->salePrice_2 = $category->prices->minPrice2;
+            $model->salePrice_3 = $category->prices->minPrice3;
+            $model->costPrice = $category->prices->costPrice;
+            $model->totalCost = $category->prices->costPrice;
+            $model->box = 1; //$category->box;
+            $model->PurchasesId = $purchasesId;
+            $model->category = $categoryid;
+            $model->save(false);
+        } else {
+            $temp->quantity = $temp->quantity + 1;
+            $model->salePrice = $category->prices->maxPrice;
+            $model->salePrice_ = $category->prices->minPrice;
+            $model->salePrice_2 = $category->prices->minPrice2;
+            $model->salePrice_3 = $category->prices->minPrice3;
+            $model->costPrice = $category->prices->costPrice;
+            $model->totalCost = $category->prices->costPrice;
+            $model->box = 1; //$category->box;
+            $model->PurchasesId = $purchasesId;
+            $model->category = $categoryid;
+            $model->save(false);
         }
+        // ========
+        //     $stocks = Stocks::find()->where(['category' => $categoryid])
+        //     ->andWhere(['branch' => Yii::$app->user->identity->branch])
+        //     ->andWhere(['type' => $purchase->type])->one();
+        // if ($purchase->type == 3) {
+        //     $stocks->quantity = ($stocks->quantity - $temp->quantity);
+        //     $stocks->save(true);
+        // } elseif ($purchase->type == 1 || $purchase->type == 2) {
+        //     $stocks->quantity = ($stocks->quantity + $temp->quantity);
+        //     $stocks->save(true);
+        // }
+        // =========
+        $purchase = Purchases::find()->where(['id' => $purchasesId])->one();
+        $purchase->total = $purchase->total + ($model->quantity * $model->costPrice);
+        $purchase->save(false);
+        return $this->redirect(['purchases/update', 'id' => $purchasesId]);
     }
 }

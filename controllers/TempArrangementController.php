@@ -12,7 +12,6 @@ use app\models\Category;
 use app\models\Inventory;
 use yii\helpers\Json;
 use yii\filters\AccessControl;
-use function Complex\abs;
 use app\models\ArrangementDetails;
 use app\models\CompanyInfo;
 use app\models\Stocks;
@@ -34,7 +33,6 @@ class TempArrangementController extends Controller
             ],
             'access' => [
                 'class' => AccessControl::class,
-                //'except' =>  'temp-back-sales/itemlist',
                 'rules' => [
                     [
                         'allow' => true,

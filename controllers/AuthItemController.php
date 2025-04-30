@@ -9,8 +9,8 @@ use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use app\models\AuthItemChild;
-use yii\filters\AccessControl;
 use app\models\AuthItemChildSearch;
+use yii\filters\AccessControl;
 use yii\helpers\ArrayHelper;
 
 /**
@@ -25,13 +25,13 @@ class AuthItemController extends Controller
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
                 ],
             ],
             'access' => [
-                'class' => AccessControl::className(),
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
@@ -99,8 +99,7 @@ class AuthItemController extends Controller
     public function actionCreate()
     {
         $model = new AuthItem();
-       // $userPermission = AuthItem::find()->where(['type'=>2])->all();
-       $userPermission = ArrayHelper::map(\app\models\AuthItem::find()
+       $userPermission = ArrayHelper::map(AuthItem::find()
        ->where(['=','type','2'])->asArray()->all(), 'name', 'description');
         if ($model->load(Yii::$app->request->post())) {
         
@@ -135,13 +134,11 @@ class AuthItemController extends Controller
     public function actionUpdate($id)
     {
         $model = $this->findModel($id);
-        $giving = ArrayHelper::map(\app\models\AuthItemChild::find()->where(['parent'=>$model->name])->all()
+        $giving = ArrayHelper::map(AuthItemChild::find()->where(['parent'=>$model->name])->all()
        , 'child', 'child');
-        $userPermission = ArrayHelper::map(\app\models\AuthItem::find()
+        $userPermission = ArrayHelper::map(AuthItem::find()
          ->where(['=','type','2'])->asArray()->all(), 'name', 'description');
 
-       // $userPermission = AuthItem::find()->where(['type'=>2])->all();
-        
         if ($model->load(Yii::$app->request->post())  ) {
             $model->save();
 

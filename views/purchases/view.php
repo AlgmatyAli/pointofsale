@@ -2,18 +2,98 @@
 
 use yii\helpers\Html;
 use yii\widgets\DetailView;
-use app\models\CompanyInfo;
 use yii\helpers\Url;
 
-/* @var $this yii\web\View */
-/* @var $model app\models\Purchases */
+/**   @var $this yii\web\View **/
+/** @var $model app\models\Purchases **/
 
 $this->title = $model->billId;
-$this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Purchases'), 'url' => ['index']];
-$this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 ?>
+
 <div class="purchases-view">
+<div class="row">
+        <div class="col-md-3 col-sm-6 col-xs-12">
+            <div class="info-box">
+                <span class="info-box-icon bg-aqua"><i class="fa fa-fw fa-dollar"></i></span>
+
+                <div class="info-box-content">
+                    <span class="info-box-text"><?= Yii::t('app', 'Items Count') ?></span>
+                    <span class="info-box-number"><?php echo $dataProvider->getCount() ?><small></small></span>
+                </div>
+                <!-- /.info-box-content -->
+            </div>
+            <!-- /.info-box -->
+        </div>
+
+        <?php $count = 0;
+        foreach ($dataProvider->getModels() as $dataP) {
+            $count = $dataP->quantity + $count;
+        }
+        ?>
+
+        <div class="col-md-3 col-sm-6 col-xs-12">
+            <div class="info-box">
+                <span class="info-box-icon bg-green"><i class="fa fa-fw fa-dollar"></i></span>
+
+                <div class="info-box-content">
+                    <span class="info-box-text"><?= Yii::t('app', 'اجمالي الكمية') ?></span>
+                    <span class="info-box-number"><?= $count ?><small></small></span>
+                </div>
+            </div>
+        </div>
+
+        <?php if (Yii::$app->user->identity->seeCostPrice == 1) { ?>
+            <?php
+            $cost = 0;
+            foreach ($dataProvider->getModels() as $sum) {
+                $cost += ($sum->quantity * $sum->totalCost);
+            }
+            ?>
+            <div class="col-md-3 col-sm-6 col-xs-12">
+                <div class="info-box">
+                    <span class="info-box-icon bg-yellow"><i class="fa fa-fw fa-dollar"></i></span>
+
+                    <div class="info-box-content">
+                        <span class="info-box-text"><?= Yii::t('app', 'اجمالي التكلفة بالمصاريف') ?></span>
+                        <span class="info-box-number"><?= @number_format($cost, 3) ?>
+                        </span>
+                    </div>
+                    <!-- /.info-box-content -->
+                </div>
+                <!-- /.info-box -->
+            </div>
+
+            <?php $count = 0;
+            $total = 0;
+            $profit = 0;
+            foreach ($dataProvider->getModels() as $sum) {
+
+                $count = $sum->quantity * $sum->salePrice;
+                $countProfit = ($sum->quantity * $sum->salePrice) - ($sum->quantity * $sum->totalCost);
+                $total = $total + $count;
+                $profit = $profit + $countProfit;
+            }
+            ?>
+            <div class="col-md-3 col-sm-6 col-xs-12">
+                <div class="info-box">
+                    <span class="info-box-icon bg-yellow"><i class="fa fa-fw fa-dollar"></i></span>
+
+                    <div class="info-box-content">
+                        <span class="info-box-text"><?= Yii::t('app', 'اجمالي البيع') ?></span>
+                        <span class="info-box-number"><?= @number_format($total, 3) ?>
+                            <br>
+                            <small>هامش الربح: <?= @number_format($profit, 3) ?></small>
+                        </span>
+                    </div>
+                    <!-- /.info-box-content -->
+                </div>
+                <!-- /.info-box -->
+            </div>
+            <hr>
+            <?php }?>
+    </div>
+
     <br>
     <h1><?= Html::encode($this->title) ?></h1>
     <hr><br>
@@ -76,6 +156,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
     </div>
     </p>
+    <br>
     <?= DetailView::widget([
         'model' => $model,
         'attributes' => [

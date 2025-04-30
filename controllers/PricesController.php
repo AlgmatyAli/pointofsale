@@ -2,7 +2,6 @@
 
 namespace app\controllers;
 
-use app\models\CompanyInfo;
 use Yii;
 use app\models\Prices;
 use app\models\PricesSearch;
@@ -11,7 +10,6 @@ use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\helpers\Json;
-use yii\helpers\ArrayHelper;
 use yii\filters\AccessControl;
 
 /**
@@ -26,14 +24,13 @@ class PricesController extends Controller
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
                 ],
             ],
             'access' => [
-                'class' => AccessControl::className(),
-                //'except' =>  'temp-back-sales/itemlist',
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,

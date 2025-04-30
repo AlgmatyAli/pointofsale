@@ -2,6 +2,7 @@
 
 namespace app\controllers;
 
+use app\models\base\TempBackSales;
 use app\models\CompanyInfo;
 use Yii;
 use app\models\SalesDetails;
@@ -24,7 +25,7 @@ class SalesDetailsController extends Controller
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
                 ],
@@ -127,59 +128,6 @@ class SalesDetailsController extends Controller
 
         throw new NotFoundHttpException(Yii::t('app', 'The requested page does not exist.'));
     }
-    public function actionBack($id)
-    {
-
-        $model = $this->findModel($id);
-        $sale = new Sales();
-        $data = SalesDetails::find()->where(['id' => $id])->one();
-        // die(var_dump($data));
-        $old_quantity = $model->quantity;
-        $old_sale =  Sales::find()->where(['id' => $data->salesId])->one();
-
-        if ($model->load(Yii::$app->request->post())) {
-
-            if ($model->quantity > $old_quantity) {
-                Yii::$app->session->setFlash('error', Yii::t('app', "You can NOT return a larger quantity than what is on the invoice"));
-                return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
-            }
-            $bill = Sales::find()->where(['type' => 2])->max('billId') + 1;
-            $sale->billId = $bill;
-
-            $sale->billId = $bill;
-            $sale->payWay = $old_sale->payWay;
-            $sale->at = Date('Y-m-d');
-            $sale->clinet = $old_sale->clinet;
-            $sale->branch = Yii::$app->user->identity->branch;
-            $sale->total = $data->salePrice * $model->quantity;
-            $sale->type = 2;
-            $sale->user_insert = Yii::$app->user->identity->id;
-            $sale->user_update = Yii::$app->user->identity->id;
-            $sale->created_at = Date('Y-m-d h:m:s');
-            // $sale->updated_at = Date('Y-m-d hh:mm:ss');
-
-            $sale->save(false);
-
-            $quantity = $model->quantity;
-            $model = new SalesDetails();
-            $model->salesId = $sale->id;
-            $model->category = $data->category;
-            $model->salePrice = $data->salePrice;
-            $model->salePrice = $data->salePrice;
-            $model->costPrice = $data->costPrice;
-            $model->quantity = $quantity;
-
-            $model->expire = $data->expire;
-            $model->box = $data->box;
-
-            $model->save();
-            return $this->redirect(['sales/print', 'id' => $sale->id]);
-        }
-
-        return $this->render('back', [
-            'model' => $model,
-        ]);
-    }
 
     public function actionAddsale($categoryid, $salesId)
     {
@@ -280,8 +228,6 @@ class SalesDetailsController extends Controller
         $sales = Sales::find()->where(['id' => $salesId])->one();
         $sales->total = $sales->total + ($model->quantity * $model->salePrice);
         $sales->save(false);
-        return $this->redirect(['sales/update', 'id' => $salesId]); {
-            return $this->redirect(['sales/update', 'id' => $salesId]);
-        }
+        return $this->redirect(['sales/update', 'id' => $salesId]); 
     }
 }

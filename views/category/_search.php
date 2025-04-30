@@ -140,9 +140,10 @@ JS;
 
         <br>
     </div>
+    <br>
     <div class="row">
-        <div class="col-lg-2"></div>
-        <div class="col-lg-8">
+        <div class="col-lg-1"></div>
+        <div class="col-lg-11">
             <div class="form-group">
                 <?= Html::a('<i class="fa fa-fw fa-eraser"></i>' . ' ' . Yii::t('app', "Erase"), Url::toRoute(['index']), ['class' => 'btn btn-danger btn-lg']) ?>
                 <?= Html::a('<i class="fa fa-fw fa-plus"></i>' . ' ' . Yii::t('app', 'New Create'), ['create'], ['class' => 'btn btn-success btn-lg']) ?>

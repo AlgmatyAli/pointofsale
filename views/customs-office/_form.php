@@ -1,10 +1,10 @@
 <?php
 
-use app\models\base\Currancy;
+use app\models\Currancy;
 use app\models\CustomsDeclaration;
+use kartik\date\DatePicker;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use kartik\date\DatePicker;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
 /* @var $this yii\web\View */

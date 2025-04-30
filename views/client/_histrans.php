@@ -1,6 +1,6 @@
 <?php
 
-use app\models\base\Currancy;
+use app\models\Currancy;
 use app\models\CompanyInfo;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;

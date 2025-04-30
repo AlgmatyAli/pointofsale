@@ -12,6 +12,7 @@ use yii\web\UploadedFile;
 use yii\filters\AccessControl;
 use yii\helpers\Json;
 use yii\web\ForbiddenHttpException;
+
 /**
  * CompanyInfoController implements the CRUD actions for CompanyInfo model.
  */
@@ -55,7 +56,7 @@ class CompanyInfoController extends Controller
                 ],
             ],
 
-            
+
         ];
     }
 
@@ -64,22 +65,21 @@ class CompanyInfoController extends Controller
      * @return mixed
      */
 
-     public $exists;
+    public $exists;
     public function actionIndex()
     {
-        if (Yii::$app->user->can('companyInfo')){
+        if (Yii::$app->user->can('companyInfo')) {
             $values = CompanyInfo::find()->asArray()->all();
             $searchModel = new CompanyInfoSearch();
             $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-            
+
             return $this->render('index', [
                 'searchModel' => $searchModel,
                 'dataProvider' => $dataProvider,
                 'values' => $values,
             ]);
-        }else
-        throw new ForbiddenHttpException;
-        
+        } else
+            throw new ForbiddenHttpException;
     }
 
     /**
@@ -100,48 +100,42 @@ class CompanyInfoController extends Controller
      */
     public function actionCreate()
     {
-
         $model = new CompanyInfo();
-       
-        $exist = CompanyInfo::find()->exists(); 
-            if($exist){
-                echo '<script type="text/javascript"> 
+
+        $exist = CompanyInfo::find()->exists();
+        if ($exist) {
+            echo '<script type="text/javascript"> 
                 alert("عفوا البيانات تم تسجيلها مسبقا");
                 
                </script>';
-            }else{
+        } else {
             if ($model->load(Yii::$app->request->post())) {
                 if (!is_dir("img/c_info")) {
                     mkdir("img/c_info");
                     $path = "img/c_info";
-                }else{
+                } else {
                     $path = "img/c_info";
                 }
                 $model->file = UploadedFile::getInstance($model, 'file');
-                if($model->file != null){
-               // $model->file = UploadedFile::getInstance($model,'file');
-                $ext = substr(strrchr($model->file,'.'),1);
-                
-               if($ext != null)
-                {        
-                  $uniqid= uniqid(); 
-                  $model->file->saveAs($path.'/'.$uniqid.'.'.$model->file->extension );   
-                  $model->path=$path.'/'.$uniqid.'.'.$model->file->extension;
-                } 
-            }
+                if ($model->file != null) {
+                    // $model->file = UploadedFile::getInstance($model,'file');
+                    $ext = substr(strrchr($model->file, '.'), 1);
+
+                    if ($ext != null) {
+                        $uniqid = uniqid();
+                        $model->file->saveAs($path . '/' . $uniqid . '.' . $model->file->extension);
+                        $model->path = $path . '/' . $uniqid . '.' . $model->file->extension;
+                    }
+                }
                 $model->save();
 
                 return $this->redirect(['view', 'id' => $model->id]);
-             
-        } else {
-            return $this->render('create', [
-                'model' => $model,
-            ]);
-             }
-             
-            
+            } else {
+                return $this->render('create', [
+                    'model' => $model,
+                ]);
             }
-    
+        }
     }
     /**
      * Updates an existing CompanyInfo model.
@@ -157,22 +151,20 @@ class CompanyInfoController extends Controller
             if (!is_dir("img/c_info")) {
                 mkdir("img/c_info");
                 $path = "img/c_info";
-            }else{
+            } else {
                 $path = "img/c_info";
             }
             $model->file = UploadedFile::getInstance($model, 'file');
-            if($model->file != null){
-           // $model->file = UploadedFile::getInstance($model,'file');
             if ($model->file != null) {
-            $ext = substr(strrchr($model->file,'.'),1);
-           if($ext != null)
-            {        
-              $uniqid= uniqid(); 
-              $model->file->saveAs($path.'/'.$uniqid.'.'.$model->file->extension );   
-              $model->path=$path.'/'.$uniqid.'.'.$model->file->extension;
-            } 
-        }
-    }
+                if ($model->file != null) {
+                    $ext = substr(strrchr($model->file, '.'), 1);
+                    if ($ext != null) {
+                        $uniqid = uniqid();
+                        $model->file->saveAs($path . '/' . $uniqid . '.' . $model->file->extension);
+                        $model->path = $path . '/' . $uniqid . '.' . $model->file->extension;
+                    }
+                }
+            }
             $model->save();
             return $this->redirect(['view', 'id' => $model->id]);
         } else {
@@ -211,9 +203,9 @@ class CompanyInfoController extends Controller
         }
     }
 
-    public function actionExist(){
-        $exists = CompanyInfo::find()->one();    
-         echo Json::encode($exists);
-        }
-
+    public function actionExist()
+    {
+        $exists = CompanyInfo::find()->one();
+        echo Json::encode($exists);
+    }
 }

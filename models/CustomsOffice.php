@@ -16,6 +16,7 @@ use Yii;
  * @property string $created_at
  * @property int|null $user_update
  * @property string|null $update_at
+ * @property string|null $currancy
  *
  * @property CustomsDeclaration $custom
  * @property User $userInsert

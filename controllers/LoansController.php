@@ -23,13 +23,13 @@ class LoansController extends Controller
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
                 ],
             ],
             'access' => [
-                'class' => AccessControl::className(),
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
@@ -181,7 +181,7 @@ class LoansController extends Controller
         where loans.status = 0 and loans.employee = " . $employee . "
         ORDER BY `loans`.`id` DESC LIMIT 1";
 
-        $connection = \Yii::$app->db;
+        $connection = Yii::$app->db;
         $data = $connection->createCommand($sql);
         $info = $data->queryAll();
         if ($info == null) {

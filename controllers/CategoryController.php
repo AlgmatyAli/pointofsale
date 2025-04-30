@@ -307,31 +307,6 @@ class CategoryController extends Controller
      * Lists all Inventory models.
      * @return mixed
      */
-    public function actionReorder()
-    {
-        $dataProvider = new ActiveDataProvider([
-            'query' => Inventory::find()
-                ->select('inventory.id, max(inventory.name) name, max(inventory.serialNo) serialNo,
-                         max(category.minimum) as minimum, sum(inventory.quantity) quantity')
-                ->leftJoin('category', 'category.id = inventory.id')
-                ->groupBy('inventory.id, category.minimum ')
-                ->having('sum(inventory.quantity) <= category.minimum')
-                ->orderBy('inventory.id'),
-
-            'pagination' => [
-                'pageSize' => 70
-            ],
-        ]);
-
-        return $this->render('reorder', [
-            'dataProvider' => $dataProvider,
-        ]);
-    }
-
-    /**
-     * Lists all Inventory models.
-     * @return mixed
-     */
     public function actionMoreRequest()
     {
         $dataProvider = new ActiveDataProvider([

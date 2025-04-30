@@ -24,7 +24,7 @@ use yii\helpers\Url;
 
             <?= $form->field($model, 'unit')->textInput(['maxlength' => true, 'value' => 'قطعة']) ?>
 
-            <?= $form->field($model, 'box')->textInput(['value' => 1]) ?>
+            <?= $form->field($model, 'box')->textInput(['value' => !empty($model->box) ? $model->box : 1]) ?>
 
             <?= $form->field($model, 'place')->textInput(['maxlength' => true]) ?>
 
@@ -39,7 +39,7 @@ use yii\helpers\Url;
 
             <?= $form->field($model, 'quantity')->textInput() ?>
 
-            <?= $form->field($model, 'minimum')->textInput(['value' => 3]) ?>
+            <?= $form->field($model, 'minimum')->textInput(['value' => !empty($model->minimum) ? $model->minimum : 3]) ?>
 
             <?= $form->field($model, 'company')->textInput() ?>
 

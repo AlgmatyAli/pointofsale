@@ -8,7 +8,7 @@ use yii\helpers\Url;
 use kartik\daterange\DateRangePicker;
 use app\models\Branches;
 use app\models\User;
-use app\models\base\Currancy;
+use app\models\Currancy;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\SalesSearch */

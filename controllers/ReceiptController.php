@@ -15,7 +15,6 @@ use app\models\Dept;
 use app\models\DeptSupp;
 use app\models\CompanyInfo;
 use app\models\Safe;
-use yii\helpers\Json;
 
 /**
  * ReceiptController implements the CRUD actions for Receipt model.
@@ -29,14 +28,14 @@ class ReceiptController extends Controller
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
                 ],
             ],
 
             'access' => [
-                'class' => AccessControl::className(),
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
@@ -119,7 +118,6 @@ class ReceiptController extends Controller
         $model = new Receipt();
 
         if ($model->load(Yii::$app->request->post())) {
-            $company = CompanyInfo::find()->one();
             $exist = Receipt::find()->where(['=', 'value', $model->value])
                 ->andWhere(['=', 'at', $model->at])
                 ->andWhere(['=', 'clinet', $model->clinet])->one();
@@ -131,7 +129,6 @@ class ReceiptController extends Controller
             $model->created_at    = date('Y-m-d H:i:s');
             $model->user_insert = Yii::$app->user->id;
             $model->branch = Yii::$app->user->identity->branch;
-            //$model->currancy = $company['currancy'];
             if ($model->value > Yii::$app->user->identity->maxReceipt && $model->type  == 2) {
                 Yii::$app->session->setFlash('error', Yii::t('app', "Sorry You Do Not Have Permession To Discount This Value"));
             } else {
@@ -213,7 +210,6 @@ class ReceiptController extends Controller
         return $this->render('printRecipt', [
             'model' => $this->findModel($id),
             'balance' => $balance,
-            // 'numtoarb'=>$this->numtoarb($total['value'])
         ]);
     }
 
@@ -231,7 +227,6 @@ class ReceiptController extends Controller
         return $this->render('printReciptReciver', [
             'model' => $this->findModel($id),
             'balance' => $balance,
-            // 'numtoarb'=>$this->numtoarb($total['value'])
         ]);
     }
 

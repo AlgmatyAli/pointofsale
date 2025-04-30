@@ -28,13 +28,13 @@ class ArrangementController extends Controller
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
                 ],
             ],
             'access' => [
-                'class' => AccessControl::className(),
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
@@ -191,7 +191,6 @@ class ArrangementController extends Controller
             $posted = current($_POST['ArrangementDetails']);
             $quantity = $posted['quantity'];
             $post['ArrangementDetails'] = $posted;
-            // die(var_dump($old->quantity.' '.$quantity.' '.$result->quantity ));
             if ($result->load($post)) {
                 $result->save(false);
                 if (isset($posted['quantity'])) {
@@ -341,32 +340,6 @@ class ArrangementController extends Controller
      */
     public function actionStockTaking()
     {
-        //            DATE_FORMAT(arrangement.at, '%Y') AS year,
-
-        //      $model = new Arrangement();
-        //     if ($model->load(Yii::$app->request->post())) {
-        //     $dataProvider = new ActiveDataProvider([
-        //         'query' => ArrangementDetails::find()
-        //         ->select("rrangement.at, category.name, arrangementDetails.quantity, 
-        //         category.serialNo, category.company")
-        //         ->joinWith('arrangement0', 'arrangement.id = arrangementDetails.arrangement')
-        //         ->leftJoin('category', 'category.id = arrangementDetails.category')
-        //         ->where(['arrangementDetails.stockTaking' => 1])
-        //         ->andWhere("DATE_FORMAT(arrangement.at, '%Y')  =  ".$model->at."")
-        //         ->orderBy('category.id'),
-
-        //         'pagination' => ['pageSize' => false],
-        //             'sort'=>false,
-
-        //     ]);
-        //     return $this->render('stockTakingRep', [
-        //         'dataProvider' => $dataProvider
-        //      ]);  
-        // }
-        //   return $this->render('stockTaking', [
-        //         'model' => $model,
-        //     ]);
-
         $model = new Arrangement();
         if ($model->load(Yii::$app->request->post())) {
 
@@ -379,7 +352,7 @@ class ArrangementController extends Controller
         order by  arrangement.id";
 
 
-            $connection = \Yii::$app->db;
+            $connection = Yii::$app->db;
             $data = $connection->createCommand($sql);
             $info = $data->queryAll();
             if ($info == null) {

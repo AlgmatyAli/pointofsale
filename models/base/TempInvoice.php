@@ -23,6 +23,9 @@ use yii\behaviors\BlameableBehavior;
  * @property string $created_at
  * @property integer $updated_by
  * @property string $updated_at
+ * @property string $mac_address
+ * @property integer $type
+ * @property integer $waitQnty
  *
  * @property \app\models\User $createdBy
  * @property \app\models\User $updatedBy

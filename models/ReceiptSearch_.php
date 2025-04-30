@@ -17,8 +17,8 @@ class ReceiptSearch_ extends Receipt
     public function rules()
     {
         return [
-            [['id', 'rId', 'clinet', 'type', 'user_insert','agent' ,'user_update', 'branch'], 'safe'],
-            [['at', 'why', 'payWay', 'created_at', 'update_at', 'agent','tafqet'], 'safe'],
+            [['id', 'rId', 'clinet', 'type', 'user_insert','user_update', 'branch'], 'safe'],
+            [['at', 'why', 'payWay', 'created_at', 'update_at', 'tafqet'], 'safe'],
             [['value'], 'number'],
         ];
     }
@@ -67,10 +67,8 @@ class ReceiptSearch_ extends Receipt
             'id' => $this->id,
             'rId' => $this->rId,
             'clinet' => $this->clinet,
-           // 'at' => $this->at,
             'value' => $this->value,
             'type' =>  $this->type,
-            'agent' => $this->agent,
             'user_insert' => $this->user_insert,
             'created_at' => $this->created_at,
             'user_update' => $this->user_update,

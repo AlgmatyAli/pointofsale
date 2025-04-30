@@ -2,8 +2,6 @@
 
 namespace app\models;
 
-use app\models\base\Currancy;
-use PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel\Current;
 use Yii;
 
 /**
@@ -16,42 +14,36 @@ use Yii;
  * @property int $payWay
  * @property int $branch
  * @property float $total
+ * @property float|null $disscount
  * @property float|null $paid
  * @property string|null $notes
  * @property string|null $path
  * @property int $type
- * @property string $deleviryAt
- * @property int $carpenter
- * @property int $upholstered
- * @property int $paintId
- * @property int $deleviryId
+ * @property string|null $deleviryAt
+ * @property string|null $deserving
+ * @property int|null $deleviried
+ * @property int $currancy
  * @property int $user_insert
  * @property string $created_at
  * @property int|null $user_update
  * @property string|null $update_at
- * @property int|null $disscount
- * @property int|null $deleviried
  * @property int|null $wholesale
- * @property int|null $currancy
- * @property int|null $packing $name
-
- * @property Branches $br
- * @property User $carpenter0
- * @property Client $c
- * @property User $deleviry
- * @property User $paint
- * @property User $upholstered0
+ *
+ * @property Branches $branch0
+ * @property Client $clinet0
+ * @property Currancy $currancy0
+ * @property Salesdetails[] $salesdetails
  * @property User $userInsert
  * @property User $userUpdate
- * @property SalesDetails[] $salesDetails
  */
 class Sales extends \yii\db\ActiveRecord
 {
+    public $file;
+    public $phone,$net,$category, $min_date, $max_date;
+
     /**
      * {@inheritdoc}
      */
-    public $file;
-    public $phone,$net,$category, $min_date, $max_date;
     public static function tableName()
     {
         return 'sales';
@@ -63,20 +55,19 @@ class Sales extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['billId', 'at', 'clinet', 'payWay', 'branch', 'total', 'type', 'created_at', 'paid', 'disscount', 'currancy'], 'required'],
-            [['billId', 'clinet', 'payWay','category', 'branch', 'type','net', 'carpenter', 'upholstered', 'paintId', 'deleviryId', 'user_insert', 'agent','user_update'], 'integer'],
-            [['at', 'deleviryAt', 'created_at', 'update_at', 'category','phone', 'carpenter', 'upholstered', 'paintId', 'deleviryId', 'min_date', 'max_date','agent', 'deleviried', 'deserving', 'wholesale'], 'safe'],
-            [['total', 'paid', 'disscount', 'user_insert', 'currancy'], 'number'],
+            [['disscount', 'paid', 'notes', 'path', 'deleviryAt', 'deserving', 'deleviried', 'user_update', 'update_at'], 'default', 'value' => null],
+            [['currancy'], 'default', 'value' => 1],
+            [['wholesale'], 'default', 'value' => 0],
+            [['billId', 'at', 'clinet', 'payWay', 'branch', 'total', 'type', 'user_insert'], 'required'],
+            [['billId', 'clinet', 'payWay', 'branch', 'type', 'deleviried', 'currancy', 'user_insert', 'user_update', 'wholesale'], 'integer'],
+            [['at', 'deleviryAt', 'deserving', 'created_at', 'update_at', 'phone', 'net', 'category', 'min_date', 'max_date'], 'safe'],
+            [['total', 'disscount', 'paid'], 'number'],
             [['notes', 'path'], 'string', 'max' => 255],
-            [['branch'], 'exist', 'skipOnError' => true, 'targetClass' => Branches::className(), 'targetAttribute' => ['branch' => 'id']],
-            [['carpenter'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['carpenter' => 'id']],
-            [['clinet'], 'exist', 'skipOnError' => true, 'targetClass' => Client::className(), 'targetAttribute' => ['clinet' => 'id']],
-            [['deleviryId'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['deleviryId' => 'id']],
-            [['paintId'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['paintId' => 'id']],
-            [['upholstered'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['upholstered' => 'id']],
-            [['user_insert'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['user_insert' => 'id']],
-            [['user_update'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['user_update' => 'id']],
-            [['currancy'], 'exist', 'skipOnError' => true, 'targetClass' => Currancy::className(), 'targetAttribute' => ['currancy' => 'id']],
+            [['branch'], 'exist', 'skipOnError' => true, 'targetClass' => Branches::class, 'targetAttribute' => ['branch' => 'id']],
+            [['user_insert'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_insert' => 'id']],
+            [['user_update'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_update' => 'id']],
+            [['clinet'], 'exist', 'skipOnError' => true, 'targetClass' => Client::class, 'targetAttribute' => ['clinet' => 'id']],
+            [['currancy'], 'exist', 'skipOnError' => true, 'targetClass' => Currancy::class, 'targetAttribute' => ['currancy' => 'id']],
             [['file'], 'file']
         ];
     }
@@ -90,105 +81,69 @@ class Sales extends \yii\db\ActiveRecord
             'id' => Yii::t('app', 'ID'),
             'billId' => Yii::t('app', 'Bill ID'),
             'at' => Yii::t('app', 'At'),
-            'clinet' => Yii::t('app', 'C ID'),
+            'clinet' => Yii::t('app', 'Clinet'),
             'payWay' => Yii::t('app', 'Pay Way'),
-            'branch' => Yii::t('app', 'Br ID'),
-            'net' => Yii::t('app', 'Net'),
+            'branch' => Yii::t('app', 'Branch'),
             'total' => Yii::t('app', 'Total'),
+            'disscount' => Yii::t('app', 'Disscount'),
             'paid' => Yii::t('app', 'Paid'),
             'notes' => Yii::t('app', 'Notes'),
             'path' => Yii::t('app', 'Path'),
             'type' => Yii::t('app', 'Type'),
-            'agent' => Yii::t('app', 'Agent'),
             'deleviryAt' => Yii::t('app', 'Deleviry At'),
-            'carpenter' => Yii::t('app', 'Carpenter'),
-            'upholstered' => Yii::t('app', 'Upholstered'),
-            'paintId' => Yii::t('app', 'Paint ID'),
-            'deleviryId' => Yii::t('app', 'Deleviry ID'),
+            'deserving' => Yii::t('app', 'Deserving'),
+            'deleviried' => Yii::t('app', 'Deleviried'),
+            'currancy' => Yii::t('app', 'Currancy'),
             'user_insert' => Yii::t('app', 'User Insert'),
             'created_at' => Yii::t('app', 'Created At'),
             'user_update' => Yii::t('app', 'User Update'),
             'update_at' => Yii::t('app', 'Update At'),
-            'file'=>Yii::t('app', 'img'),
-            'phone'=>Yii::t('app', 'Phone'),
+            'wholesale' => Yii::t('app', 'Wholesale'),
             'min_date' => Yii::t('app', 'Min Date'),
             'max_date' => Yii::t('app', 'Max Date'),
-            'disscount' => Yii::t('app', 'Disscount'),
-            'deleviried'=> Yii::t('app', 'Deleviried'),
-            'deserving' => Yii::t('app', 'Deserving'), 
-            'wholesale' => Yii::t('app', 'Wholesale'),
-            'currancy' => Yii::t('app', 'Currancy'),
+            'net' => Yii::t('app', 'Net'),
+            'phone' => Yii::t('app', 'Phone'),
         ];
     }
 
     /**
-     * Gets query for [[Br]].
+     * Gets query for [[Branch0]].
      *
      * @return \yii\db\ActiveQuery
      */
-    public function getBr()
-    {
-        return $this->hasOne(Branches::className(), ['id' => 'branch']);
-    }
     public function getBranch()
     {
-        return $this->hasOne(Branches::className(), ['id' => 'branch']);
+        return $this->hasOne(Branches::class, ['id' => 'branch']);
     }
 
     /**
-     * Gets query for [[Carpenter0]].
-     *
-     * @return \yii\db\ActiveQuery
-     */
-    public function getCarpenter0()
-    {
-        return $this->hasOne(User::className(), ['id' => 'carpenter']);
-    }
-
-    /**
-     * Gets query for [[C]].
+     * Gets query for [[Clinet0]].
      *
      * @return \yii\db\ActiveQuery
      */
     public function getC()
     {
-        return $this->hasOne(Client::className(), ['id' => 'clinet']);
+        return $this->hasOne(Client::class, ['id' => 'clinet']);
     }
 
     /**
-     * Gets query for [[Deleviry]].
+     * Gets query for [[Currancy0]].
      *
      * @return \yii\db\ActiveQuery
      */
-    public function getDeleviry()
+    public function getCurrancy0()
     {
-        return $this->hasOne(User::className(), ['id' => 'deleviryId']);
+        return $this->hasOne(Currancy::class, ['id' => 'currancy']);
     }
 
     /**
-     * Gets query for [[Paint]].
+     * Gets query for [[Salesdetails]].
      *
      * @return \yii\db\ActiveQuery
      */
-    public function getPaint()
+    public function getSalesDetails()
     {
-        return $this->hasOne(User::className(), ['id' => 'paintId']);
-    }
-
-
-    public function getAgent0()
-    {
-        return $this->hasOne(Agent::className(), ['id' => 'agent']);
-    }
-
-    /**
-     * Gets query for [[Upholstered0]].
-     *
-     * @return \yii\db\ActiveQuery
-     */
-    public function getUpholstered0()
-    {
-        return $this->hasOne(User::className(), ['id' => 'upholstered']);
+        return $this->hasMany(Salesdetails::class, ['salesId' => 'id']);
     }
 
     /**
@@ -198,7 +153,7 @@ class Sales extends \yii\db\ActiveRecord
      */
     public function getUserInsert()
     {
-        return $this->hasOne(User::className(), ['id' => 'user_insert']);
+        return $this->hasOne(User::class, ['id' => 'user_insert']);
     }
 
     /**
@@ -208,16 +163,7 @@ class Sales extends \yii\db\ActiveRecord
      */
     public function getUserUpdate()
     {
-        return $this->hasOne(User::className(), ['id' => 'user_update']);
+        return $this->hasOne(User::class, ['id' => 'user_update']);
     }
 
-    /**
-     * Gets query for [[SalesDetails]].
-     *
-     * @return \yii\db\ActiveQuery
-     */
-    public function getSalesDetails()
-    {
-        return $this->hasMany(SalesDetails::className(), ['salesId' => 'id']);
-    }
 }

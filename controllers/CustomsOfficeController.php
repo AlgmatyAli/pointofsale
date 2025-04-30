@@ -22,13 +22,13 @@ class CustomsOfficeController extends Controller
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
                 ],
             ],
             'access' => [
-                'class' => AccessControl::className(),
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
@@ -171,14 +171,13 @@ class CustomsOfficeController extends Controller
                 $model->max_date = date('Y-m-d');
             }
 
-            $sumwared=0;$sumsader =0;
             $sqlSum = " SELECT 
             sum(v_customsOffice.value) as wared, sum(v_customsOffice.paid) as sader
             FROM v_customsOffice
             where v_customsOffice.customsOffice = ".$model->customId." 
             and v_customsOffice.at < '".$model->min_date."' 
             and v_customsOffice.currancy = '".$model->currancy."'";
-            $connection = \Yii::$app->db;
+            $connection = Yii::$app->db;
             $data = $connection->createCommand($sqlSum);
             $lastBalance = $data->queryAll();
 
@@ -190,18 +189,13 @@ class CustomsOfficeController extends Controller
             order by at, id";    
         
 
-            $connection = \Yii::$app->db;
+            $connection = Yii::$app->db;
             $data = $connection->createCommand($sql);
             $info = $data->queryAll();
             
             if (count($info) === 0) {
                 Yii::$app->session->setFlash('error', Yii::t('app',"Pardon There is no data to view"));
                 return $this->redirect(['histrans', 'model' => $model]);
-
-                // echo '<script type="text/javascript"> 
-                // alert("عفوا لايوجد بيانات للعرض");
-                // window.location.href="?r=client/histrans"
-                // </script>';
              }
              return $this->render('histransrep', [
                 'models' => $info,

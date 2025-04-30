@@ -42,8 +42,8 @@ class Receipt extends \yii\db\ActiveRecord
     {
         return [
             [['rId', 'clinet', 'at', 'value', 'why', 'payWay', 'type', 'user_insert', 'created_at', 'branch'], 'required'],
-            [['rId', 'clinet', 'type', 'user_insert','currancy', 'user_update', 'agent','branch'], 'integer'],
-            [['at', 'created_at','currancy', 'update_at','agent' ,'tafqet'], 'safe'],
+            [['rId', 'clinet', 'type', 'user_insert','currancy', 'user_update','branch'], 'integer'],
+            [['at', 'created_at','currancy', 'update_at','tafqet'], 'safe'],
             [['value'], 'number'],
             [['payWay'], 'string'],
             [['why'], 'string', 'max' => 255],
@@ -65,7 +65,6 @@ class Receipt extends \yii\db\ActiveRecord
             'at' => Yii::t('app', 'At'),
             'value' => Yii::t('app', 'Value'),
             'why' => Yii::t('app', 'Why'),
-            'agent' => Yii::t('app', 'Agent'),
             'payWay' => Yii::t('app', 'Pay Way'),
             'type' => Yii::t('app', 'Type'),
             'user_insert' => Yii::t('app', 'User Insert'),

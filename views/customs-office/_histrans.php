@@ -1,6 +1,6 @@
 <?php
 
-use app\models\base\Currancy;
+use app\models\Currancy;
 use app\models\CustomsDeclaration;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
@@ -46,7 +46,7 @@ use yii\helpers\Url;
         DatePicker::class,
         [
             'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,
@@ -60,7 +60,7 @@ use yii\helpers\Url;
         DatePicker::class,
         [
             'language' => 'ar',
-            'clientOptions' => [
+            'pluginOptions' => [
                 'autoclose' => true,
                 'format' => 'yyyy-mm-dd',
                 'todayHighlight' => true,

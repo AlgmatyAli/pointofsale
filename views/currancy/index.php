@@ -1,19 +1,17 @@
 <?php
 
-/* @var $this yii\web\View */
-/* @var $dataProvider yii\data\ActiveDataProvider */
-
+use app\models\Currancy;
 use yii\helpers\Html;
-use kartik\export\ExportMenu;
-use kartik\grid\GridView;
+use yii\helpers\Url;
+use yii\grid\ActionColumn;
+use yii\grid\GridView;
+use yii\widgets\Pjax;
+/** @var yii\web\View $this */
+/** @var app\models\CurrancyDataSearch $searchModel */
+/** @var yii\data\ActiveDataProvider $dataProvider */
 
-$this->title = Yii::t('app', 'Currancy');
+$this->title = Yii::t('app', 'Currancies');
 $this->params['breadcrumbs'][] = $this->title;
-$search = "$('.search-button').click(function(){
-	$('.search-form').toggle(1000);
-	return false;
-});";
-$this->registerJs($search);
 ?>
 <div class="currancy-index">
 
@@ -22,76 +20,34 @@ $this->registerJs($search);
     <p>
         <?= Html::a(Yii::t('app', 'Create Currancy'), ['create'], ['class' => 'btn btn-success']) ?>
     </p>
-<?php 
-    $gridColumn = [
-        ['class' => 'yii\grid\SerialColumn'],
-        ['attribute' => 'id', 'visible' => false],
-        'name',
-        'code',
-        [
-                'attribute' => 'user_insert',
-                'label' => Yii::t('app', 'User Insert'),
-                'value' => function($model){
-                    if ($model->userInsert)
-                    {return $model->userInsert->username;}
-                    else
-                    {return NULL;}
-                },
-                'filterType' => GridView::FILTER_SELECT2,
-                'filter' => \yii\helpers\ArrayHelper::map(\app\models\User::find()->asArray()->all(), 'id', 'username'),
-                'filterWidgetOptions' => [
-                    'pluginOptions' => ['allowClear' => true],
-                ],
-                'filterInputOptions' => ['placeholder' => 'User', 'id' => 'grid--user_insert']
-            ],
-        [
-                'attribute' => 'user_update',
-                'label' => Yii::t('app', 'User Update'),
-                'value' => function($model){
-                    if ($model->userUpdate)
-                    {return $model->userUpdate->username;}
-                    else
-                    {return NULL;}
-                },
-                'filterType' => GridView::FILTER_SELECT2,
-                'filter' => \yii\helpers\ArrayHelper::map(\app\models\User::find()->asArray()->all(), 'id', 'username'),
-                'filterWidgetOptions' => [
-                    'pluginOptions' => ['allowClear' => true],
-                ],
-                'filterInputOptions' => ['placeholder' => 'User', 'id' => 'grid--user_update']
-            ],
-        'update_at',
-        [
-                'attribute' => 'purchases',
-                'label' => Yii::t('app', 'Purchases'),
-                'value' => function($model){
-                    if ($model->purchases0)
-                    {return $model->purchases0->id;}
-                    else
-                    {return NULL;}
-                },
-                'filterType' => GridView::FILTER_SELECT2,
-                'filter' => \yii\helpers\ArrayHelper::map(\app\models\Purchases::find()->asArray()->all(), 'id', 'id'),
-                'filterWidgetOptions' => [
-                    'pluginOptions' => ['allowClear' => true],
-                ],
-                'filterInputOptions' => ['placeholder' => 'Purchases', 'id' => 'grid--purchases']
-            ],
-        [
-            'class' => 'yii\grid\ActionColumn',
-        ],
-    ]; 
-    ?>
+
+    <?php Pjax::begin(); ?>
+    <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
+
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
-        'columns' => $gridColumn,
-        'pjax' => true,
-        'pjaxSettings' => ['options' => ['id' => 'kv-pjax-container-currancy']],
-        'panel' => [
-            'type' => GridView::TYPE_PRIMARY,
-            'heading' => '<span class="glyphicon glyphicon-book"></span>  ' . Html::encode($this->title),
+        'filterModel' => $searchModel,
+        'columns' => [
+            ['class' => 'yii\grid\SerialColumn'],
+
+            'id',
+            'name',
+            'code',
+            'user_insert',
+            'created_at',
+            //'user_update',
+            //'update_at',
+            //'created_by',
+            //'updated_by',
+            [
+                'class' => ActionColumn::className(),
+                'urlCreator' => function ($action, Currancy $model, $key, $index, $column) {
+                    return Url::toRoute([$action, 'id' => $model->id]);
+                 }
+            ],
         ],
-       
     ]); ?>
+
+    <?php Pjax::end(); ?>
 
 </div>

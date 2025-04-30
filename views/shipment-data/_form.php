@@ -1,6 +1,6 @@
 <?php
 
-use app\models\base\Currancy;
+use app\models\Currancy;
 use app\models\CustomsDeclaration;
 use kartik\date\DatePicker;
 use kartik\select2\Select2;

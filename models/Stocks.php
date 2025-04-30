@@ -27,7 +27,7 @@ class Stocks extends \yii\db\ActiveRecord
     /**
      * {@inheritdoc}
      */
-    public $serialNo, $class, $company, $commCode, $name,  $costPrice, $branchName;
+    public $serialNo, $class, $company, $commCode, $name,  $costPrice, $branchName, $status;
     public $maxPrice, $minPrice, $minPrice2, $minPrice3, $tq;
     public function rules()
     {
@@ -35,7 +35,7 @@ class Stocks extends \yii\db\ActiveRecord
             [['category', 'quantity'], 'required'],
             [['category'], 'integer'],
             [['quantity'], 'number'],
-            [['serialNo', 'class', 'company', 'commCode', 'name', 'maxPrice', 'minPrice', 'costPrice', 'minPrice2', 'minPrice3', 'tq', 'branchName'], 'safe'],
+            [['serialNo', 'class', 'company', 'commCode', 'name', 'maxPrice', 'minPrice', 'costPrice', 'minPrice2', 'minPrice3', 'tq', 'branchName', 'status'], 'safe'],
             [['category'], 'exist', 'skipOnError' => true, 'targetClass' => Category::class, 'targetAttribute' => ['category' => 'id']],
         ];
     }
