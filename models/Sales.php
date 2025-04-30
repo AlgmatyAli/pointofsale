@@ -143,7 +143,7 @@ class Sales extends \yii\db\ActiveRecord
      */
     public function getSalesDetails()
     {
-        return $this->hasMany(Salesdetails::class, ['salesId' => 'id']);
+        return $this->hasMany(SalesDetails::class, ['salesId' => 'id']);
     }
 
     /**
