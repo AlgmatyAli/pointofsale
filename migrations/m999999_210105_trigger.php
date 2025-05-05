@@ -90,6 +90,37 @@ class m999999_210105_trigger extends Migration
 
         $this->execute(" CREATE TRIGGER `beforeDeletePurchasesDetails_` AFTER DELETE ON `purchasesDetails`
         FOR EACH ROW UPDATE stocks a set a.quantity = 0 where a.quantity is null");
+
+        // ================
+        $this->execute(
+            " CREATE TRIGGER `insertPrices` AFTER INSERT ON `category`
+                    FOR EACH ROW INSERT INTO prices(category, costPrice, minPrice, maxPrice, minPrice2, minPrice3)
+                    VALUES(new.id, new.cost, new.price, new.price, 0,0)"
+        );
+        
+        $this->execute(
+            " CREATE TRIGGER `insertStocks` AFTER INSERT ON `category`
+                    FOR EACH ROW 
+                    BEGIN
+                        DECLARE branch_id INT;
+                        DECLARE done INT DEFAULT 0;
+                        DECLARE branch_cursor CURSOR FOR SELECT id FROM branches;
+                        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+                        OPEN branch_cursor;
+
+                        read_loop: LOOP
+                            FETCH branch_cursor INTO branch_id;
+                            IF done THEN
+                                LEAVE read_loop;
+                            END IF;
+                            INSERT INTO stocks(category, quantity, branch, type)
+                            VALUES (NEW.id, NEW.quantity, branch_id, 1);
+                        END LOOP;
+
+                        CLOSE branch_cursor;
+                    END"
+        );
     }
 
     /**
