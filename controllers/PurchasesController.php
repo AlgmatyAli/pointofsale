@@ -4,6 +4,8 @@ namespace app\controllers;
 
 use app\models\base\TempTransferItems;
 use app\models\CompanyInfo;
+use app\models\Dept;
+use app\models\DeptSupp;
 use Yii;
 use app\models\Purchases;
 use app\models\PurchasesSearch;
@@ -159,6 +161,7 @@ class PurchasesController extends Controller
     public function actionPrintBill($id)
     {
         if (Yii::$app->user->identity->printPurtchaseInvoice == 1) {
+            $model = $this->findModel($id);
             $dataProvider = new ActiveDataProvider([
                 'query' => PurchasesDetails::find()
                     ->select('purchasesDetails.*, category.name, category.serialNo')
@@ -172,9 +175,17 @@ class PurchasesController extends Controller
 
             ]);
 
+
+            if ($model->c->type == 0 || $model->c->type == 2) {
+                $balance = Dept::find()->where(['id' => $model->clinet])->andWhere(['in', 'currency', ['0', $model->currancy]])->sum('credt');
+            } else {
+                $balance = DeptSupp::find()->where(['id' => $model->clinet])->andWhere(['in', 'currency', ['0', $model->currancy]])->sum('credt');
+            }
+            
             return $this->render('printBill', [
-                'model' => $this->findModel($id),
-                'dataProvider' => $dataProvider
+                'model' => $model,
+                'dataProvider' => $dataProvider,
+                'balance' => $balance,
             ]);
         } else {
             Yii::$app->session->setFlash('error', Yii::t('app', "Sorry You Do Not Have Permession to Print Invoice"));

@@ -162,7 +162,7 @@ use yii\grid\GridView;
           <table cellpadding="0" cellspacing="0">
             <tr>
               <th>الاجمـــالي</th>
-              <td><?php echo number_format($model->total + $model->totalCost, 3) . "\n" ?></td>
+              <td><?php echo number_format($model->total, 3) . "\n" ?></td>
               <td></td>
             </tr>
 
@@ -174,7 +174,13 @@ use yii\grid\GridView;
 
             <tr>
               <th>الصـــافي</th>
-              <td><?php echo number_format(($model->total + $model->totalCost) - $model->paid, 3) . "\n" ?></td>
+              <td><?php echo number_format(($model->total) - $model->paid, 3) . "\n" ?></td>
+              <td></td>
+            </tr>
+
+            <tr>
+              <th>الرصيد المتبقي</th>
+              <td><?php echo number_format($balance, 3) . "\n" ?></td>
               <td></td>
             </tr>
           </table>
