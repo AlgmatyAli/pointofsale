@@ -14,56 +14,65 @@ use yii\widgets\Pjax;
 ?>
 
 <div class="temp-invoice-form">
-    <div class="row">
-
+    <div class="row mb-4">
         <div class="col-md-12">
-            <div class="btn-group">
-                <?php echo Html::button(
-                    '<i class="fa fa-fw fa-cart"></i>' . ' ' . Yii::t('app', 'Create Category'),
-                    ['value' => Url::to(['category/create-category']), 'class' => 'btn btn-primary popup']
-                ); ?>
+            <div class="d-flex justify-content-between">
+                <div class="btn-group btn-group-md">
+                    <?php echo Html::button(
+                        '<i class="fa fa-cart"></i>' . ' ' . Yii::t('app', 'Create Category'),
+                        ['value' => Url::to(['category/create-category']), 'class' => 'btn btn-primary popup mr-2']
+                    ); ?>
 
-                <?php echo Html::button('<i class="fa fa-fw fa-step-forward"></i>' . ' ' . Yii::t('app', 'Complete Sale'), ['value' => Url::to(['sales/create']), 'class' => 'btn btn-danger popup']); ?>
+                    <?php echo Html::button(
+                        '<i class="fa fa-fw fa-step-forward"></i>' . ' ' . Yii::t('app', 'Complete Sale'),
+                        ['value' => Url::to(['sales/create']), 'class' => 'btn btn-danger popup mr-2']
+                    ); ?>
 
-                <?= Html::a('<i class="fa fa-fw fa-pause"></i>' . Yii::t('app', 'Hold'), ['hold'], ['class' => 'btn btn-success']) ?>
+                    <?= Html::a(
+                        '<i class="fa fa-fw fa-pause"></i>' . Yii::t('app', 'Hold'),
+                        ['hold'],
+                        ['class' => 'btn btn-success mr-2']
+                    ) ?>
 
-                <?php echo Html::button('<i class="fa fa-fw fa-cloud-upload"></i>' . ' ' . Yii::t('app', 'Holded Invoices'), ['value' => Url::to(['holded']), 'class' => 'btn btn-warning popup']); ?>
+                    <?php echo Html::button(
+                        '<i class="fa fa-fw fa-cloud-upload"></i>' . ' ' . Yii::t('app', 'Holded Invoices'),
+                        ['value' => Url::to(['holded']), 'class' => 'btn btn-warning popup mr-2']
+                    ); ?>
 
-                <?php echo Html::button('<i class="fa fa-fw fa-fast"></i>' . ' ' . Yii::t('app', 'Adedd Fast'), ['value' => Url::to(['fast']), 'class' => 'btn btn-info popup']); ?>
+                    <?php echo Html::button(
+                        '<i class="fa fa-fw fa-fast"></i>' . ' ' . Yii::t('app', 'Adedd Fast'),
+                        ['value' => Url::to(['fast']), 'class' => 'btn btn-info popup']
+                    ); ?>
+                </div>
+
+                <?= Html::a(
+                    '<i class="fa fa-fw fa-trash"></i>' . ' ' . Yii::t('app', 'Delete All'),
+                    ['delete-all'],
+                    [
+                        'class' => 'btn btn-warning pull-left',
+                        'data' => [
+                            'confirm' => Yii::t('app', 'Are you sure you want to delete this item?'),
+                            'method' => 'post',
+                        ],
+                    ]
+                ) ?>
             </div>
-            <?= Html::a('<i class="fa fa-fw fa-trash "></i>' . ' ' . Yii::t('app', 'Delete All'), ['delete-all'], [
-                'class' => 'btn btn-warning pull-left',
-                'data' => [
-                    'confirm' => Yii::t('app', 'Are you sure you want to delete this item?'),
-                    'method' => 'post',
-                    //'id'=>"delete-btn"
-                ],
-            ])
-            ?>
         </div>
     </div>
     <br>
     <!-- <div style="font-size:26px; color:red">عدد الأصناف:( <span id="submit-counter"> 0 </span> )</div> -->
     <!-- <hr> -->
-    <div class="row">
+    <div class="row info-boxes mb-4">
         <?php Pjax::begin(['id' => 'pjax-grid-view']); ?>
-        <?php //if ($dataProvider->getCount() == 0) { 
-        ?>
         <div class="col-md-4 col-sm-6 col-xs-12">
-            <div class="info-box">
+            <div class="info-box shadow-sm">
                 <span class="info-box-icon bg-aqua"><i class="fa fa-fw fa-dollar"></i></span>
-
                 <div class="info-box-content">
                     <span class="info-box-text"><?= Yii::t('app', 'Items Count') ?></span>
-                    <span class="info-box-number"><?php echo $dataProvider->getCount() ?><small></small></span>
+                    <span class="info-box-number"><?php echo $dataProvider->getCount() ?></span>
                 </div>
-                <!-- /.info-box-content -->
             </div>
-            <!-- /.info-box -->
         </div>
-        <?php  //} 
-        ?>
-
 
         <?php $count = 0;
         foreach ($dataProvider->getModels() as $dataP) {
@@ -74,17 +83,14 @@ use yii\widgets\Pjax;
         ?>
 
         <div class="col-md-4 col-sm-6 col-xs-12">
-            <div class="info-box">
+            <div class="info-box shadow-sm">
                 <span class="info-box-icon bg-green"><i class="fa fa-fw fa-dollar"></i></span>
-
                 <div class="info-box-content">
                     <span class="info-box-text"><?= Yii::t('app', 'items quantity') ?></span>
-                    <span class="info-box-number"><?= $count ?><small></small></span>
+                    <span class="info-box-number"><?= $count ?></span>
                 </div>
             </div>
         </div>
-        <?php //} 
-        ?>
 
 
         <?php $count = 0;
@@ -101,36 +107,27 @@ use yii\widgets\Pjax;
         //if ($count != 0) { 
         ?>
         <div class="col-md-4 col-sm-6 col-xs-12">
-            <div class="info-box">
+            <div class="info-box shadow-sm">
                 <span class="info-box-icon bg-yellow"><i class="fa fa-fw fa-dollar"></i></span>
-
                 <div class="info-box-content">
                     <span class="info-box-text"><?= Yii::t('app', 'Total Invoice') ?></span>
-                    <span class="info-box-number"><?= @number_format($total, 3) ?>
-                        <br>
-                        <?php if (Yii::$app->user->identity->seeCostPrice == 1) { ?>
-                            <small><?= @number_format($profit, 3) ?></small>
-                        <?php } ?>
+                    <span class="info-box-number">
+                        <?= @number_format($total, 3) ?>
+                        <?php if (Yii::$app->user->identity->seeCostPrice == 1) : ?>
+                            <small class="text-muted"><?= @number_format($profit, 3) ?></small>
+                        <?php endif; ?>
                     </span>
                 </div>
-                <!-- /.info-box-content -->
             </div>
-            <!-- /.info-box -->
         </div>
-        <hr>
-        <?php //} 
-        ?>
+        <?php Pjax::end(); ?>
     </div>
-    <?php Pjax::end(); ?>
-
-    <?php
-    $form = ActiveForm::begin(
-        [
-            'id' => 'temp-invoice-form',
-            'enableAjaxValidation' => false,
-            'enableClientValidation' => false,
-        ]
-    ) ?>
+    <?php $form = ActiveForm::begin([
+        'id' => 'temp-invoice-form',
+        'enableAjaxValidation' => false,
+        'enableClientValidation' => false,
+        'options' => ['class' => 'search-form mb-4']
+    ]) ?>
     <div class="row">
         <div class="col-md-12">
             <?php
@@ -433,7 +430,7 @@ JS;
             }
         });
     }',
-    //var data=$.parseJSON(data);
+                        //var data=$.parseJSON(data);
                     ],
                 ]);
             }
