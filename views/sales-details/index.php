@@ -65,8 +65,6 @@ $gridColumn = [
 
     'salePrice',
 
-    'original_price',
-
     [
         'class' => 'yii\grid\ActionColumn',
         'template' => '{view}',
