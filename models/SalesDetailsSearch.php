@@ -50,7 +50,7 @@ use app\models\SalesDetails;
                 'defaultOrder' => [
                     'id' => SORT_DESC
                 ]],
-            'pagination' => false,//[ 'pageSize' => 200 ],
+            'pagination' => [ 'pageSize' => 200 ],
         ]);
 
         $this->load($params);
