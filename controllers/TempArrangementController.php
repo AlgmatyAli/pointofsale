@@ -80,107 +80,82 @@ class TempArrangementController extends Controller
     public function actionCreate()
     {
         $model = new TempArrangement();
-        
+
         $searchModel = new TempArrangementSearch();
         $searchModel->created_by = Yii::$app->user->identity->id;
-        $searchModel->state=0;
+        $searchModel->state = 0;
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-        
+
         if (yii::$app->request->post('hasEditable')) {
             $id = Yii::$app->request->post('editableKey');
-            $result=TempArrangement::findOne($id);
-            
-            $out=Json::encode(['output'=>'','message'=>'']);
-            $post=[];
-            $posted=current($_POST['TempArrangement']);
-            $post['TempArrangement']=$posted ;
-            if ($result->load($post)){
-                $result->save(false);
-                if (isset($posted['quantity'])){
-                   $outMessage =$result->quantity;
-                }else
-                {
-                    $outMessage =$result->type; 
-                }
-              
-                $output=$outMessage;
+            $result = TempArrangement::findOne($id);
 
-                $out=Json::encode(['output'=>$output]);
-                
+            $out = Json::encode(['output' => '', 'message' => '']);
+            $post = [];
+            $posted = current($_POST['TempArrangement']);
+            $post['TempArrangement'] = $posted;
+            if ($result->load($post)) {
+                $result->save(false);
+                if (isset($posted['quantity'])) {
+                    $outMessage = $result->quantity;
+                } else {
+                    $outMessage = $result->type;
+                }
+
+                $output = $outMessage;
+
+                $out = Json::encode(['output' => $output]);
+
                 return $out;
             }
-         }
-
-        if ($model->loadAll(Yii::$app->request->post())){
-            
-            $temp = TempArrangement::find()->where([
-                'category'=>$model->category,
-                'stockTaking'=> 1,
-                ])->one();
-           
-            if($model->stockTaking == 1 && $temp <> NULL){
-             if($temp->category == $model->category){
-                
-                Yii::$app->session->setFlash('error', Yii::t('app',"This Item Alrady stockTaking").' : '.$model->category0->name);
-                return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl); 
-             }
         }
 
-        $tempD = ArrangementDetails::find()
-        ->leftJoin('arrangement', 'arrangement.id = arrangementDetails.arrangement')
-        ->where([
-            'category'=>$model->category,
-            'stockTaking'=> 1,
-            ])
-            ->andWhere('year(arrangement.at) = '.date("Y").'')
-            ->one();
+        if ($model->loadAll(Yii::$app->request->post())) {
 
-       //die(var_dump($tempD));
-        if($model->stockTaking == 1 && $tempD <> NULL){
-         if($tempD->category == $model->category){
-            Yii::$app->session->setFlash('error', Yii::t('app',"This Item Alrady stockTaking").' : '.$model->category0->name);
-            return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl); 
-         }
-    }
+            $temp = TempArrangement::find()->where([
+                'category' => $model->category,
+                'stockTaking' => 1,
+            ])->one();
+
+            if ($model->stockTaking == 1 && $temp <> NULL) {
+                if ($temp->category == $model->category) {
+
+                    Yii::$app->session->setFlash('error', Yii::t('app', "This Item Alrady stockTaking") . ' : ' . $model->category0->name);
+                    return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
+                }
+            }
+
+            $tempD = ArrangementDetails::find()
+                ->leftJoin('arrangement', 'arrangement.id = arrangementDetails.arrangement')
+                ->where([
+                    'category' => $model->category,
+                    'stockTaking' => 1,
+                ])
+                ->andWhere('year(arrangement.at) = ' . date("Y") . '')
+                ->one();
+
+            if ($model->stockTaking == 1 && $tempD <> NULL) {
+                if ($tempD->category == $model->category) {
+                    Yii::$app->session->setFlash('error', Yii::t('app', "This Item Alrady stockTaking") . ' : ' . $model->category0->name);
+                    return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
+                }
+            }
 
             $deferent = $model->quantity - $model->realQuantity;
-            if($deferent >= 0){
+            if ($deferent >= 0) {
                 $model->type  = 1;
                 $model->quantity = $deferent;
             }
-            if($deferent < 0){
+            if ($deferent < 0) {
                 $model->type  = -1;
                 $model->quantity = ($deferent * -1);
             }
 
-            $category = new Category();
-            $category =Inventory::find()
-            ->joinWith('prices0')
-            ->where(['prices.category'=>$model->category])->one();
-         
-            $temp = TempArrangement::find()->where([
-                'category'=>$model->category,
-                'created_by'=>Yii::$app->user->identity->id,
-                ])->one();
+            $model->state = 0;
+            $model->box = 1;
+            $model->branch = Yii::$app->user->identity->branch;
+            $model->save(false);
 
-                    //if (!isset($temp)) {
-                        $model->state= 0;
-                        $model->box = 1;
-                        $model->branch = Yii::$app->user->identity->branch;
-                        $model->save(false);
-                    // }else{
-                    //     $temp->quantity=$temp->quantity+1;
-                    //     $model->branch = Yii::$app->user->identity->branch;
-                    //     $model->box= $category->box;
-                    //     $model->state= 0;
-                    //     if($model->stockTaking == 0){
-                    //         $model->stockTaking = 0;
-                    //     }else{
-                    //     $model->stockTaking = 1;
-                    //     } 
-                    //     $temp->save();
-                    // }
-            
             return $this->redirect(['create', 'id' => 1]);
         } else {
             return $this->render('create', [
@@ -219,11 +194,11 @@ class TempArrangementController extends Controller
     public function actionDelete($id)
     {
         $this->findModel($id)->deleteWithRelated();
-        
+
         return $this->redirect(['create']);
     }
 
-    
+
     /**
      * Finds the TempArrangement model based on its primary key value.
      * If the model is not found, a 404 HTTP exception will be thrown.
@@ -242,7 +217,7 @@ class TempArrangementController extends Controller
 
     public function actionDeleteAll()
     {
-        TempArrangement::deleteAll(['state'=> 0,'created_by' => Yii::$app->user->identity->id]);
+        TempArrangement::deleteAll(['state' => 0, 'created_by' => Yii::$app->user->identity->id]);
         return $this->redirect(['create']);
     }
 
@@ -274,7 +249,7 @@ class TempArrangementController extends Controller
             $query->select(
                 $secript
             )
-                ->from('category') 
+                ->from('category')
                 ->leftJoin('prices', 'prices.category = category.id')
                 ->leftJoin('stocks', 'stocks.category = category.id')
                 ->leftJoin('branches', 'branches.id = stocks.branch')
@@ -341,5 +316,4 @@ class TempArrangementController extends Controller
         Yii::$app->response->format = Yii\web\Response::FORMAT_JSON;
         return $value;
     }
-
 }

@@ -130,8 +130,7 @@ class ArrangementController extends Controller
                     $stocks->type = 1;
                     $stocks->save(false);
                 } else {
-                    if ($data->type == 1) {
-                        Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + ($data->quantity*$data->type)
+                        Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + ($data->quantity * $data->type)
                  WHERE category=:category
                  and branch = :branch
                  and type = :type")
@@ -139,16 +138,6 @@ class ArrangementController extends Controller
                             ->bindValue(':branch', Yii::$app->user->identity->branch)
                             ->bindValue(':type', 1)
                             ->execute();
-                    } else {
-                        Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  - ($data->quantity*$data->type)
-                WHERE category=:category
-                and branch = :branch
-                and type = :type")
-                            ->bindValue(':category', $data->category)
-                            ->bindValue(':branch', Yii::$app->user->identity->branch)
-                            ->bindValue(':type', 1)
-                            ->execute();
-                    }
                 }
             }
             TempArrangement::deleteAll(['created_by' => Yii::$app->user->identity->id, 'state' => 0]);

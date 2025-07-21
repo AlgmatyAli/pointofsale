@@ -10,8 +10,9 @@ use Yii;
  * @property int $id
  * @property int $category
  * @property float $quantity
- *
+ * @property integer $branch
  * @property Category $category0
+ * @property integer|null $type
  */
 class Stocks extends \yii\db\ActiveRecord
 {
