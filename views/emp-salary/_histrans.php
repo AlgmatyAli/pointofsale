@@ -61,8 +61,8 @@ use yii\helpers\Url;
 
     <br>
     <div class="form-group">
-        <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Run'), ['class' => 'btn btn-success btn-lg']) ?>
-        <?= Html::a('<i class="fa fa-fw fa-eraser"></i>' . ' ' . Yii::t('app', "Erase"), Url::toRoute(['histrans']), ['class' => 'btn btn-danger btn-lg']) ?>
+        <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Run'), ['class' => 'btn btn-success  ']) ?>
+        <?= Html::a('<i class="fa fa-fw fa-eraser"></i>' . ' ' . Yii::t('app', "Erase"), Url::toRoute(['histrans']), ['class' => 'btn btn-danger  ']) ?>
     </div>
     <?php ActiveForm::end(); ?>
 

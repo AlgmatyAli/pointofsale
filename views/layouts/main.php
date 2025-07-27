@@ -64,7 +64,7 @@ if (Yii::$app->controller->action->id === 'login') {
 
     <?php
         yii\bootstrap\Modal::begin([
-            'header' => '<b>' . Yii::t('app', '') . '<hr></b>',
+            'header' => '<b>' . Yii::t('app', 'منظومة المبيعات') . '<hr></b>',
             'headerOptions' => ['id' => 'modalHeader'],
             'id' => 'modal',
             'size' => 'modal-lg',

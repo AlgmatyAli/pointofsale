@@ -25,58 +25,62 @@ use yii\helpers\Url;
         </div>
     </div>
     <br>
-    <?= $form->field($model, 'expenseTo')->textInput(['maxlength' => true]) ?>
+    <div class="row">
+        <div class="col-md-1"></div>
+        <div class="col-md-6">
+            <?= $form->field($model, 'expenseTo')->textInput(['maxlength' => true]) ?>
 
-    <?php
-    echo $form->field($model, 'at')->widget(
-        DatePicker::class,
-        [
-            'language' => 'ar',
-            'pluginOptions' => [
-                'autoclose' => true,
-                'format' => 'yyyy-mm-dd',
-                'todayHighlight' => true,
-                'todayBtn' => true,
-            ]
-        ]
-    )->label(Yii::t('app', 'Expens Date'));
-    ?>
+            <?php
+            echo $form->field($model, 'at')->widget(
+                DatePicker::class,
+                [
+                    'language' => 'ar',
+                    'pluginOptions' => [
+                        'autoclose' => true,
+                        'format' => 'yyyy-mm-dd',
+                        'todayHighlight' => true,
+                        'todayBtn' => true,
+                    ]
+                ]
+            )->label(Yii::t('app', 'Expens Date'));
+            ?>
 
-    <?php
-    echo $form->field($model, 'itemId')->widget(Select2::class, [
-        'data' => ArrayHelper::map(Items::find()
-            ->all(), 'id', 'name'),
-        'language' => 'ar',
-        'options' => ['placeholder' => 'الرجاء اختيار اسم المصروف ...'],
-        'pluginOptions' => [
-            'allowClear' => true,
-            'multiple' => false
-        ],
-    ]);
-    ?>
+            <?php
+            echo $form->field($model, 'itemId')->widget(Select2::class, [
+                'data' => ArrayHelper::map(Items::find()
+                    ->all(), 'id', 'name'),
+                'language' => 'ar',
+                'options' => ['placeholder' => 'الرجاء اختيار اسم المصروف ...'],
+                'pluginOptions' => [
+                    'allowClear' => true,
+                    'multiple' => false
+                ],
+            ]);
+            ?>
 
-    <?= $form->field($model, 'value')->textInput() ?>
+            <?= $form->field($model, 'value')->textInput() ?>
 
-    <?php
-    echo $form->field($model, 'currancy')->widget(Select2::class, [
-        'data' => ArrayHelper::map(Currancy::find()->all(), 'id', 'name'),
-        'language' => 'ar',
-        'pluginOptions' => [
-            'allowClear' => true,
-            'multiple' => false,
-        ],
-    ]);
-    ?>
+            <?php
+            echo $form->field($model, 'currancy')->widget(Select2::class, [
+                'data' => ArrayHelper::map(Currancy::find()->all(), 'id', 'name'),
+                'language' => 'ar',
+                'pluginOptions' => [
+                    'allowClear' => true,
+                    'multiple' => false,
+                ],
+            ]);
+            ?>
 
-    <?= $form->field($model, 'outBox')->checkbox() ?>
+            <?= $form->field($model, 'outBox')->checkbox() ?>
 
-    <?= $form->field($model, 'why')->textarea(['rows' => 6]) ?>
+            <?= $form->field($model, 'why')->textarea(['rows' => 6]) ?>
 
-    <div class="form-group">
-        <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Save'), ['class' => 'btn btn-success btn-lg']) ?>
-        <?= Html::a('<i class="fa fa-fw fa-window-close"></i>' . ' ' . Yii::t('app', 'Cancel'), Yii::$app->request->referrer, ['class' => 'btn btn-danger btn-lg']) ?>
+            <div class="form-group">
+                <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Save'), ['class' => 'btn btn-success']) ?>
+                <?= Html::a('<i class="fa fa-fw fa-window-close"></i>' . ' ' . Yii::t('app', 'Cancel'), Yii::$app->request->referrer, ['class' => 'btn btn-danger']) ?>
+            </div>
+        </div>
     </div>
-
     <?php ActiveForm::end(); ?>
 
 </div>

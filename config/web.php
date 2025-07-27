@@ -10,12 +10,12 @@ $config = [
     'bootstrap' => ['log'],
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
-        '@npm'   => '@vendor/npm-asset',
+        '@npm' => '@vendor/npm-asset',
     ],
     'language' => 'ar-AR',
     'sourceLanguage' => 'en-US',
     'modules' => [
-        'gridview' =>  [
+        'gridview' => [
             'class' => '\kartik\grid\Module'
         ]
     ],
@@ -28,7 +28,7 @@ $config = [
             'cookieValidationKey' => 'pointofsale.ly',
             'enableCsrfValidation' => true,
             'csrfParam' => '_csrf-frontend',
-            
+
             'parsers' => [
                 'application/json' => 'yii\web\JsonParser',
             ]
@@ -50,8 +50,9 @@ $config = [
         'errorHandler' => [
             'errorAction' => 'site/error',
         ],
+
         'mailer' => [
-            'class' => \yii\symfonymailer\Mailer::class,  
+            'class' => \yii\symfonymailer\Mailer::class,
             'enableSwiftMailerLogging' => true,
 
             //'useFileTransport'=>false,
@@ -90,7 +91,6 @@ $config = [
         ],
         'db' => $db,
 
-
         // 'urlManager' => [
         //     'enablePrettyUrl' => true,
         //     'showScriptName' => false,
@@ -104,24 +104,6 @@ $config = [
             'locale' => 'id',
             'thousandSeparator' => ',',
         ],
-
-    ],
-    'modules' => [
-        //your another module
-        'gridview' => [
-            'class' => '\kartik\grid\Module',
-            // see settings on http://demos.krajee.com/grid#module
-        ],
-        'datecontrol' => [
-            'class' => '\kartik\datecontrol\Module',
-            // see settings on http://demos.krajee.com/datecontrol#module
-        ],
-        // If you use tree table
-        'treemanager' =>  [
-            'class' => '\kartik\tree\Module',
-            // see settings on http://demos.krajee.com/tree-manager#module
-        ]
-        // your another module
 
     ],
 

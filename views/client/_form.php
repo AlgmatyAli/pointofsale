@@ -12,7 +12,7 @@ use kartik\widgets\SwitchInput;
 
     <?php $form = ActiveForm::begin(); ?>
     <div class="row">
-        <div class="col-lg-3"></div>
+        <div class="col-lg-1"></div>
         <div class="col-lg-6">
             <?= $form->field($model, 'name')->textInput(['maxlength' => true]) ?>
 
@@ -31,8 +31,8 @@ use kartik\widgets\SwitchInput;
             <?= $form->field($model, 'type')->dropDownList(['0' => 'زبون', '1' => 'مورد', '2' => 'كلاهما'], ['prompt' => 'اختيار نوع العميل...']) ?>
             <br>
             <div class="form-group">
-                <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Save'), ['class' => 'btn btn-success btn-lg']) ?>
-                <?= Html::a('<i class="fa fa-fw fa-window-close"></i>' . ' ' . Yii::t('app', 'Cancel'), Yii::$app->request->referrer, ['class' => 'btn btn-danger btn-lg']) ?>
+                <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Save'), ['class' => 'btn btn-success']) ?>
+                <?= Html::a('<i class="fa fa-fw fa-window-close"></i>' . ' ' . Yii::t('app', 'Cancel'), Yii::$app->request->referrer, ['class' => 'btn btn-danger']) ?>
             </div>
         </div>
         <div class='col-md-2' style="height: 3%;">
@@ -46,9 +46,6 @@ use kartik\widgets\SwitchInput;
             ]); ?>
         </div>
     </div>
- 
-
-
     <?php ActiveForm::end(); ?>
 
 </div>

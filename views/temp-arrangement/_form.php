@@ -13,13 +13,7 @@ use yii\web\JsExpression;
 
 <div class="temp-arrangement-form">
     <div class="col-md-12">
-        <?php echo Html::button(
-            '<i class="fa fa-fw fa-cart"></i>' . ' ' . Yii::t('app', 'Create Category'),
-            ['value' => Url::to(['category/create-category']), 'class' => 'btn btn-primary popup']
-        ); ?>
-
         <?php echo Html::button('<i class="fa fa-fw fa-step-forward"></i>' . ' ' . Yii::t('app', 'Complete'), ['value' => Url::to(['arrangement/create']), 'class' => 'btn btn-danger popup']); ?>
-
 
         <?= Html::a('<i class="fa fa-fw fa-trash "></i>' . ' ' . Yii::t('app', 'Delete All'), ['delete-all'], [
             'class' => 'btn btn-warning pull-left',
@@ -59,13 +53,11 @@ $formatJs = <<< 'JS'
       '<div class="col-sm-3"><i class="badge badge-primary badge-pill"> رقم القطعة 1 - </i> ' + product.serialNo + '</div>' +
       '<div class="col-sm-3"><i class="badge badge-primary badge-pill"> رقم القطعة 2 - </i> ' + product.commCode + '</div>' +
       '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> رقم التسلسل - </i> '  + product.id + '</div>' +
-      //'<div class="col-sm-2"><i class="badge badge-primary badge-pill">حالة القطعة</i> ' +product.type+ '</div>' +
       '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الشركة - </i> ' + product.company + '</div>' +
-      //'<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الكمية = </i> ' + '  ' + product.quantity + '</div>' +
+      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الكمية = </i> ' + '  ' + product.quantity + '</div>' +
     '</div>';
     return '<div style="overflow:hidden;">' + markup + '</div>';
   };                
-    
 
   var formatProductSelection = function (product) {
     return product.name || product.text;

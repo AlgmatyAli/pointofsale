@@ -14,6 +14,7 @@ use yii\widgets\ActiveForm;
 ?>
 
 <div class="loans-form">
+    <div class="row">
     <div class="col-md-2"></div>
     <div class="col-md-8">
         <?php $form = ActiveForm::begin(); ?>
@@ -79,11 +80,13 @@ use yii\widgets\ActiveForm;
 
 
         <div class="form-group">
-            <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Save'), ['class' => 'btn btn-success btn-lg']) ?>
-            <?= Html::a('<i class="fa fa-fw fa-window-close"></i>' . ' ' . Yii::t('app', 'Cancel'), Yii::$app->request->referrer, ['class' => 'btn btn-danger btn-lg']) ?>
+            <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Save'), ['class' => 'btn btn-success  ']) ?>
+            <?= Html::a('<i class="fa fa-fw fa-window-close"></i>' . ' ' . Yii::t('app', 'Cancel'), Yii::$app->request->referrer, ['class' => 'btn btn-danger  ']) ?>
         </div>
     </div>
+    </div>
 </div>
+
 <?php ActiveForm::end(); ?>
 
 </div>

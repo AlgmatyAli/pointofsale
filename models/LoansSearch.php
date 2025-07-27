@@ -19,7 +19,7 @@ class LoansSearch extends Loans
         return [
             [['id', 'employee', 'parts', 'paid', 'status', 'created_by', 'updated_by'], 'integer'],
             [['loanValue', 'kestValue'], 'number'],
-            [['at', 'notes', 'created_at', 'updated_at'], 'safe'],
+            [['at', 'notes', 'created_at', 'updated_at', 'emp_name'], 'safe'],
         ];
     }
 
@@ -41,7 +41,8 @@ class LoansSearch extends Loans
      */
     public function search($params)
     {
-        $query = Loans::find();
+        $query = Loans::find()
+        ->joinWith('employee0');
 
         // add conditions that should always apply here
 
@@ -72,7 +73,7 @@ class LoansSearch extends Loans
             'updated_by' => $this->updated_by,
             'updated_at' => $this->updated_at,
         ]);
-
+        $query->andFilterWhere(['like', 'employee.name', $this->emp_name]);
         $query->andFilterWhere(['like', 'notes', $this->notes]);
 
         return $dataProvider;

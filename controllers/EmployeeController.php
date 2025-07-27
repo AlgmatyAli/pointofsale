@@ -61,7 +61,7 @@ class EmployeeController extends Controller
      * @return mixed
      */
     public function actionIndex()
-    { 
+    {
         $searchModel = new EmployeeSearch();
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
@@ -93,12 +93,23 @@ class EmployeeController extends Controller
     {
         $model = new Employee();
 
-        if ($model->load(Yii::$app->request->post())) {
-            $model->salaryByDay = ($model->salary / $model->dayOfWork);
-            $model->created_at = date('Y-m-d H:i:s');
-            $model->created_by = Yii::$app->user->identity->id;
-            $model->save();
-            return $this->redirect(['view', 'id' => $model->id]);
+        if ($this->request->isPost) {
+            if ($model->load($this->request->post())) {
+                $model->salaryByDay = ($model->salary / $model->dayOfWork);
+                $model->created_at = date('Y-m-d H:i:s');
+                $model->created_by = Yii::$app->user->identity->id;
+                if ($model->save(false)) {
+                   // return 'success';
+                   return $this->redirect(['view', 'id' => $model->id]);
+                }
+                //return $this->redirect(['view', 'id' => $model->id]);
+            }
+        } elseif ($this->request->isAjax) {
+            return $this->renderAjax('create', [
+                'model' => $model,
+            ]);
+        } else {
+            $model->loadDefaultValues();
         }
 
         return $this->render('create', [
@@ -162,12 +173,12 @@ class EmployeeController extends Controller
     public function actionState($id)
     {
         $state = $this->findModel($id);
-        if($state->state == 0){
+        if ($state->state == 0) {
             Employee::updateAll(['state' => 1], ['=', 'id', $id]);
-        }else{
+        } else {
             Employee::updateAll(['state' => 0], ['=', 'id', $id]);
         }
-        
+
         return $this->redirect(['view', 'id' => $id]);
     }
 }

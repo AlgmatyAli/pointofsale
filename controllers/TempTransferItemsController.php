@@ -216,7 +216,9 @@ class TempTransferItemsController extends Controller
             if ($item != null) {
                 if ($sumQnty >= $item->quantity) {
                     Yii::$app->response->format = Response::FORMAT_JSON;
-                    return ['error' => true, 'message' => Yii::t('app', "عفوا لقد تجاوزت الكمية الموجودة لايمكنك الاستمرار")];
+                    // return ['error' => true, 'message' => Yii::t('app', "عفوا لقد تجاوزت الكمية الموجودة لايمكنك الاستمرار")];
+                    return "عفوا لقد تجاوزت الكمية الموجودة لايمكنك الاستمرار";
+
                 }
             } else {
                 Yii::$app->response->format = Response::FORMAT_JSON;

@@ -19,7 +19,7 @@ use yii\helpers\Url;
 
     <?php $form = ActiveForm::begin(); ?>
     <div class="row">
-        <div class="col-lg-3"></div>
+        <div class="col-lg-1"></div>
         <div class="col-lg-5">
             <?php
             echo $form->field($model, 'currancy')->widget(Select2::class, [
@@ -73,7 +73,6 @@ use yii\helpers\Url;
                 ],
             ]);
             ?>
-            <!-- //var data=$.parseJSON(data); -->
             <?php
             echo $form->field($model, 'at')->widget(
                 DatePicker::class,
@@ -102,8 +101,9 @@ use yii\helpers\Url;
             <?= $form->field($model, 'type')->hiddenInput(['readonly' => true, 'value' => $model->isNewRecord ? $_GET['type'] : $model->type])->label(false) ?>
 
             <div class="form-group">
-                <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Save'), ['class' => 'btn btn-success btn-lg']) ?>
-                <?= Html::a('<i class="fa fa-fw fa-window-close"></i>' . ' ' . Yii::t('app', 'Clear'), ['/receipt/create', 'type' => $_GET['type']], ['class' => 'btn btn-danger btn-lg']) ?>
+                <?= Html::a('<i class="fa fa-fw fa-window-close"></i>' . ' ' . Yii::t('app', 'Clear'), ['/receipt/create', 'type' => $_GET['type']], ['class' => 'btn btn-danger btn-md']) ?>
+
+                <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Save'), ['class' => 'btn btn-success btn-md']) ?>
             </div>
         </div>
 

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @link http://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
@@ -20,7 +21,6 @@ class AppAsset extends AssetBundle
     public $basePath = '@webroot';
     public $baseUrl = '@web';
     public $css = [
-       // 'css/template.css',
         'css/site.css',
         'css/style.css',
         'css/util.css',
@@ -30,15 +30,11 @@ class AppAsset extends AssetBundle
     public $js = [
         'js/ajax-modal-popup.js',
         'js/sweet-alert.js',
-       // 'js/loadSalesGrid.js',
-       // 'js/popup.js',
-        //'js/invoice.js',
+        // 'js/loadSalesGrid.js',
         'js/tafqeet.js',
-        //'js/ajaxsave.js',
-    //    'https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js'
     ];
     public $depends = [
         'yii\web\YiiAsset',
-        'yii\bootstrap\BootstrapAsset',  
+        'yii\bootstrap\BootstrapAsset',
     ];
 }

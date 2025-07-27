@@ -14,7 +14,7 @@ use yii\web\JsExpression;
 
 <div class="temp-transfer-items-form">
     <div class="row">
-        <div class="col-md-6" style="margin-top: 15px">
+        <div class="col-md-12" style="margin-top: 15px">
             <?php echo Html::button(
                 '<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Save'),
                 [
@@ -23,7 +23,7 @@ use yii\web\JsExpression;
             ); ?>
 
             <?= Html::a('<i class="fa fa-fw fa-trash"></i>' . ' ' . Yii::t('app', 'Delete All'), ['delete-all'], [
-                'class' => 'btn btn-warning',
+                'class' => 'btn btn-warning pull-left',
                 'data' => [
                     'confirm' => Yii::t('app', 'Are you sure you want to delete this item?'),
                     'method' => 'post',
@@ -204,18 +204,7 @@ JS;
                 'id' => 'w1',
             ]
         ],
-        'pjaxSettings' => ['options' => ['id' => 'kv-pjax-container-temp-transfer-items']],
+        // 'pjaxSettings' => ['options' => ['id' => 'kv-pjax-container-temp-transfer-items']],
         'showPageSummary' => true,
     ]); ?>
 </div>
-
-<?php
-// $this->registerJs("$(function() {
-//      $('.popupModal').click(function(e) {
-//      e.preventDefault();
-//      $('#modal').modal('show').find('.modal-content')
-//      .load($(this).attr('href'));
-//      });
-// });");
-
-?>

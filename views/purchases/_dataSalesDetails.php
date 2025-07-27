@@ -20,12 +20,15 @@ $gridColumns = [
     ],
     'quantity',
     [
+        'label' => Yii::t('app', 'اجمالي التكلفة'),
+        'attribute' => 'totalCost',
+        'format' => ['decimal', 3],
+        'pageSummary' => true,
+    ],
+    [
         'label' => Yii::t('app', 'Sale Price'),
         'attribute' => 'salePrice',
         'format' => ['decimal', 3],
-        // 'format' => 'currency',
-        // 'format' => 'decimal',
-        // 'hAlign' => 'right',
         'pageSummary' => true,
     ],
     [

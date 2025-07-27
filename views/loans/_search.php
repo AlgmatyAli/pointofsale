@@ -18,35 +18,17 @@ use yii\widgets\ActiveForm;
         ],
     ]); ?>
 
-    <?= $form->field($model, 'id') ?>
+    <div class="row">
+        <div class="col-md-1"></div>
+        <div class="col-md-6">
+            <?= $form->field($model, 'emp_name')->textInput(['placeholder' => Yii::t('app', 'اسم الموظف')]) ?>
 
-    <?= $form->field($model, 'employee') ?>
-
-    <?= $form->field($model, 'loanValue') ?>
-
-    <?= $form->field($model, 'kestValue') ?>
-
-    <?= $form->field($model, 'at') ?>
-
-    <?php // echo $form->field($model, 'parts') ?>
-
-    <?php // echo $form->field($model, 'paid') ?>
-
-    <?php // echo $form->field($model, 'notes') ?>
-
-    <?php // echo $form->field($model, 'status') ?>
-
-    <?php // echo $form->field($model, 'created_by') ?>
-
-    <?php // echo $form->field($model, 'created_at') ?>
-
-    <?php // echo $form->field($model, 'updated_by') ?>
-
-    <?php // echo $form->field($model, 'updated_at') ?>
-
+        </div>
+    </div>
     <div class="form-group">
+        <?= Html::a('<i class="fa fa-fw fa-window-close"></i>' . ' ' . Yii::t('app', 'Clear'), ['/loans/index'], ['class' => 'btn btn-danger  ']) ?>
+
         <?= Html::submitButton(Yii::t('app', 'Search'), ['class' => 'btn btn-primary']) ?>
-        <?= Html::resetButton(Yii::t('app', 'Reset'), ['class' => 'btn btn-outline-secondary']) ?>
     </div>
 
     <?php ActiveForm::end(); ?>

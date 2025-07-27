@@ -114,7 +114,7 @@ use yii\widgets\Pjax;
                     <span class="info-box-number">
                         <?= @number_format($total, 3) ?>
                         <?php if (Yii::$app->user->identity->seeCostPrice == 1) : ?>
-                            <small class="text-muted"><?= @number_format($profit, 3) ?></small>
+                            <br><small class="text-muted"><?= @number_format($profit, 3) ?></small>
                         <?php endif; ?>
                     </span>
                 </div>
@@ -443,6 +443,7 @@ JS;
                     <br>
                     <div class="form-group">
                         <?= Html::submitButton($model->isNewRecord ? '<i class="fa fa-fw fa-plus"></i>' . ' ' . Yii::t('app', 'Add') : Yii::t('app', 'Update'), ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']) ?>
+
                     </div>
                 </div>
                 <div class="col-md-2">

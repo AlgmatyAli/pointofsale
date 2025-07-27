@@ -20,6 +20,7 @@ use Yii;
  * @property string|null $created_at
  * @property int|null $updated_by
  * @property string|null $updated_at
+ * @property string|null $emp_name
  *
  * @property User $createdBy
  * @property User $updatedBy
@@ -30,7 +31,7 @@ class Loans extends \yii\db\ActiveRecord
     /**
      * {@inheritdoc}
      */
-    public $salary, $drawing, $min_date, $max_date, $lastPay, $lastPayDate;
+    public $salary, $drawing, $min_date, $max_date, $lastPay, $lastPayDate, $emp_name;
     public static function tableName()
     {
         return 'loans';
@@ -45,8 +46,8 @@ class Loans extends \yii\db\ActiveRecord
             [['employee', 'parts', 'status'], 'required'],
             [['employee', 'parts', 'paid', 'status', 'created_by', 'updated_by'], 'integer'],
             [['loanValue', 'kestValue'], 'number'],
-            [['at', 'created_at', 'updated_at'], 'safe'],
-            [['notes'], 'string', 'max' => 255],
+            [['at', 'created_at', 'updated_at', 'emp_name'], 'safe'],
+            [['notes', 'emp_name'], 'string', 'max' => 255],
             [['created_by'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['created_by' => 'id']],
             [['updated_by'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['updated_by' => 'id']],
             [['employee'], 'exist', 'skipOnError' => true, 'targetClass' => Employee::className(), 'targetAttribute' => ['employee' => 'id']],
@@ -75,6 +76,7 @@ class Loans extends \yii\db\ActiveRecord
             'salary' => Yii::t('app', 'Salary'),
             'lastPay' => Yii::t('app', 'Last Pay'),
             'lastPayDate' => Yii::t('app', 'Last Pay Date'),
+            'emp_name' => Yii::t('app', 'Emp Name'),
         ];
     }
 

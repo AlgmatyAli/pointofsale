@@ -50,7 +50,8 @@ use yii\widgets\Pjax;
                 <?php echo Html::button(
                     '<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Save'),
                     [
-                        'value' => Url::to(['purchases/create', 'totalInvoice' => $totalInvoice]), 'class' => 'btn btn-danger popup'
+                        'value' => Url::to(['purchases/create', 'totalInvoice' => $totalInvoice]),
+                        'class' => 'btn btn-danger popup'
                     ]
                 ); ?>
 
@@ -59,10 +60,8 @@ use yii\widgets\Pjax;
                     ['value' => Url::to(['category/create-category']), 'class' => 'btn btn-primary popup']
                 ); ?>
 
-                <?= Html::a('<i class="fa fa-fw fa-upload"></i>' . ' ' . Yii::t('app', "Upload"), Url::toRoute(['upload']), ['class' => 'btn btn-info']) ?>
-
                 <?= Html::a('<i class="fa fa-fw fa-trash"></i>' . ' ' . Yii::t('app', 'Delete All'), ['delete-all'], [
-                    'class' => 'btn btn-warning',
+                    'class' => 'btn btn-warning  pull-left',
                     'data' => [
                         'confirm' => Yii::t('app', 'Are you sure you want to delete this item?'),
                         'method' => 'post',
@@ -136,9 +135,8 @@ use yii\widgets\Pjax;
       '<div class="col-sm-3"><i class="badge badge-primary badge-pill"> رقم القطعة 1 - </i> ' + product.serialNo + '</div>' +
       '<div class="col-sm-3"><i class="badge badge-primary badge-pill"> رقم القطعة 2 - </i> ' + product.commCode + '</div>' +
       '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> رقم التسلسل - </i> '  + product.id + '</div>' +
-      //'<div class="col-sm-2"><i class="badge badge-primary badge-pill">حالة القطعة</i> ' +product.type+ '</div>' +
       '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الشركة - </i> ' + product.company + '</div>' +
-      //'<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الكمية = </i> ' + '  ' + product.quantity + '</div>' +
+      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الكمية = </i> ' + '  ' + product.quantity + '</div>' +
     '</div>';
     return '<div style="overflow:hidden;">' + markup + '</div>';
   };                
@@ -166,7 +164,6 @@ JS;
 JS;
         echo $form->field($model, 'category')->widget(Select2::classname(), [
             'name' => 'kv-repo-template',
-            // 'id' => 'tempinvoicepurchase-category',
             'language' => 'en',
             'options' => [
                 'placeholder' => Yii::t('app', 'Search...'),
@@ -206,7 +203,6 @@ JS;
             ]
 
         ]);
-        //var data=$.parseJSON(data);
         ?>
 
     </div>
@@ -225,8 +221,8 @@ JS;
     </div>
     <div class="col-md-2">
         <?= $form->field($model, 'costPrice')->textInput([
-            'maxlength' => true, 'placeholder' => 'Cost Price',
-            //'onfocusout' => 'totalCost( $(this) )'
+            'maxlength' => true,
+            'placeholder' => 'Cost Price',
         ]) ?>
     </div>
 

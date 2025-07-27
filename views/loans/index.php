@@ -15,7 +15,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1><?= Html::encode($this->title) ?></h1><hr>
 
     <?php Pjax::begin(); ?>
-    <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
+    <?php  echo $this->render('_search', ['model' => $searchModel]); ?>
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
@@ -33,15 +33,6 @@ $this->params['breadcrumbs'][] = $this->title;
                         return $searchModel->at;
                 }
             ],
-            //'parts',
-            //'paid',
-            //'notes',
-            //'status',
-            //'created_by',
-            //'created_at',
-            //'updated_by',
-            //'updated_at',
-
             [
                 'class' => 'yii\grid\ActionColumn',
                 'options'=>['style'=>'width:120px;'],

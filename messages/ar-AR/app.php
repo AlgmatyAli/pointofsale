@@ -405,6 +405,9 @@ return [
     'Zero Qnty' => 'عرض الاصناف المنتهية',
     'Purchases Invoice By Dirham' => 'فاتورة مشتريات بالدرهم الاماراتي',
     'Print Bill Dirham' => 'طباعة فاتورة بالدرهم',
+    'Out Box' => 'خارج الصندوق',
+    'Update Employee: {name}' => 'تعديل بيانات الموظف: {name}',
+    'Emp Name' => 'اسم الموظف',
 ];
 
 ?>

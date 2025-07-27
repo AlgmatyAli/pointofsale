@@ -153,7 +153,7 @@ use app\models\Currancy;
                     'options' => [
                         'value' => Yii::$app->user->identity->branch,
                         //  'placeholder' => 'الرجاء اختيار اسم العميل ...'
-                        'disabled' => true,
+                        //'disabled' => true,
                     ],
                     'pluginOptions' => [
                         'allowClear' => true,
