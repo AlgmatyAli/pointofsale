@@ -251,7 +251,7 @@ class ClientController extends Controller
             if ($model->type == 0) {
                 $model->type = '0,2';
                 $sql = " SELECT dept.id, dept.type as type, MAX(dept.name) as name, SUM(dept.credt) as credt, 
-                MAX(dept.Phone) as phone, max(dept.deserving) as deserving  FROM dept
+                MAX(dept.Phone) as phone, max(dept.deserving) as deserving, max(post_paid) as post_paid FROM dept
                 where dept.Type in(" . $model->type . ")  and dept.currency in( 0, " . $model->currency . ")
                 GROUP BY dept.id, dept.type having SUM(dept.credt)<>0";
                 $connection = Yii::$app->db;
@@ -338,7 +338,7 @@ class ClientController extends Controller
                 $types = '0,2';
                 $sql = " SELECT histrans_client.id, histrans_client.trandate, histrans_client.name as name,
         histrans_client.dept as sader, histrans_client.billId as billId, histrans_client.kind as kind,
-        histrans_client.credt as wared, histrans_client.printId as printId, histrans_client.type as type, histrans_client.deleviried as deleviried
+        histrans_client.credt as wared, histrans_client.printId as printId, histrans_client.type as type, histrans_client.deleviried as deleviried, 
         FROM histrans_client
         where histrans_client.Type in(" . $types . ") and histrans_client.id = " . $model->id . "
         and histrans_client.trandate between '" . $model->min_date . "' and '" . $model->max_date . "'

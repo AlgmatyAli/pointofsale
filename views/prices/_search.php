@@ -110,24 +110,21 @@ JS;
 
             <?= $form->field($model, 'minPrice2') ?>
 
-
+            <?php echo $form->field($model, 'company') ?>
         </div>
         <div class="col-md-2"><?= $form->field($model, 'lowPrice') ?></div>
         <div class="col-md-2"><?= $form->field($model, 'bigPrice') ?></div>
         <div class="col-md-2" style="height: 3%;"><?php
-             echo $form->field($model, 'zeroQnty')->widget(SwitchInput::class, [
-                'pluginOptions' => [
-                    'size' => 'small',
-                    'onColor' => 'success',
-                    'offColor' => 'danger',
-                ]
-            ]); 
-            ?>
+                                                    echo $form->field($model, 'zeroQnty')->widget(SwitchInput::class, [
+                                                        'pluginOptions' => [
+                                                            'size' => 'small',
+                                                            'onColor' => 'success',
+                                                            'offColor' => 'danger',
+                                                        ]
+                                                    ]);
+                                                    ?>
         </div>
     </div>
-
-    <?php // echo $form->field($model, 'minPrice3') 
-    ?>
 
     <?php // echo $form->field($model, 'maxPrice') 
     ?>

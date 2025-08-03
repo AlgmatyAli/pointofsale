@@ -61,6 +61,7 @@ class Prices extends \yii\db\ActiveRecord
             'bigPrice' => Yii::t('app', 'Big Price'),
             'Percentage' => Yii::t('app', 'Percentage of increase'),
             'zeroQnty' => Yii::t('app', 'Zero Qnty'),
+            'company' => Yii::t('app', 'Company'),
         ];
     }
 

@@ -201,6 +201,16 @@ use yii\grid\GridView;
                   return $data->reservation;
                 }
               ],
+
+              [
+                'label' => Yii::t('app', 'مكان الصنف'),
+                'contentOptions' => ['style' => 'font-size:12px;', 'text-align: center'],
+                'headerOptions' => ['style' => 'width:30%'],
+                'value' => function ($data) {
+                  return $data->cat->place;
+                }
+
+              ],
             ],
           ]);
           ?>

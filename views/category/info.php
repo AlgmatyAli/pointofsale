@@ -55,6 +55,26 @@ use yii\widgets\DetailView;
                     }
                 ],
 
+                [
+                    'label' => Yii::t('app', ''),
+                    'format' => 'raw',
+                    'value' => function ($searchModel) {
+                        if (Yii::$app->user->identity->seeCostPrice == 1) {
+                            return 'سعر التكلفة بالدرهم' . ' ' . $searchModel->prices->minPrice3;
+                        }
+                    }
+                ],
+
+                [
+                    'label' => Yii::t('app', ''),
+                    'format' => 'raw',
+                    'value' => function ($searchModel) {
+                        if (Yii::$app->user->identity->seeCostPrice == 1) {
+                            return 'سعر التكلفة الدولار' . ' ' . $searchModel->prices->minPrice2;
+                        }
+                    }
+                ],
+
             ],
         ]) ?>
         <div class="form-group">
