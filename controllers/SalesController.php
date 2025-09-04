@@ -513,6 +513,10 @@ class SalesController extends Controller
                 $model->disscount = 0;
             }
 
+            if ($model->paid == null) {
+                $model->paid = 0;
+            }
+
             if (Yii::$app->user->identity->client <> null) {
                 $model->deleviried =  0;
                 $model->wholesale = 0;
