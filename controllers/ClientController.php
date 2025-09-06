@@ -338,7 +338,7 @@ class ClientController extends Controller
                 $types = '0,2';
                 $sql = " SELECT histrans_client.id, histrans_client.trandate, histrans_client.name as name,
         histrans_client.dept as sader, histrans_client.billId as billId, histrans_client.kind as kind,
-        histrans_client.credt as wared, histrans_client.printId as printId, histrans_client.type as type, histrans_client.deleviried as deleviried, 
+        histrans_client.credt as wared, histrans_client.printId as printId, histrans_client.type as type, histrans_client.deleviried as deleviried 
         FROM histrans_client
         where histrans_client.Type in(" . $types . ") and histrans_client.id = " . $model->id . "
         and histrans_client.trandate between '" . $model->min_date . "' and '" . $model->max_date . "'
