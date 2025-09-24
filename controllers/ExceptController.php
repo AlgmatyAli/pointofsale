@@ -184,7 +184,7 @@ class ExceptController extends Controller
             $query = new Query;
             $query->select(
                 [
-                    'salesdetails.id as id',
+                    'salesDetails.id as id',
                     'sales.at',
                     'sales.clinet',
                     'salesdetails.category as category',
@@ -192,15 +192,15 @@ class ExceptController extends Controller
                     'category.serialNo',
                     'category.company',
                     'category.commCode',
-                    'salesdetails.quantity',
-                    'salesdetails.salePrice',
-                    'salesdetails.costPrice'
+                    'salesDetails.quantity',
+                    'salesDetails.salePrice',
+                    'salesDetails.costPrice'
                 ]
             )
                 ->from('salesDetails')
-                ->leftJoin('sales', 'salesdetails.salesId = sales.id')
+                ->leftJoin('sales', 'salesDetails.salesId = sales.id')
                 ->leftJoin('client', 'sales.clinet = client.id')
-                ->leftJoin('category', 'category.id = salesdetails.category ')
+                ->leftJoin('category', 'category.id = salesDetails.category ')
                 ->where(['sales.clinet' => $client])
                 ->andWhere('category.name like' . "'%" . $q . "%'")
                 ->andWhere(['=', 'category.status', 0])
