@@ -28,6 +28,7 @@ use Yii;
  * @property int|null $user_update
  * @property string|null $update_at
  * @property int|null $wholesale
+ * @property int|null $client
  *
  * @property Branches $branch0
  * @property Client $clinet0

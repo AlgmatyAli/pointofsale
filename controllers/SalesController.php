@@ -1286,7 +1286,7 @@ class SalesController extends Controller
         return $out;
     }
 
-    public function actionBackCreate()
+    public function actionBackCreate($client = null)
     {
         $model = new Sales();
         $model->payWay = 1;
@@ -1342,7 +1342,11 @@ class SalesController extends Controller
             return $this->redirect(['print', 'id' => $id]);
         } elseif (Yii::$app->request->isAjax) {
             $model->at = date('Y-m-d');
-            $model->clinet = 1;
+            if ($client == null) {
+                $model->clinet = 1;
+            } else {
+                $model->clinet = $client;
+            }
             $model->total = TempBackSales::find()->where(['created_by' => Yii::$app->user->identity->id, 'state' => 1])
                 ->sum('salePrice * quantity');
             $model->paid = 0;
@@ -2013,14 +2017,14 @@ class SalesController extends Controller
             FROM  sales, salesDetails
             WHERE sales.id = salesDetails.salesId
             and sales.type = 1
-            and sales.currancy = ".$model->currancy." and sales.user_insert = " . $model->user_insert . " and  sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "'
+            and sales.currancy = " . $model->currancy . " and sales.user_insert = " . $model->user_insert . " and  sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "'
             UNION
             SELECT     'مسترجع المبيعات', ifNull(sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity),0),
             ifNull(sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity) *-1,0)
             FROM  sales, salesDetails
             WHERE sales.id = salesDetails.salesId
             and sales.type = 2
-            and sales.currancy = ".$model->currancy." and sales.user_insert = " . $model->user_insert . " and sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "' ";
+            and sales.currancy = " . $model->currancy . " and sales.user_insert = " . $model->user_insert . " and sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "' ";
 
             $connection = Yii::$app->db;
             $data = $connection->createCommand($sql);
@@ -2059,7 +2063,7 @@ class SalesController extends Controller
         $tempInvoice->created_by = Yii::$app->user->identity->id;
         $tempInvoice->created_at = date('Y-m-d H:i:s');
         $tempInvoice->save(false);
-       
-         return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
+
+        return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
     }
 }

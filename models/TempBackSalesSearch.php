@@ -19,7 +19,7 @@ use app\models\TempBackSales;
     {
         return [
             [['id', 'category', 'box', 'state', 'created_by', 'updated_by'], 'integer'],
-            [['serial_number', 'expire', 'created_at', 'updated_at'], 'safe'],
+            [['expire', 'created_at', 'updated_at'], 'safe'],
             [['quantity', 'costPrice', 'salePrice'], 'number'],
         ];
     }
@@ -67,11 +67,11 @@ use app\models\TempBackSales;
             'expire' => $this->expire,
             'created_by' => $this->created_by,
             'created_at' => $this->created_at,
-            'updated_by' => $this->updated_by,
+            'serial_number' => $this->serial_number,
             'updated_at' => $this->updated_at,
         ]);
 
-        $query->andFilterWhere(['like', 'serial_number', $this->serial_number]);
+        // $query->andFilterWhere(['like', 'serial_number', $this->serial_number]);
 
         return $dataProvider;
     }

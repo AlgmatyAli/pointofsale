@@ -408,6 +408,7 @@ return [
     'Out Box' => 'خارج الصندوق',
     'Update Employee: {name}' => 'تعديل بيانات الموظف: {name}',
     'Emp Name' => 'اسم الموظف',
+    'Create Temp Back Sales By Client' => 'تسجيل مسترجع مبيعات حسب الزبون',
 ];
 
 ?>

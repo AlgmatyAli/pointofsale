@@ -7,6 +7,7 @@ use Yii;
 use yii\web\Controller;
 use yii\filters\VerbFilter;
 use app\models\CompanyInfo;
+use app\models\SalesDetails;
 use app\models\Stocks;
 use yii\db\Query;
 
@@ -171,6 +172,57 @@ class ExceptController extends Controller
         //         'commCode' => TotalInventory::find($id)->commCode
         //     ];
         // }
+        return $out;
+    }
+
+    public function actionItemListByClient($q = null,  $client = null, $id = null)
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $out = ['results' => ['id' => '', 'text' => '']];
+        if (!is_null($q)) {
+            $q = str_replace(' ', '%', $q);
+            $query = new Query;
+            $query->select(
+                [
+                    'salesdetails.id as id',
+                    'sales.at',
+                    'sales.clinet',
+                    'salesdetails.category as category',
+                    'category.name AS text',
+                    'category.serialNo',
+                    'category.company',
+                    'category.commCode',
+                    'salesdetails.quantity',
+                    'salesdetails.salePrice',
+                    'salesdetails.costPrice'
+                ]
+            )
+                ->from('salesDetails')
+                ->leftJoin('sales', 'salesdetails.salesId = sales.id')
+                ->leftJoin('client', 'sales.clinet = client.id')
+                ->leftJoin('category', 'category.id = salesdetails.category ')
+                ->where(['sales.clinet' => $client])
+                ->andWhere('category.name like' . "'%" . $q . "%'")
+                ->andWhere(['=', 'category.status', 0])
+                ->limit(60)
+                ->orderBy(['sales.at' => SORT_ASC]);
+            $command = $query->createCommand();
+            $data = $command->queryAll();
+            $out['results'] = array_values($data);
+        }elseif ($id > 0) {
+            $out['results'] = [
+                'id' => $id,
+                'text' => SalesDetails::find($id)->name,
+                'category' =>  SalesDetails::find($id)->category,
+                'company' =>  SalesDetails::find($id)->company,
+                'quantity' => SalesDetails::find($id)->quantity,
+                'maxPrice' => SalesDetails::find($id)->maxPrice,
+                'minPrice' => SalesDetails::find($id)->minPrice,
+                'serialNo' => SalesDetails::find($id)->serialNo,
+                'type' => SalesDetails::find($id)->type,
+                'commCode' => SalesDetails::find($id)->commCode
+            ];
+        }
         return $out;
     }
 }

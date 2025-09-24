@@ -48,13 +48,14 @@ class TempBackSales extends \yii\db\ActiveRecord
     /**
      * @inheritdoc
      */
+    public $client;
     public function rules()
     {
         return [
             [['category', 'quantity', 'salePrice'], 'required'],
-            [['category', 'box', 'state', 'created_by', 'updated_by'], 'integer'],
+            [['category', 'box', 'state', 'created_by', 'updated_by', 'client'], 'integer'],
             [['quantity', 'costPrice', 'salePrice'], 'number'],
-            [['expire', 'created_at', 'updated_at'], 'safe'],
+            [['expire', 'created_at', 'updated_at', 'client'], 'safe'],
             [['serial_number'], 'string', 'max' => 255],
            
         ];
@@ -94,6 +95,7 @@ class TempBackSales extends \yii\db\ActiveRecord
             'box' => Yii::t('app', 'Box'),
             'state' => Yii::t('app', 'State'),
             'expire' => Yii::t('app', 'Expire'),
+            'client' => Yii::t('app', 'Client'),
         ];
     }
     
@@ -133,10 +135,10 @@ class TempBackSales extends \yii\db\ActiveRecord
                 'createdByAttribute' => 'created_by',
                 'updatedByAttribute' => false,
             ],
-            'uuid' => [
-                'class' => UUIDBehavior::className(),
-                'column' => 'id',
-            ],
+            // 'uuid' => [
+            //     'class' => UUIDBehavior::className(),
+            //     'column' => 'id',
+            // ],
         ];
     }
 

@@ -18,9 +18,9 @@ class TempBackSales extends BaseTempBackSales
         return array_replace_recursive(parent::rules(),
 	    [
             [['category', 'quantity', 'salePrice'], 'required'],
-            [['category', 'box', 'state', 'created_by', 'updated_by'], 'integer'],
+            [['category', 'box', 'state', 'created_by', 'updated_by', 'client'], 'integer'],
             [['quantity', 'costPrice', 'salePrice'], 'number'],
-            [['expire', 'created_at', 'updated_at'], 'safe'],
+            [['expire', 'created_at', 'updated_at', 'client'], 'safe'],
             [['serial_number'], 'string', 'max' => 255],
         ]);
     }
