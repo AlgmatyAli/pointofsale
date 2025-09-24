@@ -187,7 +187,7 @@ class ExceptController extends Controller
                     'salesDetails.id as id',
                     'sales.at',
                     'sales.clinet',
-                    'salesdetails.category as category',
+                    'salesDetails.category as category',
                     'category.name AS text',
                     'category.serialNo',
                     'category.company',
