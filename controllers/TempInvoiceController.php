@@ -305,8 +305,11 @@ class TempInvoiceController extends Controller
                 $model->box = 1;
                 $model->state = 1;
                 $model->created_by = Yii::$app->user->identity->id;
-                $model->created_at =
-                    $model->saveAll();
+                $model->created_at = date('Y-m-d H:i:s');
+                if($model->branch == null){
+                    $model->branch = Yii::$app->user->identity->branch;
+                }
+                $model->saveAll();
             }
             // increment the counter
             $counter = TempInvoice::find()

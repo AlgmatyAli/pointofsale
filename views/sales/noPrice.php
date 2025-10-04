@@ -203,29 +203,15 @@ use yii\grid\GridView;
                 }
               ],
 
-              // [
-              //   'label' => Yii::t('app', 'Min Price2'),
-              //   'contentOptions' => ['style' => 'font-size:12px;'],
-              //   'headerOptions' => ['style' => 'width:20%'],
-              //   'format' => ['decimal', 3],
-              //   'value' => function ($data)
-              //   {
-              //     return $data->price->minPrice2;
-              //   }
-
-              //  ],   
-
-              //  [
-              //   'label' => Yii::t('app', 'Min Price3'),
-              //   'contentOptions' => ['style' => 'font-size:12px;'],
-              //   'headerOptions' => ['style' => 'width:20%'],
-              //   'format' => ['decimal', 3],
-              //   'value' => function ($data)
-              //   {
-              //     return $data->price->minPrice3;
-              //   }
-
-              //  ],   
+              [
+                'label' => Yii::t('app', 'المخزن'),
+                'contentOptions' => ['style' => 'font-size:12px;'],
+                'headerOptions' => ['style' => 'width:15%'],
+                // 'format' => ['decimal', 3],
+                'value' => function ($data) {
+                  return $data->branch0->name;
+                }
+              ],
             ],
           ]);
           ?>

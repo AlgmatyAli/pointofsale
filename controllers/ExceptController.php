@@ -204,6 +204,7 @@ class ExceptController extends Controller
                 ->where(['sales.clinet' => $client])
                 ->andWhere('category.name like' . "'%" . $q . "%'")
                 ->andWhere(['=', 'category.status', 0])
+                ->andWhere(['=', 'sales.type', '1'])
                 ->limit(60)
                 ->orderBy(['sales.at' => SORT_ASC]);
             $command = $query->createCommand();

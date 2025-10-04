@@ -548,6 +548,7 @@ class SalesController extends Controller
                             $modelDetails->original_price = $data->salePrice;
                             $modelDetails->serial_number = $data->serial_number;
                             $modelDetails->mac_address = $data->mac_address;
+                            $modelDetails->branch = $data->branch;
                             if ($model->type != 4) {
                                 if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
                                     $branch = Yii::$app->user->identity->branch;
@@ -657,6 +658,7 @@ class SalesController extends Controller
                         $modelDetails->original_price = $data->salePrice;
                         $modelDetails->serial_number = $data->serial_number;
                         $modelDetails->mac_address = $data->mac_address;
+                        $modelDetails->branch = $data->branch;
                         if ($model->type != 4) {
                             if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
                                 $branch = Yii::$app->user->identity->branch;
@@ -758,6 +760,7 @@ class SalesController extends Controller
                     $modelDetails->type = $data->type;
                     $modelDetails->original_price = $data->salePrice;
                     $modelDetails->serial_number = $data->serial_number;
+                    $modelDetails->branch = $data->branch;
                     if ($model->type != 4) {
                         if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
                             $branch = Yii::$app->user->identity->branch;
@@ -912,12 +915,14 @@ class SalesController extends Controller
                     'salesDetails.quantity',
                     'salesDetails.costPrice',
                     'salesDetails.salePrice',
+                    'branches.name as branchName',
                     'Totalinventory.quantity as Qtotalinventory',
                     'category_reservation.quantity as reservation',
                     '(SELECT quantity from Totalinventory where branch <> ' . Yii::$app->user->identity->branch . ' and type <> 3 and id = salesDetails.category) as otherQtotalinventory '
                 ])
                 ->leftJoin('Totalinventory', 'salesDetails.category = Totalinventory.id')
                 ->leftJoin('category_reservation', 'salesDetails.category = category_reservation.category')
+                ->leftJoin('branches', 'branches.id = salesDetails.branch')
                 ->where(['=', 'salesDetails.salesId', $id])
                 ->andWhere(['=', 'Totalinventory.branch', Yii::$app->user->identity->branch])
                 ->andWhere(['<>', 'Totalinventory.type', 3]),

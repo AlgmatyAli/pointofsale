@@ -26,6 +26,8 @@ use yii\behaviors\BlameableBehavior;
  * @property string $mac_address
  * @property integer $type
  * @property integer $waitQnty
+ * @property integer $branch
+ * 
  *
  * @property \app\models\User $createdBy
  * @property \app\models\User $updatedBy
@@ -60,8 +62,8 @@ class TempInvoice extends \yii\db\ActiveRecord
         return [
             [['invoice_number','type', 'category', 'box', 'state', 'created_by', 'updated_by', 'cat', 'kind'], 'integer'],
             //[['category'], 'required'],
-            [['quantity', 'costPrice', 'salePrice'], 'number'],
-            [['expire', 'mac_address','type','created_at', 'updated_at', 'waitQnty'], 'safe'],
+            [['quantity', 'costPrice', 'salePrice', 'branch'], 'number'],
+            [['expire', 'mac_address','type','created_at', 'updated_at', 'waitQnty', 'branch'], 'safe'],
         ];
     }
 
@@ -93,6 +95,7 @@ class TempInvoice extends \yii\db\ActiveRecord
             'kind' => Yii::t('app', 'Category'),
             'cat' => Yii::t('app', 'ID'),
             'waitQnty' => Yii::t('app', 'Wait Qnty'),
+            'branch' => Yii::t('app', 'Branch'),
         ];
     }
     

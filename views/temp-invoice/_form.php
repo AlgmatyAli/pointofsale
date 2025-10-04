@@ -1,7 +1,9 @@
 <?php
 
+use app\models\Branches;
 use kartik\grid\GridView;
 use kartik\select2\Select2;
+use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\web\JsExpression;
@@ -435,7 +437,6 @@ JS;
                 ]);
             }
             ?>
-
             <div class="row">
                 <div class="col-md-1"></div>
                 <div class="col-md-2">
@@ -443,7 +444,6 @@ JS;
                     <br>
                     <div class="form-group">
                         <?= Html::submitButton($model->isNewRecord ? '<i class="fa fa-fw fa-plus"></i>' . ' ' . Yii::t('app', 'Add') : Yii::t('app', 'Update'), ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']) ?>
-
                     </div>
                 </div>
                 <div class="col-md-2">
@@ -457,7 +457,18 @@ JS;
                 </div>
                 <div class="col-md-2">
                     <?php
-                    echo $form->field($model, 'category')->hiddenInput(['placeholder' => 'Category'])->label('');
+                    if ($company->repeatCategory == 1) {
+                        echo $form->field($model, 'branch')->widget(Select2::class, [
+                            'data' => ArrayHelper::map(Branches::find()
+                                ->all(), 'id', 'name'),
+                            'language' => 'ar',
+                            'options' => ['id' => 'currancy', 'placeholder' => 'الرجاء اختيار الفرع ...'],
+                            'pluginOptions' => [
+                                'allowClear' => false,
+                                'multiple' => false,
+                            ],
+                        ]);
+                    }
                     ?>
                 </div>
                 <div class="col-md-2">
@@ -467,11 +478,14 @@ JS;
                     }
                     ?>
                 </div>
+                <div class="col-md-2">
+                    <?php
+                    echo $form->field($model, 'category')->hiddenInput(['placeholder' => 'Category'])->label('');
+                    ?>
+                </div>
             </div>
-
             <?php ActiveForm::end(); ?>
         </div>
-
     </div>
     <?php
     if (Yii::$app->user->identity->editSalePrice == 0) {

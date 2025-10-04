@@ -203,6 +203,15 @@ use yii\grid\GridView;
               ],
 
               [
+                'label' => Yii::t('app', 'المخزن'),
+                'contentOptions' => ['style' => 'font-size:12px;'],
+                'headerOptions' => ['style' => 'width:15%'],
+                'value' => function ($data) {
+                  return $data->branchName;
+                }
+              ],
+
+              [
                 'label' => Yii::t('app', 'مكان الصنف'),
                 'contentOptions' => ['style' => 'font-size:12px;', 'text-align: center'],
                 'headerOptions' => ['style' => 'width:30%'],
