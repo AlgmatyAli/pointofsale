@@ -41,7 +41,7 @@ use Yii;
 class Sales extends \yii\db\ActiveRecord
 {
     public $file;
-    public $phone,$net,$category, $min_date, $max_date;
+    public $phone,$net,$category, $min_date, $max_date, $salePrice;
 
     /**
      * {@inheritdoc}
@@ -62,7 +62,7 @@ class Sales extends \yii\db\ActiveRecord
             [['wholesale'], 'default', 'value' => 0],
             [['billId', 'at', 'clinet', 'payWay', 'branch', 'total', 'type', 'user_insert'], 'required'],
             [['billId', 'clinet', 'payWay', 'branch', 'type', 'deleviried', 'currancy', 'user_insert', 'user_update', 'wholesale'], 'integer'],
-            [['at', 'deleviryAt', 'deserving', 'created_at', 'update_at', 'phone', 'net', 'category', 'min_date', 'max_date'], 'safe'],
+            [['at', 'deleviryAt', 'deserving', 'created_at', 'update_at', 'phone', 'net', 'category', 'min_date', 'max_date', 'salePrice'], 'safe'],
             [['total', 'disscount', 'paid'], 'number'],
             [['notes', 'path'], 'string', 'max' => 255],
             [['branch'], 'exist', 'skipOnError' => true, 'targetClass' => Branches::class, 'targetAttribute' => ['branch' => 'id']],

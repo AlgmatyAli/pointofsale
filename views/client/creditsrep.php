@@ -82,15 +82,16 @@ use yii\helpers\Url;
             <tr>
               <td><?= $coun++ ?></td>
               <td><?= $model["id"] ?></td>
-              <td>
+              
                 <?php
+                
                 if ($model["post_paid"] == 0) {
                   echo '<td style="color: red;  text-decoration: underline;">' . $model["name"] . '</td>';
                 } else {
                   echo '<td>' . $model["name"] . ' </td>';
                 }
                 ?>
-              </td>
+            
               <td><?= number_format($model["credt"], 3) . "\n" ?></td>
               <td><?= $model["phone"] ?></td>
               <td>

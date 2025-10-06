@@ -272,7 +272,7 @@ class ClientController extends Controller
             } elseif ($model->type == 1) {
                 $model->type = '1';
                 $sql = " SELECT dept_supp.id, dept_supp.type as type, MAX(dept_supp.name) as name,  SUM(dept_supp.credt) as credt,
-                MAX(dept_supp.Phone) as phone FROM dept_supp
+                MAX(dept_supp.Phone) as phone, '1' as post_paid FROM dept_supp
                 where dept_supp.Type in(" . $model->type . ") and dept_supp.currency in( 0, " . $model->currency . ")
                 GROUP BY dept_supp.id, dept_supp.type having SUM(dept_supp.credt)<>0";
                 $connection = Yii::$app->db;

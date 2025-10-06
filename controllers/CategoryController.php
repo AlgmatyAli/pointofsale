@@ -11,6 +11,7 @@ use yii\filters\VerbFilter;
 use yii\data\ActiveDataProvider;
 use app\models\Inventory;
 use app\models\Purchases;
+use app\models\Sales;
 use app\models\Stocks;
 use yii\web\UploadedFile;
 use yii\filters\AccessControl;
@@ -45,8 +46,14 @@ class CategoryController extends Controller
                     [
                         'allow' => true,
                         'actions' => [
-                            'create', 'view', 'create-category', 'upload', 'state',
-                            'data-table', 'change-place', 'export'
+                            'create',
+                            'view',
+                            'create-category',
+                            'upload',
+                            'state',
+                            'data-table',
+                            'change-place',
+                            'export'
                         ],
                         'roles' => ['createCategory'],
                     ],
@@ -489,17 +496,16 @@ class CategoryController extends Controller
                 $workSheet->commCode = $rowData[0][16];
                 $workSheet->moreRequest = $rowData[0][17];
                 $workSheet->weight = $rowData[0][18];
-                
+
                 $workSheet->user_insert = Yii::$app->user->identity->id;
                 $workSheet->created_at = date('Y-m-d H:i:s');
                 $workSheet->user_update = Yii::$app->user->identity->id;
                 $workSheet->update_at = date('Y-m-d H:i:s');
-                if($workSheet->name <> Null){
+                if ($workSheet->name <> Null) {
                     $workSheet->save(false);
-                }else{
+                } else {
                     break;
                 }
-                
             }
 
             return $this->redirect(['index', 'id' => $model->id]);
@@ -558,10 +564,10 @@ class CategoryController extends Controller
     {
         $model = new Category();
         $modelInfo = Stocks::find()
-        ->select(['category', 'sum(quantity) as quantity'])
-        ->where(['category' => $id])
-        ->groupBy(['category'])
-        ->one();
+            ->select(['category', 'sum(quantity) as quantity'])
+            ->where(['category' => $id])
+            ->groupBy(['category'])
+            ->one();
 
         $dateOfArrival = Purchases::find()
             ->leftJoin('purchasesDetails', 'purchases.id = purchasesDetails.PurchasesId')
@@ -570,6 +576,17 @@ class CategoryController extends Controller
             ->andWhere(['=', 'purchasesDetails.category', $id])
             ->one();
 
+        $salesInfo = Sales::find()
+            ->select(['sales.at', 'salesDetails.salePrice'])
+            ->leftJoin('salesDetails', 'sales.id = salesDetails.salesId')
+            ->where(['sales.type' => 1])
+            ->andWhere(['=', 'salesDetails.category', $id])
+           ->limit(3)
+           ->orderBy(['sales.at' => SORT_DESC])
+           ->all();
+           
+           
+
         if ($model->load(Yii::$app->request->post())) {
             return $this->redirect(Yii::$app->request->referrer);
         } elseif (Yii::$app->request->isAjax) {
@@ -577,6 +594,7 @@ class CategoryController extends Controller
                 'model' => $model,
                 'modelInfo' => $modelInfo,
                 'dateOfArrival' => $dateOfArrival,
+                'salesInfo' => $salesInfo,
             ]);
         }
     }
@@ -644,8 +662,25 @@ class CategoryController extends Controller
 
 
                     'attributes' => [
-                        'name', 'class', 'unit', 'box', 'cost', 'price', 'quantity', 'minimum', 'ending', 'qShow', 'status', 'place', 'serialNo', 
-                        'country', 'company', 'path', 'commCode', 'moreRequest', 'weight'
+                        'name',
+                        'class',
+                        'unit',
+                        'box',
+                        'cost',
+                        'price',
+                        'quantity',
+                        'minimum',
+                        'ending',
+                        'qShow',
+                        'status',
+                        'place',
+                        'serialNo',
+                        'country',
+                        'company',
+                        'path',
+                        'commCode',
+                        'moreRequest',
+                        'weight'
                     ],
                     'styles' => [
                         'A1:Z1000' => [
@@ -685,7 +720,7 @@ class CategoryController extends Controller
                 where category_histrans.clientId in ( " . Yii::$app->user->identity->client . " )
                 and category_histrans.id = " . $category->id . "
                 and category_histrans.tranDate < '" . $model->min_date . "'  
-                and category_histrans.ClientId = ". $model->client;
+                and category_histrans.ClientId = " . $model->client;
                 $connection = Yii::$app->db;
                 $data = $connection->createCommand($sqlSum);
                 $lastBalance = $data->queryAll();
@@ -699,7 +734,7 @@ class CategoryController extends Controller
                 FROM category_histrans, branches
                 where category_histrans.branch = branches.id and category_histrans.id = " . $category->id . "
                 and category_histrans.trandate  between '" . $model->min_date . "' and '" . $model->max_date . "'
-                and category_histrans.tranDate.ClientId = ". $model->client."
+                and category_histrans.tranDate.ClientId = " . $model->client . "
                 and category_histrans.clientId in ( " . Yii::$app->user->identity->client . ")
                 order by category_histrans, category_histrans.kind_id
                 ";
@@ -718,7 +753,7 @@ class CategoryController extends Controller
             FROM category_histrans
             where category_histrans.id = " . $category->id . "
             and category_histrans.tranDate < '" . $model->min_date . "'  
-            and category_histrans.ClientId = ". $model->client;
+            and category_histrans.ClientId = " . $model->client;
                 $connection = Yii::$app->db;
                 $data = $connection->createCommand($sqlSum);
                 $lastBalance = $data->queryAll();
@@ -732,7 +767,7 @@ class CategoryController extends Controller
             FROM category_histrans, branches
             where category_histrans.branch = branches.id and category_histrans.id = " . $category->id . "
             and category_histrans.trandate  between '" . $model->min_date . "' and '" . $model->max_date . "'
-            and category_histrans.ClientId = ". $model->client."
+            and category_histrans.ClientId = " . $model->client . "
             order by category_histrans.trandate, category_histrans.kind_id";
                 $connection = Yii::$app->db;
                 $data = $connection->createCommand($sql);
