@@ -135,7 +135,19 @@ JS;
 
             echo $form->field($model, 'class')->dropDownList($listData, ['prompt' => 'اختيار حالة الصنف...']) ?>
 
-            <?= $form->field($model, 'company') ?>
+            <?php
+            $data = Category::find()->select(['company'])->distinct()->all();
+            $listData = ArrayHelper::map($data, 'company', 'company');
+            echo $form->field($model, 'company')->widget(Select2::class, [
+                'data' => $listData,
+                'language' => 'ar',
+                'options' => ['placeholder' => 'الرجاء اختيار الشركة  ...'],
+                'pluginOptions' => [
+                    'allowClear' => true,
+                    'multiple' => false
+                ],
+            ]);
+            ?>
         </div>
 
         <br>
