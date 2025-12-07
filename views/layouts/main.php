@@ -1,6 +1,8 @@
 <?php
 use yii\helpers\Html;
 use app\models\CompanyInfo;
+use yii\bootstrap\Modal;
+
 
 /* @var $this \yii\web\View */
 /* @var $content string */
@@ -63,17 +65,17 @@ if (Yii::$app->controller->action->id === 'login') {
     </div>
 
     <?php
-        yii\bootstrap\Modal::begin([
+        Modal::begin([
             'header' => '<b>' . Yii::t('app', 'منظومة المبيعات') . '<hr></b>',
             'headerOptions' => ['id' => 'modalHeader'],
             'id' => 'modal',
-            'size' => 'modal-lg',
+            'size' => Modal::SIZE_LARGE,
              //keeps from closing modal with esc key or by clicking out of the modal.
              // user must click cancel or X to close
-        'clientOptions' => ['backdrop' => 'static', 'keyboard' => true]
+            'clientOptions' => ['backdrop' => 'static', 'keyboard' => true]
         ]);
             echo "<div id='modalContent'></div>";
-            yii\bootstrap\Modal::end();
+            Modal::end();
     ?>
 
      <?= \ibrarturi\scrollup\ScrollUp::widget([

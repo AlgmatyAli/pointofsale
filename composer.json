@@ -53,7 +53,10 @@
         "codemix/yii2-excelexport": "^2.8",
         "kartik-v/yii2-widget-datepicker": "dev-master",
         "yiisoft/yii2-symfonymailer": "~3.0.0",
-        "kartik-v/yii2-tabs-x": "dev-master"
+        "kartik-v/yii2-tabs-x": "dev-master",
+        "yiisoft/yii2-bootstrap5": "@dev",
+        "rmrevin/yii2-fontawesome": "*",
+        "kartik-v/yii2-bootstrap5-dropdown": "@dev"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.1.0",

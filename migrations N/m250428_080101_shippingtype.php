@@ -7,7 +7,7 @@ class m250428_080101_shippingtype extends \yii\db\Migration
     public function up()
     {
         $tableOptions = null;
-        if ($this->db->driverName === 'mysql') {
+        if ($this->getDb()->driverName === 'mysql') {
             $tableOptions = 'CHARACTER SET utf8 COLLATE utf8_general_ci ENGINE=InnoDB';
         }
 
@@ -22,7 +22,7 @@ class m250428_080101_shippingtype extends \yii\db\Migration
             'FOREIGN KEY ([[created_by]]) REFERENCES user ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
         ], $tableOptions);
 
-        app\models\Currancy('shippingType', array(
+        $this->insert('shippingType', array(
             'id' => 2,
             'name' => 'بري ',
             'created_by' => '1',
