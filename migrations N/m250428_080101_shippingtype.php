@@ -22,7 +22,7 @@ class m250428_080101_shippingtype extends \yii\db\Migration
             'FOREIGN KEY ([[created_by]]) REFERENCES user ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
         ], $tableOptions);
 
-        $this->insert('shippingType', array(
+        app\models\Currancy('shippingType', array(
             'id' => 2,
             'name' => 'بري ',
             'created_by' => '1',
