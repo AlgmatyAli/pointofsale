@@ -19,7 +19,11 @@ use app\models\Employee;
     <div class="row">
       <div class="col-md-2"></div>
       <div class="col-md-4">
-          <?= $form->field($model, 'year')->dropDownList([ '2021' => '2021', '2022' => '2022', '2023' => '2023', '2024' => '2024', '2025' => '2025', '2026' => '2026', '2027' => '2027'], 
+        
+          <?php
+           $years = range(2020, date('Y'));
+           $years = array_combine($years, $years);
+          echo $form->field($model, 'year')->dropDownList($years, 
             ['prompt' => 'الرجاء اختيار السنـة...']
         ) ?>
       </div>

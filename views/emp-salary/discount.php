@@ -5,6 +5,7 @@ use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;;
+
 use kartik\date\DatePicker;
 use app\models\Employee;
 
@@ -71,8 +72,11 @@ use app\models\Employee;
                 ]
             ) ?>
 
-            <?= $form->field($model, 'year')->dropDownList(
-                ['2021' => '2021', '2022' => '2022', '2023' => '2023', '2024' => '2024', '2025' => '2025'],
+            <?php
+            $years = range(2020, date('Y'));
+            $years = array_combine($years, $years);
+            echo $form->field($model, 'year')->dropDownList(
+                $years,
                 ['prompt' => 'الرجاء اختيار السنـة...']
             ) ?>
 

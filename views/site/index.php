@@ -1,7 +1,6 @@
 <?php
 
 use yii\helpers\Html;
-use dosamigos\chartjs\ChartJs;
 use kartik\ipinfo\IpInfo;
 use kartik\select2\Select2;
 use yii\helpers\Url;
