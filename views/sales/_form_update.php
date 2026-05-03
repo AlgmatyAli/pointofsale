@@ -1,6 +1,7 @@
 <?php
 
 use app\models\Currancy;
+use app\models\PaymentTypes;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use kartik\date\DatePicker;
@@ -152,6 +153,13 @@ use yii\widgets\Pjax;
             }
             ?>
             <?= $form->field($model, 'notes')->textInput(['maxlength' => true, 'placeholder' => 'Notes']) ?>
+            <?php
+            if ($model->type != 2) {
+                echo $form->field($model, 'deleviried')->checkbox(['id' => "todayis"]);
+            } else {
+                echo $form->field($model, 'deleviried')->checkbox(['checked' => true, 'id' => "todayis"]);
+            }
+            ?>
         </div>
         <div class="col-md-3">
             <?php
@@ -179,20 +187,22 @@ use yii\widgets\Pjax;
             ?>
 
             <?php
-            echo '<label class="form-label">تاريخ الاستحقاق</label>';
-
-            echo DatePicker::widget([
-                'model' => $model,
-                'attribute' => 'deserving',
-                'options' => ['placeholder' => 'Enter Deserving ...'],
+            echo $form->field($model, 'payment_type')->widget(Select2::class, [
+                'data' => ArrayHelper::map(PaymentTypes::find()->all(), 'id', 'name'),
+                'language' => 'ar',
+                'options' => [
+                    'placeholder' => 'الرجاء اختيار  طريقة الدفع ...',
+                    'value' => $model->isNewRecord ? 1 : $model->payment_type
+                ],
                 'pluginOptions' => [
-                    'autoclose' => true,
-                    'format' => 'yyyy-mm-dd',
-                    'todayHighlight' => true,
-                ]
+                    'allowClear' => true,
+                    'multiple' => false,
+                ],
             ]);
             ?>
 
+            <br>
+            <?php echo $form->field($model, 'wholesale')->checkbox(); ?>
 
         </div>
         <div class="col-md-3">
@@ -235,15 +245,22 @@ use yii\widgets\Pjax;
                 ],
             ]);
             ?>
-            <br>
-            <?php echo $form->field($model, 'wholesale')->checkbox(); ?>
+
             <?php
-            if ($model->type != 2) {
-                echo $form->field($model, 'deleviried')->checkbox(['id' => "todayis"]);
-            } else {
-                echo $form->field($model, 'deleviried')->checkbox(['checked' => true, 'id' => "todayis"]);
-            }
+            echo '<label class="form-label">تاريخ الاستحقاق</label>';
+
+            echo DatePicker::widget([
+                'model' => $model,
+                'attribute' => 'deserving',
+                'options' => ['placeholder' => 'Enter Deserving ...'],
+                'pluginOptions' => [
+                    'autoclose' => true,
+                    'format' => 'yyyy-mm-dd',
+                    'todayHighlight' => true,
+                ]
+            ]);
             ?>
+
         </div>
         <?= $form->field($model, 'id')->hiddenInput()->label(false) ?>
     </div>

@@ -6,6 +6,7 @@ use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use app\models\Receipt;
 use Yii;
+
 /**
  * ReceiptSearch_ represents the model behind the search form of `app\models\Receipt`.
  */
@@ -17,8 +18,8 @@ class ReceiptSearch_ extends Receipt
     public function rules()
     {
         return [
-            [['id', 'rId', 'clinet', 'type', 'user_insert','user_update', 'branch'], 'safe'],
-            [['at', 'why', 'payWay', 'created_at', 'update_at', 'tafqet'], 'safe'],
+            [['id', 'rId', 'clinet', 'type', 'user_insert', 'user_update', 'branch'], 'safe'],
+            [['at', 'why', 'payment_type', 'created_at', 'update_at', 'tafqet'], 'safe'],
             [['value'], 'number'],
         ];
     }
@@ -47,11 +48,12 @@ class ReceiptSearch_ extends Receipt
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
-            'sort' =>[
-                'defaultOrder' => [ 
+            'sort' => [
+                'defaultOrder' => [
                     'id' => SORT_DESC
-                ]],
-                'pagination' => [ 'pageSize' => 70 ],
+                ]
+            ],
+            'pagination' => ['pageSize' => 70],
         ]);
 
         $this->load($params);
@@ -77,13 +79,12 @@ class ReceiptSearch_ extends Receipt
         ]);
 
         $query->andFilterWhere(['like', 'why', $this->why])
-            ->andFilterWhere(['like', 'payWay', $this->payWay]);
+            ->andFilterWhere(['=', 'payment_type', $this->payment_type]);
 
-            if(!empty($this->at) && strpos($this->at, '-') !== false) {
-                list($min_date, $max_date) = explode(' - ', $this->at);
+        if (!empty($this->at) && strpos($this->at, '-') !== false) {
+            list($min_date, $max_date) = explode(' - ', $this->at);
             $query->andFilterWhere(['between', 'at', $min_date, $max_date]);
-            
-            }
+        }
 
         return $dataProvider;
     }

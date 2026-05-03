@@ -53,12 +53,33 @@ class Purchases extends \yii\db\ActiveRecord
     {
         return [
             [[
-                'billId', 'clinet', 'at', 'payWay', 'clientBill', 'BuyFor', 'branch', 'total', 'type',
-                'user_insert', 'created_at', 'total', 'paid'
+                'billId',
+                'clinet',
+                'at',
+                'payWay',
+                'clientBill',
+                'BuyFor',
+                'branch',
+                'total',
+                'type',
+                'user_insert',
+                'created_at',
+                'total',
+                'paid',
+                'payment_type'
             ], 'required'],
             [[
-                'billId', 'clinet', 'payWay', 'BuyFor', 'branch', 'type', 'currancy', 'user_insert',
-                'user_update', 'shippingType'
+                'billId',
+                'clinet',
+                'payWay',
+                'BuyFor',
+                'branch',
+                'type',
+                'currancy',
+                'user_insert',
+                'user_update',
+                'shippingType',
+                'payment_type'
             ], 'integer'],
             [['at', 'created_at', 'update_at', 'dateOfArrival', 'changeSalePrice'], 'safe'],
             [['total', 'paid', 'total_currancy',], 'number'],
@@ -107,6 +128,8 @@ class Purchases extends \yii\db\ActiveRecord
             'shippingType' => Yii::t('app', 'Shipping Type'),
             'dateOfArrival' => Yii::t('app', 'Date Of Arrival'),
             'changeSalePrice' => Yii::t('app', 'Change Sale Price'),
+            'payment_type' => Yii::t('app', 'Payment Type'),
+
         ];
     }
 
@@ -169,5 +192,10 @@ class Purchases extends \yii\db\ActiveRecord
     public function getPurchasesDetails()
     {
         return $this->hasMany(PurchasesDetails::class, ['PurchasesId' => 'id']);
+    }
+
+    public function getPaymentType0()
+    {
+        return $this->hasOne(PaymentTypes::class, ['id' => 'payment_type']);
     }
 }

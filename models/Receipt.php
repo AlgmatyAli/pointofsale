@@ -41,15 +41,15 @@ class Receipt extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['rId', 'clinet', 'at', 'value', 'why', 'payWay', 'type', 'user_insert', 'created_at', 'branch'], 'required'],
-            [['rId', 'clinet', 'type', 'user_insert','currancy', 'user_update','branch'], 'integer'],
-            [['at', 'created_at','currancy', 'update_at','tafqet'], 'safe'],
+            [['rId', 'clinet', 'at', 'value', 'why', 'payWay', 'type', 'user_insert', 'created_at', 'branch', 'payment_type'], 'required'],
+            [['rId', 'clinet', 'type', 'user_insert', 'currancy', 'user_update', 'branch', 'payment_type'], 'integer'],
+            [['at', 'created_at', 'currancy', 'update_at', 'tafqet'], 'safe'],
             [['value'], 'number'],
             [['payWay'], 'string'],
             [['why'], 'string', 'max' => 255],
-            [['clinet'], 'exist', 'skipOnError' => true, 'targetClass' => Client::className(), 'targetAttribute' => ['clinet' => 'id']],
-            [['user_insert'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['user_insert' => 'id']],
-            [['user_update'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['user_update' => 'id']],
+            [['clinet'], 'exist', 'skipOnError' => true, 'targetClass' => Client::class, 'targetAttribute' => ['clinet' => 'id']],
+            [['user_insert'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_insert' => 'id']],
+            [['user_update'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_update' => 'id']],
         ];
     }
 
@@ -74,6 +74,8 @@ class Receipt extends \yii\db\ActiveRecord
             'branch' => Yii::t('app', 'Br ID'),
             'currancy' => Yii::t('app', 'Currancy'),
             'tafqet' => Yii::t('app', 'Tafqet'),
+            'payment_type' => Yii::t('app', 'Payment Type'),
+
         ];
     }
 
@@ -84,7 +86,7 @@ class Receipt extends \yii\db\ActiveRecord
      */
     public function getC()
     {
-        return $this->hasOne(Client::className(), ['id' => 'clinet']);
+        return $this->hasOne(Client::class, ['id' => 'clinet']);
     }
 
     /**
@@ -94,7 +96,7 @@ class Receipt extends \yii\db\ActiveRecord
      */
     public function getUserInsert()
     {
-        return $this->hasOne(User::className(), ['id' => 'user_insert']);
+        return $this->hasOne(User::class, ['id' => 'user_insert']);
     }
 
     /**
@@ -104,25 +106,24 @@ class Receipt extends \yii\db\ActiveRecord
      */
     public function getUserUpdate()
     {
-        return $this->hasOne(User::className(), ['id' => 'user_update']);
+        return $this->hasOne(User::class, ['id' => 'user_update']);
     }
-
-    public function getAgent0()
-    {
-        return $this->hasOne(Agent::className(), ['id' => 'agent']);
-    }
-
-     /**
+    /**
      * Gets query for [[Br]].
      *
      * @return \yii\db\ActiveQuery
      */
     public function getBr()
     {
-        return $this->hasOne(Branches::className(), ['id' => 'branch']);
+        return $this->hasOne(Branches::class, ['id' => 'branch']);
     }
     public function getCurrancy0()
     {
-        return $this->hasOne(Currancy::className(), ['id' => 'currancy']);
+        return $this->hasOne(Currancy::class, ['id' => 'currancy']);
+    }
+
+    public function getPaymentType0()
+    {
+        return $this->hasOne(PaymentTypes::class, ['id' => 'payment_type']);
     }
 }

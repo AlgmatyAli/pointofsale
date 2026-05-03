@@ -1,7 +1,12 @@
 {
     "name": "yiisoft/yii2-app-basic",
     "description": "Yii 2 Basic Project Template",
-    "keywords": ["yii2", "framework", "basic", "project template"],
+    "keywords": [
+        "yii2",
+        "framework",
+        "basic",
+        "project template"
+    ],
     "homepage": "http://www.yiiframework.com/",
     "type": "project",
     "license": "BSD-3-Clause",
@@ -13,7 +18,7 @@
         "source": "https://github.com/yiisoft/yii2"
     },
     "minimum-stability": "stable",
-    "require": { 
+    "require": {
         "php": ">=8.0",
         "yiisoft/yii2": "~2.0.14",
         "yiisoft/yii2-bootstrap": "~2.0.0",
@@ -42,7 +47,7 @@
         "kartik-v/yii2-editable": "@dev",
         "moonlandsoft/yii2-phpexcel": "*",
         "ibrarturi/yii2-scrollup": "dev-master",
-        "philippfrenzel/yii2fullcalendar":"*",
+        "philippfrenzel/yii2fullcalendar": "*",
         "kartik-v/yii2-widget-touchspin": "dev-master",
         "kartik-v/yii2-widget-switchinput": "dev-master",
         "fedemotta/yii2-widget-datatables": "*",
@@ -69,7 +74,6 @@
         "codeception/module-filesystem": "^1.0.0",
         "codeception/module-yii2": "^1.0.0",
         "codeception/module-asserts": "^1.0.0"
-        
     },
     "config": {
         "process-timeout": 1800,

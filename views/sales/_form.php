@@ -2,14 +2,16 @@
 
 use app\models\Currancy;
 use app\models\CompanyInfo;
+use app\models\PaymentTypes;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
 use kartik\date\DatePicker;
-/* @var $this yii\web\View */
-/* @var $model app\models\Sales */
-/* @var $form yii\widgets\ActiveForm */
+
+/** @var yii\web\View $this */
+/** @var app\models\Sales $model */
+/** @var yii\widgets\ActiveForm $form */
 
 $company = CompanyInfo::find()->one();
 
@@ -73,6 +75,21 @@ $company = CompanyInfo::find()->one();
                 echo $form->field($model, 'payWay')->dropDownList(['0' => 'نقدا', '1' => 'آجـــل', '2' => 'دفعة على الحساب',], ['prompt' => 'اختيار طريقة الدفع']);
             }
             ?>
+
+            <?php
+            echo $form->field($model, 'payment_type')->widget(Select2::class, [
+                'data' => ArrayHelper::map(PaymentTypes::find()->all(), 'id', 'name'),
+                'language' => 'ar',
+                'options' => [
+                    'placeholder' => 'الرجاء اختيار  طريقة الدفع ...',
+                    'value' => $model->isNewRecord ? 1 : $model->payment_type
+                ],
+                'pluginOptions' => [
+                    'allowClear' => true,
+                    'multiple' => false,
+                ],
+            ]);
+            ?>
             <?php
             echo $form->field($model, 'currancy')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Currancy::find()->all(), 'id', 'name'),
@@ -83,6 +100,7 @@ $company = CompanyInfo::find()->one();
                 ],
             ]);
             ?>
+
             <br>
             <?php
             if (Yii::$app->user->identity->client == null && $company->invoiceState == 1) {

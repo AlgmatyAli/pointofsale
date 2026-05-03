@@ -19,7 +19,7 @@ class ReceiptSearch extends Receipt
     {
         return [
             [['id', 'rId', 'clinet', 'type', 'user_insert', 'user_update', 'branch'], 'safe'],
-            [['at', 'why', 'payWay', 'created_at', 'update_at', 'tafqet'], 'safe'],
+            [['at', 'why', 'created_at', 'update_at', 'tafqet', 'payment_type'], 'safe'],
             [['value'], 'number'],
         ];
     }
@@ -79,7 +79,7 @@ class ReceiptSearch extends Receipt
         ]);
 
         $query->andFilterWhere(['like', 'why', $this->why])
-            ->andFilterWhere(['like', 'payWay', $this->payWay]);
+            ->andFilterWhere(['like', 'payment_type', $this->payment_type]);
 
         if (!empty($this->at) && strpos($this->at, '-') !== false) {
             list($min_date, $max_date) = explode(' - ', $this->at);

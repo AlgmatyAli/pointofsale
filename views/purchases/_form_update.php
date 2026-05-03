@@ -6,15 +6,16 @@ use yii\widgets\ActiveForm;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
 use app\models\Client;
+use app\models\PaymentTypes;
 use app\models\ShippingType;
 use kartik\date\DatePicker;
 use yii\helpers\Url;
 use kartik\grid\GridView;
 use yii\web\JsExpression;
 
-/* @var $this yii\web\View */
-/* @var $model app\models\Purchases */
-/* @var $form yii\widgets\ActiveForm */
+/** @var yii\web\View $this */
+/** @var app\models\Purchases $model */
+/** @var yii\widgets\ActiveForm $form */
 ?>
 
 
@@ -117,6 +118,20 @@ use yii\web\JsExpression;
         </div>
 
         <div class="col-md-3">
+            <?php
+            echo $form->field($model, 'payment_type')->widget(Select2::class, [
+                'data' => ArrayHelper::map(PaymentTypes::find()->all(), 'id', 'name'),
+                'language' => 'ar',
+                'options' => [
+                    'placeholder' => 'الرجاء اختيار  طريقة الدفع ...',
+                    'value' => $model->isNewRecord ? 1 : $model->payment_type
+                ],
+                'pluginOptions' => [
+                    'allowClear' => true,
+                    'multiple' => false,
+                ],
+            ]);
+            ?>
             <?php
             echo $form->field($model, 'dateOfArrival')->widget(
                 DatePicker::class,

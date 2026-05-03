@@ -33,7 +33,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     return $data->item->name;
                 }
             ],
-           
+
             [
                 'label' => Yii::t('app', 'Value'),
                 'attribute' => 'value',
@@ -43,20 +43,27 @@ $this->params['breadcrumbs'][] = $this->title;
                 'pageSummary' => true,
             ],
 
+            [
+                'label' => Yii::t('app', 'Payment Type'),
+                'format' => 'raw',
+                'value' => 'paymentType0.name',
+
+            ],
+
             'outBox',
-            
+
             [
                 'class' => 'yii\grid\ActionColumn',
-                'options'=>['style'=>'width:120px;'],
-                'template'=>'<div class="btn-group btn-group-sm" role="group" aria-label="...">{view}</div>',
-                'buttons'=>[
-                    'view'=>function($url,$searchModel,$key){
-                        return Html::a('<i class="fa fa-eye"></i>',$url,['class'=>'btn btn-default']);
+                'options' => ['style' => 'width:120px;'],
+                'template' => '<div class="btn-group btn-group-sm" role="group" aria-label="...">{view}</div>',
+                'buttons' => [
+                    'view' => function ($url, $searchModel, $key) {
+                        return Html::a('<i class="fa fa-eye"></i>', $url, ['class' => 'btn btn-default']);
                     },
-                   
-                    
+
+
                 ]
-            ], 
+            ],
         ],
     ]); ?>
 

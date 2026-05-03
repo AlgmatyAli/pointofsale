@@ -9,6 +9,7 @@ use kartik\daterange\DateRangePicker;
 use app\models\Branches;
 use app\models\User;
 use app\models\Currancy;
+use app\models\PaymentTypes;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\SalesSearch */
@@ -16,16 +17,16 @@ use app\models\Currancy;
 ?>
 
 <div class="sales-search">
-   
 
-        <?php $form = ActiveForm::begin([
-            'action' => ['index'],
-            'method' => 'get',
-            'options' => [
-                'data-pjax' => 1
-            ],
-        ]); ?>
- <div class="row">
+
+    <?php $form = ActiveForm::begin([
+        'action' => ['index'],
+        'method' => 'get',
+        'options' => [
+            'data-pjax' => 1
+        ],
+    ]); ?>
+    <div class="row">
         <div class="col-sm-2">
             <?= $form->field($model, 'billId') ?>
 
@@ -46,6 +47,20 @@ use app\models\Currancy;
             ]);
 
             ?><br>
+
+            <?php
+            echo $form->field($model, 'payment_type')->widget(Select2::class, [
+                'data' => ArrayHelper::map(PaymentTypes::find()->all(), 'id', 'name'),
+                'language' => 'ar',
+                'options' => [
+                    'placeholder' => 'الرجاء اختيار  طريقة الدفع ...',
+                ],
+                'pluginOptions' => [
+                    'allowClear' => true,
+                    'multiple' => false,
+                ],
+            ]);
+            ?>
         </div>
         <div class="col-sm-2">
             <?= $form->field($model, 'user_insert')->widget(Select2::classname(), [
@@ -166,7 +181,10 @@ use app\models\Currancy;
             ?>
             <?= $form->field($model, 'type')->widget(Select2::classname(), [
                 'data' => [
-                    '1' => 'مبيعات', '2' => 'مسترجع مبيعات', '3' => 'فاتورة معلقة', '4' => 'فاتورة مبدئية'
+                    '1' => 'مبيعات',
+                    '2' => 'مسترجع مبيعات',
+                    '3' => 'فاتورة معلقة',
+                    '4' => 'فاتورة مبدئية'
                 ],
                 'language' => 'ar',
                 'options' => [
@@ -184,14 +202,14 @@ use app\models\Currancy;
             <?= $form->field($model, 'wholesale')->dropDownList(['0' => 'بيع عادي', '1' => 'بيع بجملة الجملة'], ['prompt' => 'اختيار حالة البيـع']) ?>
 
             <?php
-               echo $form->field($model, 'currancy')->widget(Select2::classname(), [
-                   'data' => ArrayHelper::map(Currancy::find()->all(), 'id', 'name'),
-                   'language' => 'ar',
-                   'pluginOptions' => [
-                       'allowClear' => true,
-                       'multiple' => false,
-                   ],
-               ]);
+            echo $form->field($model, 'currancy')->widget(Select2::classname(), [
+                'data' => ArrayHelper::map(Currancy::find()->all(), 'id', 'name'),
+                'language' => 'ar',
+                'pluginOptions' => [
+                    'allowClear' => true,
+                    'multiple' => false,
+                ],
+            ]);
             ?>
         </div>
     </div>

@@ -6,12 +6,13 @@ use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
 use app\models\Client;
 use app\models\Currancy;
+use app\models\PaymentTypes;
 use app\models\ShippingType;
 use kartik\date\DatePicker;
 
-/* @var $this yii\web\View */
-/* @var $model app\models\Purchases */
-/* @var $form yii\widgets\ActiveForm */
+/** @var yii\web\View $this */
+/** @var app\models\Purchases $model */
+/** @var yii\widgets\ActiveForm $form */
 ?>
 
 
@@ -113,15 +114,33 @@ use kartik\date\DatePicker;
         </div>
         <div class="col-md-4">
             <?= $form->field($model, 'payWay')->dropDownList(['0' => 'نقدا', '1' => 'آجـــل', '2' => 'دفعة على الحساب',], ['prompt' => '']) ?>
+
+            <?php
+            echo $form->field($model, 'payment_type')->widget(Select2::class, [
+                'data' => ArrayHelper::map(PaymentTypes::find()->all(), 'id', 'name'),
+                'language' => 'ar',
+                'options' => [
+                    'placeholder' => 'الرجاء اختيار  طريقة الدفع ...',
+                    'value' => $model->isNewRecord ? 1 : $model->payment_type
+                ],
+                'pluginOptions' => [
+                    'allowClear' => true,
+                    'multiple' => false,
+                ],
+            ]);
+            ?>
+
             <?= $form->field($model, 'total')->textInput() ?>
 
             <?= $form->field($model, 'paid')->textInput([
                 'maxlength' => true,
                 'onfocusout' => 'netTotalsPurchases( $(this) )',
             ]); ?>
-            <?= $form->field($model, 'notes')->textarea(['rows' => 3, 'columns' => 20]) ?>
+
         </div>
     </div>
+    <?= $form->field($model, 'notes')->textarea(['rows' => 3, 'columns' => 20]) ?>
+
     <div class="form-group">
         <div class="btn-group">
             <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Save'), ['class' => 'btn btn-success']) ?>

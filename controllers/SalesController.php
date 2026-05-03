@@ -46,13 +46,13 @@ class SalesController extends Controller
                 'rules' => [
                     [
                         'allow' => true,
-                        'actions' => ['create', 'view', 'print', 'noprice', 'itemlist', 'deserving', 'stop-credit', 'done', 'itemlistid', 'print-no-price', 'fast', 'save-pdf', 'delev'],
+                        'actions' => ['create', 'view', 'print', 'print-with-place', 'noprice', 'itemlist', 'deserving', 'stop-credit', 'done', 'itemlistid', 'print-no-price', 'fast', 'save-pdf', 'delev'],
                         'roles' => ['createSales'],
                     ],
 
                     [
                         'allow' => true,
-                        'actions' => ['update', 'view', 'print', 'noprice', 'remove', 'pdf', 'itemlist', 'deserving', 'stop-credit', 'done', 'transfer-to-temp-invoice', 'itemlistid', 'print-no-price', 'save-pdf', 'delev'],
+                        'actions' => ['update', 'view', 'print', 'print-with-place', 'noprice', 'remove', 'pdf', 'itemlist', 'deserving', 'stop-credit', 'done', 'transfer-to-temp-invoice', 'itemlistid', 'print-no-price', 'save-pdf', 'delev'],
                         'roles' => ['updateSales'],
                     ],
 
@@ -436,7 +436,8 @@ class SalesController extends Controller
                 $data = $connection->createCommand($sqlSum);
                 $lastBalance = $data->queryAll();
 
-                $sql = " SELECT * FROM ftran
+                $sql = " SELECT ftran.*, payment_types.name as paymentType FROM ftran
+            left join payment_types on payment_types.id = ftran.payment_type
             where  ftran.branch =" . Yii::$app->user->identity->branch . " 
             and ftran.date_  between '" . $model->min_date . "' and '" . $model->max_date . "' and ftran.outBox =0 and currancy = '" . $model->currancy . "' and ftran.user_insert = '" . $model->user_insert . "'";
             } else {
@@ -448,14 +449,27 @@ class SalesController extends Controller
                 $data = $connection->createCommand($sqlSum);
                 $lastBalance = $data->queryAll();
 
-                $sql = " SELECT * FROM ftran
+                $sql = " SELECT ftran.*, payment_types.name as paymentType FROM ftran
+            left join payment_types on payment_types.id = ftran.payment_type
             where  ftran.branch =" . Yii::$app->user->identity->branch . " 
-            and ftran.date_  between '" . $model->min_date . "' and '" . $model->max_date . "' and currancy = '" . $model->currancy . "' and ftran.outBox = 0 order by ftran.date_  ";
+            and ftran.date_  between '" . $model->min_date . "' and '" . $model->max_date . "' and ftran.outBox = 0 order by ftran.date_  ";
             }
 
             $connection = Yii::$app->db;
             $data = $connection->createCommand($sql);
             $info = $data->queryAll();
+            if ($info == null) {
+                die("Sorry no thing to preview");
+            }
+
+            $sumSql = " SELECT max(payment_types.name), sum(sader), sum(wared) FROM `ftran`
+            left join payment_types on payment_types.id = ftran.payment_type
+            where  ftran.branch =" . Yii::$app->user->identity->branch . "
+            and ftran.date_  between '" . $model->min_date . "' and '" . $model->max_date . "'
+            group by ftran.payment_type";
+            $connection = Yii::$app->db;
+            $sumSql1 = $connection->createCommand($sumSql);
+            $info1 = $sumSql1->queryAll();
             if ($info == null) {
                 die("Sorry no thing to preview");
             }
@@ -471,6 +485,7 @@ class SalesController extends Controller
                 'coun' => 1,
                 'count' => 0,
                 'lastBalance' => $lastBalance,
+                'sumSql' => $info1,
             ]);
         }
 
@@ -861,12 +876,15 @@ class SalesController extends Controller
     public function actionPrint($id)
     {
         $totalInvoice = SalesDetails::find()->where(['salesId' => $id])
+            //->andWhere(['=', 'branch', Yii::$app->user->identity->branch])
             ->sum('salePrice * quantity');
 
         $company = CompanyInfo::find()->one();
         $model = $this->findModel($id);
         $providerSalesDetails = new ActiveDataProvider([
-            'query' => SalesDetails::find()->where(['=', 'salesId', $id]),
+            'query' => SalesDetails::find()
+                ->where(['=', 'salesId', $id]),
+            //->andWhere(['=', 'branch', Yii::$app->user->identity->branch]),
             'sort' => [
                 'defaultOrder' => [
                     'id' => SORT_DESC,
@@ -887,24 +905,6 @@ class SalesController extends Controller
 
     public function actionNoprice($id)
     {
-        // $sql = "select sales.id, sales.at, sales.payWay, sales.total, sales.disscount, sales.paid, sales.type, sales.billId, sales.notes, sales.deleviried,
-        //         salesDetails.quantity, salesDetails.costPrice, salesDetails.salePrice,
-        //         Totalinventory.quantity as Qtotalinventory,
-        //         client.name as client, client.mobile,
-        //         category.name as category, category.serialNo, category.company, category.commCode,
-        //         category_reservation.quantity as reservation, category.place as place
-        //         FROM sales
-        //         JOIN salesDetails on sales.id = salesDetails.salesId
-        //         JOIN Totalinventory on salesDetails.category = Totalinventory.id
-        //         JOIN client on sales.clinet = client.id
-        //         JOIN category on category.id = salesDetails.category
-        //         left JOIN category_reservation on salesDetails.category = category_reservation.category
-        //         where sales.id = " . $id . " and Totalinventory.branch = " . Yii::$app->user->identity->branch . " and Totalinventory.type <> 3 
-        //         ";
-        // $connection = Yii::$app->db;
-        // $data = $connection->createCommand($sql);
-        // $info = $data->queryAll();
-        // =======================
         $company = CompanyInfo::find()->one();
         $providerSalesDetails = new ActiveDataProvider([
             'query' => SalesDetails::find()
@@ -939,10 +939,6 @@ class SalesController extends Controller
             'providerSalesDetails' => $providerSalesDetails,
             'company' => $company,
         ]);
-        // return $this->render('printBill', [
-        //     'infos' => $info,
-        //     'models' => $info,
-        // ]);
     }
 
     public function actionPrintNoPrice($id)
@@ -962,6 +958,48 @@ class SalesController extends Controller
             'model' => $this->findModel($id),
             'providerSalesDetails' => $providerSalesDetails,
             'company' => $company,
+        ]);
+    }
+
+    public function actionPrintWithPlace($id)
+    {
+        $totalInvoice = SalesDetails::find()
+            ->where(['salesId' => $id])
+            ->leftjoin('branches', 'branches.id = salesDetails.branch')
+            //->andWhere(['!=', 'branch', Yii::$app->user->identity->branch])
+            ->sum('salePrice * quantity');
+
+        $company = CompanyInfo::find()->one();
+        $model = $this->findModel($id);
+        $providerSalesDetails = new ActiveDataProvider([
+            'query' => SalesDetails::find()
+                ->select([
+                    'salesDetails.id',
+                    'salesDetails.salesId',
+                    'salesDetails.category',
+                    'salesDetails.quantity',
+                    'salesDetails.costPrice',
+                    'salesDetails.salePrice',
+                    'branches.name as branchName',
+                ])
+                ->leftJoin('branches', 'branches.id = salesDetails.branch')
+                ->where(['=', 'salesId', $id]),
+            //->andWhere(['!=', 'branch', Yii::$app->user->identity->branch]),
+            'sort' => [
+                'defaultOrder' => [
+                    'id' => SORT_DESC,
+                ]
+            ],
+            'pagination' => false,
+        ]);
+
+        $balance = Dept::find()->where(['id' => $model->clinet])->sum('credt');
+        return $this->render('print_with_place', [
+            'model' => $this->findModel($id),
+            'providerSalesDetails' => $providerSalesDetails,
+            'company' => $company,
+            'balance' => $balance,
+            'totalInvoice' => $totalInvoice,
         ]);
     }
 
@@ -1214,6 +1252,7 @@ class SalesController extends Controller
                         THEN "متوفر"
                         ELSE "قريبا" END as type',
                     'branches.name AS BRNAME',
+                    'branches.id AS branchId'
                 ];
             } else {
                 if (Yii::$app->user->identity->seeCostPrice == 1) {
@@ -1235,6 +1274,7 @@ class SalesController extends Controller
                             THEN "متوفر"
                             ELSE "قريبا" END as type',
                         'branches.name AS BRNAME',
+                        'branches.id AS branchId'
                     ];
                 } else {
                     $secript = [
@@ -1254,6 +1294,7 @@ class SalesController extends Controller
                              THEN "متوفر"
                              ELSE "قريبا" END as type',
                         'branches.name AS BRNAME',
+                        'branches.id AS branchId'
                     ];
                 }
             }

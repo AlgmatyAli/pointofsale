@@ -176,6 +176,7 @@ use yii\widgets\Pjax;
      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> سعر البيع الأدنى - </i> ' + minPrice + '</div>' +
      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> مكان الصنف - </i> ' + product.place + '</div>' +
      '<div class="col-sm-1"><i class="badge badge-primary badge-pill"> - </i> <span class="label label-info"> ' + product.BRNAME + '</div>' +
+    '<div class="col-sm-1" style="display:none;"><i class="badge badge-primary badge-pill"> - </i> <span class="label label-info"> ' + product.branchId + '</div>' +
      '</div>' +
      '<br>' +
      '<div class="row">' +
@@ -210,12 +211,13 @@ JS;
 JS;
                 echo $form->field($model, 'kind')->widget(Select2::classname(), [
                     'name' => 'kv-repo-template1',
-                    'id' => 'kind',
+                    // 'id' => 'kind',
                     'language' => 'en',
                     'options' => [
                         'placeholder' => Yii::t('app', 'Search...'),
                         'dir' => 'rtl',
                         'multiple' => false,
+                        'id' => 'kind',
                     ],
                     'pluginOptions' => [
                         'autofocus' => true,
@@ -275,6 +277,7 @@ JS;
      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> سعر البيع الأدنى - </i> ' +product. minPrice + '</div>' +
      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> مكان الصنف - </i> ' + product.place + '</div>' +
      '<div class="col-sm-1"><i class="badge badge-primary badge-pill"> - </i> <span class="label label-info"> ' + product.BRNAME + '</div>' +
+    '<div class="col-sm-1" style="display:none;"><i class="badge badge-primary badge-pill"> - </i> <span class="label label-info"> ' + product.branchId + '</div>' +
      '</div>' +
      '<br>' +
      '<div class="row">' +
@@ -309,12 +312,13 @@ JS;
 JS;
                 echo $form->field($model, 'kind')->widget(Select2::classname(), [
                     'name' => 'kv-repo-template1',
-                    'id' => 'kind',
+                    // 'id' => 'kind',
                     'language' => 'en',
                     'options' => [
                         'placeholder' => Yii::t('app', 'Search...'),
                         'dir' => 'rtl',
                         'multiple' => false,
+                        'id' => 'kind',
                     ],
                     'pluginOptions' => [
                         'autofocus' => true,
@@ -366,6 +370,7 @@ var markup =
   '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> سعر البيع الأدنى - </i> ' +product. minPrice + '</div>' +
   '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> مكان الصنف - </i> ' + product.place + '</div>' +
   '<div class="col-sm-1"><i class="badge badge-primary badge-pill"> - </i> <span class="label label-info"> ' + product.BRNAME + '</div>' +
+    '<div class="col-sm-1" style="display:none;"><i class="badge badge-primary badge-pill"> - </i> <span class="label label-info"> ' + product.branchId + '</div>' +
   '</div>' +
   '<br>' +
   '<div class="row">' +
@@ -400,12 +405,13 @@ JS;
             if ($company->searchById == 1) {
                 echo $form->field($model, 'cat')->widget(Select2::class, [
                     'name' => 'kv-repo-template',
-                    'id' => 'cat',
+                    // 'id' => 'cat',
                     'language' => 'en',
                     'options' => [
                         'placeholder' => Yii::t('app', 'Search...'),
                         'dir' => 'rtl',
                         'multiple' => false,
+                        'id' => 'cat',
                     ],
                     'pluginOptions' => [
                         'autofocus' => true,
@@ -458,16 +464,7 @@ JS;
                 <div class="col-md-2">
                     <?php
                     if ($company->repeatCategory == 1) {
-                        echo $form->field($model, 'branch')->widget(Select2::class, [
-                            'data' => ArrayHelper::map(Branches::find()
-                                ->all(), 'id', 'name'),
-                            'language' => 'ar',
-                            'options' => ['id' => 'currancy', 'placeholder' => 'الرجاء اختيار الفرع ...'],
-                            'pluginOptions' => [
-                                'allowClear' => false,
-                                'multiple' => false,
-                            ],
-                        ]);
+                        echo $form->field($model, 'branch')->hiddenInput(['placeholder' => 'branch', 'id' => 'branch'])->label('');
                     }
                     ?>
                 </div>

@@ -48,7 +48,8 @@ class ExceptController extends Controller
                 'minPrice AS minPrice',
                 'place',
                 'commCode',
-                'branches.name AS BRNAME'
+                'branches.name AS BRNAME',
+                'branches.id AS branchId'
             ];
             $query->select(
                 $secript
@@ -210,7 +211,7 @@ class ExceptController extends Controller
             $command = $query->createCommand();
             $data = $command->queryAll();
             $out['results'] = array_values($data);
-        }elseif ($id > 0) {
+        } elseif ($id > 0) {
             $out['results'] = [
                 'id' => $id,
                 'text' => SalesDetails::find($id)->name,

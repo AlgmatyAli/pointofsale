@@ -15,62 +15,6 @@ use yii\grid\GridView;
   <p>
   <div class="btn-group">
     <button class='btn btn-primary' onClick="window.print()"><?= Yii::t('app', 'Print') ?></button>`
-
-    <?= Html::a('<i class="fa fa-fw fa-print"></i>' . ' ' . Yii::t('app', 'Print with place'), ['print-with-place', 'id' => $model->id], ['class' => 'btn btn-danger']) ?>
-
-    <?= Html::a('<i class="fa fa-fw fa-print"></i>' . ' ' . Yii::t('app', 'Print without price'), ['noprice', 'id' => $model->id], ['class' => 'btn btn-secondary']) ?>
-
-    <?php //Html::a('<i class="fa fa-fw fa-print"></i>' . ' ' . Yii::t('app', 'Print without price'), ['print-no-price', 'id' => $model->id], ['class' => 'btn btn-success']) 
-    ?>
-
-    <?php if ($model->type == 1 || $model->type == 4) {
-      echo Html::a(
-        '<i class="fa fa-fw fa-edit"></i>' . ' ' . Yii::t('app', 'Update'),
-        ['update', 'id' => $model->id],
-        ['class' => 'btn btn-primary']
-      );
-    } else {
-      echo Html::a(
-        '<i class="fa fa-fw fa-edit"></i>' . ' ' . Yii::t('app', 'Update'),
-        ['update', 'id' => $model->id],
-        ['class' => 'btn btn-primary']
-      );
-    }
-
-    ?>
-
-    <?php //echo Html::button('<i class="fa fa-fw fa-copy"></i>' . ' ' . Yii::t('app', 'SaveAsNew'), ['value' => Url::to(['sales/save-as-new', 'oldId' => $model->id]), 'class' => 'btn btn-info popup']); 
-    ?>
-
-    <?= Html::a('<i class="fa fa-fw fa-envelope"></i>' . ' ' . Yii::t('app', 'Send By Email'), ['pdf', 'id' => $model->id], ['class' => 'btn btn-warning']) ?>
-
-    <?= Html::a(
-      Yii::t('app', 'Create Client Histrans'),
-      ['histrans', 'client' => $model->clinet, 'allData' => 1, 'type' => $model->c->type],
-      ['class' => 'btn btn-info']
-    ) ?>
-
-    <?= Html::a('<i class="fa fa-fw fa-print"></i>' . ' ' . Yii::t('app', 'Save AS PDF'), ['save-pdf', 'id' => $model->id], ['class' => 'btn btn-success']) ?>
-
-    <?php
-    if ($model->deleviried == 0) {
-      echo Html::a(Yii::t('app', 'تغيير حالة الفاتورة'), ['delev', 'id' => $model->id], ['class' => 'btn btn-warning']);
-    }
-    ?>
-
-    <?php
-    echo Html::a(Yii::t('app', 'ايقاف الدين على الزبون'), ['stop-credit', 'id' => $model->clinet], ['class' => 'btn btn-primary']);
-    ?>
-
-    <?= Html::a('<i class="fa fa-fw fa-trash "></i>' . ' ' . Yii::t('app', 'Delete'), ['delete', 'id' => $model->id], [
-      'class' => 'btn btn-danger',
-      'data' => [
-        'confirm' => Yii::t('app', 'Are you sure you want to delete this item?'),
-        'method' => 'post',
-      ],
-    ])
-    ?>
-
   </div>
   <?= Html::a(Yii::t('app', 'Cancel'), Yii::$app->request->referrer, ['class' => 'btn btn-warning pull-left']) ?>
   </p>
@@ -258,6 +202,15 @@ use yii\grid\GridView;
                 }
 
               ],
+
+              [
+                'label' => Yii::t('app', 'Branch'),
+                'contentOptions' => ['style' => 'font-size:12px;'],
+                'headerOptions' => ['style' => 'width:20%'],
+                'value' => function ($data) {
+                  return $data->branchName;
+                }
+              ]
 
             ],
           ]);

@@ -7,6 +7,7 @@ use kartik\date\DatePicker;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
 use app\models\Items;
+use app\models\PaymentTypes;
 use yii\helpers\Url;
 
 /* @var $this yii\web\View */
@@ -74,6 +75,21 @@ use yii\helpers\Url;
             <?= $form->field($model, 'outBox')->checkbox() ?>
 
             <?= $form->field($model, 'why')->textarea(['rows' => 6]) ?>
+
+            <?php
+            echo $form->field($model, 'payment_type')->widget(Select2::class, [
+                'data' => ArrayHelper::map(PaymentTypes::find()->all(), 'id', 'name'),
+                'language' => 'ar',
+                'options' => [
+                    'placeholder' => 'الرجاء اختيار  طريقة الدفع ...',
+                    'value' => $model->isNewRecord ? 1 : $model->payment_type
+                ],
+                'pluginOptions' => [
+                    'allowClear' => true,
+                    'multiple' => false,
+                ],
+            ]);
+            ?>
 
             <div class="form-group">
                 <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Save'), ['class' => 'btn btn-success']) ?>

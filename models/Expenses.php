@@ -39,15 +39,15 @@ class Expenses extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['expenseTo', 'at', 'itemId', 'value', 'why', 'user_insert', 'created_at', 'branch', 'outBox', 'currancy'], 'required'],
+            [['expenseTo', 'at', 'itemId', 'value', 'why', 'user_insert', 'created_at', 'branch', 'outBox', 'currancy', 'payment_type'], 'required'],
             [['at', 'created_at', 'update_at'], 'safe'],
-            [['itemId', 'user_insert', 'user_update', 'branch', 'currancy'], 'integer'],
+            [['itemId', 'user_insert', 'user_update', 'branch', 'currancy', 'payment_type'], 'integer'],
             [['value'], 'number'],
             [['expenseTo', 'why'], 'string', 'max' => 255],
-            [['itemId'], 'exist', 'skipOnError' => true, 'targetClass' => Items::className(), 'targetAttribute' => ['itemId' => 'id']],
-            [['user_insert'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['user_insert' => 'id']],
-            [['user_update'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['user_update' => 'id']],
-            [['currancy'], 'exist', 'skipOnError' => true, 'targetClass' => Currancy::className(), 'targetAttribute' => ['currancy' => 'id']],
+            [['itemId'], 'exist', 'skipOnError' => true, 'targetClass' => Items::class, 'targetAttribute' => ['itemId' => 'id']],
+            [['user_insert'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_insert' => 'id']],
+            [['user_update'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_update' => 'id']],
+            [['currancy'], 'exist', 'skipOnError' => true, 'targetClass' => Currancy::class, 'targetAttribute' => ['currancy' => 'id']],
         ];
     }
 
@@ -70,6 +70,8 @@ class Expenses extends \yii\db\ActiveRecord
             'branch' => Yii::t('app', 'Br ID'),
             'outBox' => Yii::t('app', 'Out Box'),
             'currancy' => Yii::t('app', 'Currancy'),
+            'payment_type' => Yii::t('app', 'Payment Type'),
+
         ];
     }
 
@@ -80,7 +82,7 @@ class Expenses extends \yii\db\ActiveRecord
      */
     public function getItem()
     {
-        return $this->hasOne(Items::className(), ['id' => 'itemId']);
+        return $this->hasOne(Items::class, ['id' => 'itemId']);
     }
 
     /**
@@ -90,7 +92,7 @@ class Expenses extends \yii\db\ActiveRecord
      */
     public function getUserInsert()
     {
-        return $this->hasOne(User::className(), ['id' => 'user_insert']);
+        return $this->hasOne(User::class, ['id' => 'user_insert']);
     }
 
     /**
@@ -100,16 +102,21 @@ class Expenses extends \yii\db\ActiveRecord
      */
     public function getUserUpdate()
     {
-        return $this->hasOne(User::className(), ['id' => 'user_update']);
+        return $this->hasOne(User::class, ['id' => 'user_update']);
     }
 
-     /**
+    /**
      * Gets query for [[Br]].
      *
      * @return \yii\db\ActiveQuery
      */
     public function getBr()
     {
-        return $this->hasOne(Branches::className(), ['id' => 'branch']);
+        return $this->hasOne(Branches::class, ['id' => 'branch']);
+    }
+
+    public function getPaymentType0()
+    {
+        return $this->hasOne(PaymentTypes::class, ['id' => 'payment_type']);
     }
 }

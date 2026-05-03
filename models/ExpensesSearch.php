@@ -19,7 +19,7 @@ class ExpensesSearch extends Expenses
     {
         return [
             [['id', 'itemId', 'user_insert', 'user_update', 'branch', 'outBox'], 'integer'],
-            [['expenseTo', 'at', 'why', 'created_at', 'update_at'], 'safe'],
+            [['expenseTo', 'at', 'why', 'created_at', 'update_at', 'payment_type'], 'safe'],
             [['value'], 'number'],
         ];
     }
@@ -48,11 +48,12 @@ class ExpensesSearch extends Expenses
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
-            'sort' =>[
+            'sort' => [
                 'defaultOrder' => [
                     'id' => SORT_DESC
-                ]],
-            'pagination' => [ 'pageSize' => 70 ],
+                ]
+            ],
+            'pagination' => ['pageSize' => 70],
         ]);
 
         $this->load($params);
@@ -66,7 +67,7 @@ class ExpensesSearch extends Expenses
         // grid filtering conditions
         $query->andFilterWhere([
             'id' => $this->id,
-           // 'at' => $this->at,
+            'payment_type' => $this->payment_type,
             'itemId' => $this->itemId,
             'value' => $this->value,
             'user_insert' => $this->user_insert,
@@ -79,12 +80,11 @@ class ExpensesSearch extends Expenses
 
         $query->andFilterWhere(['like', 'expenseTo', $this->expenseTo])
             ->andFilterWhere(['like', 'why', $this->why]);
-            
-            if(!empty($this->at) && strpos($this->at, '-') !== false) {
-                list($min_date, $max_date) = explode(' - ', $this->at);
+
+        if (!empty($this->at) && strpos($this->at, '-') !== false) {
+            list($min_date, $max_date) = explode(' - ', $this->at);
             $query->andFilterWhere(['between', 'at', $min_date, $max_date]);
-            
-            }
+        }
 
         return $dataProvider;
     }

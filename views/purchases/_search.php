@@ -5,6 +5,7 @@ use yii\widgets\ActiveForm;
 use kartik\daterange\DateRangePicker;
 use app\models\Client;
 use app\models\Currancy;
+use app\models\PaymentTypes;
 use app\models\ShippingType;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
@@ -104,6 +105,21 @@ use yii\helpers\Url;
                     'allowClear' => true
                 ],
             ]); ?>
+        </div>
+        <div class="col-md-2">
+            <?php
+            echo $form->field($model, 'payment_type')->widget(Select2::class, [
+                'data' => ArrayHelper::map(PaymentTypes::find()->all(), 'id', 'name'),
+                'language' => 'ar',
+                'options' => [
+                    'placeholder' => 'الرجاء اختيار  طريقة الدفع ...',
+                ],
+                'pluginOptions' => [
+                    'allowClear' => true,
+                    'multiple' => false,
+                ],
+            ]);
+            ?>
         </div>
     </div>
     <hr>

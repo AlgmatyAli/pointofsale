@@ -41,7 +41,7 @@ use Yii;
 class Sales extends \yii\db\ActiveRecord
 {
     public $file;
-    public $phone,$net,$category, $min_date, $max_date, $salePrice;
+    public $phone, $net, $category, $min_date, $max_date, $salePrice;
 
     /**
      * {@inheritdoc}
@@ -60,8 +60,8 @@ class Sales extends \yii\db\ActiveRecord
             [['disscount', 'paid', 'notes', 'path', 'deleviryAt', 'deserving', 'deleviried', 'user_update', 'update_at'], 'default', 'value' => null],
             [['currancy'], 'default', 'value' => 1],
             [['wholesale'], 'default', 'value' => 0],
-            [['billId', 'at', 'clinet', 'payWay', 'branch', 'total', 'type', 'user_insert'], 'required'],
-            [['billId', 'clinet', 'payWay', 'branch', 'type', 'deleviried', 'currancy', 'user_insert', 'user_update', 'wholesale'], 'integer'],
+            [['billId', 'at', 'clinet', 'payWay', 'branch', 'total', 'type', 'user_insert', 'payment_type'], 'required'],
+            [['billId', 'clinet', 'payWay', 'branch', 'type', 'deleviried', 'currancy', 'user_insert', 'user_update', 'wholesale', 'payment_type'], 'integer'],
             [['at', 'deleviryAt', 'deserving', 'created_at', 'update_at', 'phone', 'net', 'category', 'min_date', 'max_date', 'salePrice'], 'safe'],
             [['total', 'disscount', 'paid'], 'number'],
             [['notes', 'path'], 'string', 'max' => 255],
@@ -105,6 +105,7 @@ class Sales extends \yii\db\ActiveRecord
             'max_date' => Yii::t('app', 'Max Date'),
             'net' => Yii::t('app', 'Net'),
             'phone' => Yii::t('app', 'Phone'),
+            'payment_type' => Yii::t('app', 'Payment Type'),
         ];
     }
 
@@ -168,4 +169,8 @@ class Sales extends \yii\db\ActiveRecord
         return $this->hasOne(User::class, ['id' => 'user_update']);
     }
 
+    public function getPaymentType0()
+    {
+        return $this->hasOne(PaymentTypes::class, ['id' => 'payment_type']);
+    }
 }

@@ -36,12 +36,12 @@ class SalesDetails extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-           // [['salesId', 'category', 'quantity', 'costPrice', 'box'], 'required'],
-            [['salesId', 'type','category', 'box'], 'integer'],
+            // [['salesId', 'category', 'quantity', 'costPrice', 'box'], 'required'],
+            [['salesId', 'type', 'category', 'box'], 'integer'],
             [['quantity', 'costPrice', 'salePrice', 'original_price'], 'number'],
-            [['expire','type','mac_address','serial_number', 'packing', 'waitQnty', 'company', 'serialNo', 'commCode', 'class', 'client', 'Qtotalinventory', 'reservation', 'otherQtotalinventory', 'branchName'], 'safe'],
-            [['category'], 'exist', 'skipOnError' => true, 'targetClass' => Category::className(), 'targetAttribute' => ['category' => 'id']],
-            [['salesId'], 'exist', 'skipOnError' => true, 'targetClass' => Sales::className(), 'targetAttribute' => ['salesId' => 'id']],
+            [['expire', 'type', 'mac_address', 'serial_number', 'packing', 'waitQnty', 'company', 'serialNo', 'commCode', 'class', 'client', 'Qtotalinventory', 'reservation', 'otherQtotalinventory', 'branchName'], 'safe'],
+            [['category'], 'exist', 'skipOnError' => true, 'targetClass' => Category::class, 'targetAttribute' => ['category' => 'id']],
+            [['salesId'], 'exist', 'skipOnError' => true, 'targetClass' => Sales::class, 'targetAttribute' => ['salesId' => 'id']],
         ];
     }
 
@@ -60,10 +60,11 @@ class SalesDetails extends \yii\db\ActiveRecord
             'serial_number' => Yii::t('app', 'Serial Number'),
             'box' => Yii::t('app', 'Box'),
             'mac_address' => Yii::t('app', 'Mac Address'),
-            'original_price'=>Yii::t('app','Original Price'),
+            'original_price' => Yii::t('app', 'Original Price'),
             'expire' => Yii::t('app', 'Expire'),
             'packing' => Yii::t('app', 'Packing'),
-            'waitQnty' => Yii::t('app', 'Wait Qnty')
+            'waitQnty' => Yii::t('app', 'Wait Qnty'),
+            'branch' => Yii::t('app', 'Branch'),
         ];
     }
 
@@ -74,11 +75,11 @@ class SalesDetails extends \yii\db\ActiveRecord
      */
     public function getCat()
     {
-        return $this->hasOne(Category::className(), ['id' => 'category']);
+        return $this->hasOne(Category::class, ['id' => 'category']);
     }
     public function getCategory0()
     {
-        return $this->hasOne(Category::className(), ['id' => 'category']);
+        return $this->hasOne(Category::class, ['id' => 'category']);
     }
 
     /**
@@ -88,21 +89,20 @@ class SalesDetails extends \yii\db\ActiveRecord
      */
     public function getSales()
     {
-        return $this->hasOne(Sales::className(), ['id' => 'salesId']);
+        return $this->hasOne(Sales::class, ['id' => 'salesId']);
     }
     public function getPrice()
     {
-        return $this->hasOne(Totalinventory::className(), ['id' => 'category']);
+        return $this->hasOne(Totalinventory::class, ['id' => 'category']);
     }
 
     public function getPrices()
     {
-        return $this->hasOne(Prices::className(), ['id' => 'category']);
+        return $this->hasOne(Prices::class, ['id' => 'category']);
     }
 
-        public function getBranch0()
+    public function getBranch0()
     {
-        return $this->hasOne(Branches::className(), ['id' => 'branch']);
+        return $this->hasOne(Branches::class, ['id' => 'branch']);
     }
-    
 }

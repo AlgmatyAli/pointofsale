@@ -7,6 +7,7 @@ use kartik\daterange\DateRangePicker;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
 use app\models\Items;
+use app\models\PaymentTypes;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\ExpensesSearch */
@@ -15,62 +16,76 @@ use app\models\Items;
 
 <div class="expenses-search">
     <div class="row">
-    <div class="col-lg-2"></div>
-    <div class="col-lg-4">
+        <div class="col-lg-2"></div>
+        <div class="col-lg-4">
 
-    <?php $form = ActiveForm::begin([
-        'action' => ['index'],
-        'method' => 'get',
-        'options' => [
-            'data-pjax' => 1
-        ],
-    ]); ?>
+            <?php $form = ActiveForm::begin([
+                'action' => ['index'],
+                'method' => 'get',
+                'options' => [
+                    'data-pjax' => 1
+                ],
+            ]); ?>
 
-    <?php
-     echo '<label class="control-label">تاريخ الصرف</label>';
-     echo DateRangePicker::widget([
-        'model'=>$model,
-        'attribute'=>'at',
-        'language' => 'en',
-        'convertFormat'=>false,
-        'pluginOptions'=>[
-            'timePicker'=>false,
-            'timePickerIncrement'=>30,
-            'locale'=>[
-                'format'=>'YYYY-MM-DD'
-            ]
-        ]
-    ]);
+            <?php
+            echo '<label class="control-label">تاريخ الصرف</label>';
+            echo DateRangePicker::widget([
+                'model' => $model,
+                'attribute' => 'at',
+                'language' => 'en',
+                'convertFormat' => false,
+                'pluginOptions' => [
+                    'timePicker' => false,
+                    'timePickerIncrement' => 30,
+                    'locale' => [
+                        'format' => 'YYYY-MM-DD'
+                    ]
+                ]
+            ]);
 
-    ?><br>
+            ?><br>
 
-    <?php 
-     echo $form->field($model, 'itemId')->widget(Select2::class, [
-        'data' =>ArrayHelper::map(Items::find()
-           ->all(),'id', 'name'),
-        'language' => 'ar',
-        'options' => ['placeholder' => 'الرجاء اختيار اسم المصروف ...'],
-        'pluginOptions' => [
-            'allowClear' => true,
-            'multiple'=>false
-        ],
-    ]);
-    ?>
+            <?php
+            echo $form->field($model, 'itemId')->widget(Select2::class, [
+                'data' => ArrayHelper::map(Items::find()
+                    ->all(), 'id', 'name'),
+                'language' => 'ar',
+                'options' => ['placeholder' => 'الرجاء اختيار اسم المصروف ...'],
+                'pluginOptions' => [
+                    'allowClear' => true,
+                    'multiple' => false
+                ],
+            ]);
+            ?>
 
-    <br>
-    <div class="form-group">
-        <?= Html::submitButton('<i class="fa fa-fw fa-search"></i>'.' '.Yii::t('app', 'Search'), ['class' => 'btn btn-primary btn-lg']) ?>
-        <?= Html::a('<i class="fa fa-fw fa-eraser"></i>'.' '.Yii::t('app', "Erase"), Url::toRoute(['index']), ['class' => 'btn btn-danger btn-lg']) ?>
-    </div>
+            <br>
+            <div class="form-group">
+                <?= Html::submitButton('<i class="fa fa-fw fa-search"></i>' . ' ' . Yii::t('app', 'Search'), ['class' => 'btn btn-primary btn-lg']) ?>
+                <?= Html::a('<i class="fa fa-fw fa-eraser"></i>' . ' ' . Yii::t('app', "Erase"), Url::toRoute(['index']), ['class' => 'btn btn-danger btn-lg']) ?>
+            </div>
 
-    </div>
-    <div class="col-lg-4">
-   
-    <?= $form->field($model, 'value') ?>
+        </div>
+        <div class="col-lg-4">
 
-    
+            <?= $form->field($model, 'value') ?>
 
-    </div>
+            <?php
+            echo $form->field($model, 'payment_type')->widget(Select2::class, [
+                'data' => ArrayHelper::map(PaymentTypes::find()->all(), 'id', 'name'),
+                'language' => 'ar',
+                'options' => [
+                    'placeholder' => 'الرجاء اختيار  طريقة الدفع ...',
+                ],
+                'pluginOptions' => [
+                    'allowClear' => true,
+                    'multiple' => false,
+                ],
+            ]);
+            ?>
+
+
+
+        </div>
     </div>
 
     <?php ActiveForm::end(); ?>

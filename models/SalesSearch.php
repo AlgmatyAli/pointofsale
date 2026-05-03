@@ -6,6 +6,7 @@ use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use app\models\Sales;
 use Yii;
+
 /**
  * SalesSearch represents the model behind the search form of `app\models\Sales`.
  */
@@ -17,11 +18,36 @@ class SalesSearch extends Sales
     public function rules()
     {
         return [
-            [['id', 'billId', 'clinet', 'payWay', 'branch', 'type', 'carpenter', 'upholstered','agent', 'paintId',
-             'deleviryId', 'user_insert', 'user_update', 'currancy'], 'safe'],
-            [['at', 'notes', 'path', 'deleviryAt', 'created_at', 'update_at', 'phone','agent', 'deleviried', 
-            'deserving', 'wholesale'], 'safe'],
-            [['total', 'paid', 'disscount'], 'safe'],
+            [[
+                'id',
+                'billId',
+                'clinet',
+                'payWay',
+                'branch',
+                'type',
+                'carpenter',
+                'upholstered',
+                'agent',
+                'paintId',
+                'deleviryId',
+                'user_insert',
+                'user_update',
+                'currancy',
+            ], 'safe'],
+            [[
+                'at',
+                'notes',
+                'path',
+                'deleviryAt',
+                'created_at',
+                'update_at',
+                'phone',
+                'agent',
+                'deleviried',
+                'deserving',
+                'wholesale'
+            ], 'safe'],
+            [['total', 'paid', 'disscount', 'payment_type'], 'safe'],
         ];
     }
 
@@ -43,25 +69,26 @@ class SalesSearch extends Sales
      */
     public function search($params)
     {
-        
+
         $query = Sales::find();
         // add conditions that should always apply here
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
-            'sort' =>[
+            'sort' => [
                 'defaultOrder' => [
                     'id' => SORT_DESC
-                ]],
-            'pagination' => [ 'pageSize' => 70 ],
+                ]
+            ],
+            'pagination' => ['pageSize' => 70],
         ]);
 
         $this->load($params);
-       
+
         if (!$this->validate()) {
             // uncomment the following line if you do not want to return any records when validation fails
             // $query->where('sales.branch='.Yii::$app->user->identity->branch);
             // $query->where('id<=1');
-           // $dataProvider->query->where('0=1');
+            // $dataProvider->query->where('0=1');
             return $dataProvider;
         }
         // grid filtering conditions
@@ -79,6 +106,7 @@ class SalesSearch extends Sales
             'deleviried' => $this->deleviried,
             'wholesale' => $this->wholesale,
             'currancy' => $this->currancy,
+            'payment_type' => $this->payment_type,
         ]);
 
         $query->andFilterWhere(['like', 'notes', $this->notes])
@@ -86,34 +114,32 @@ class SalesSearch extends Sales
             ->andFilterWhere(['=', 'billId', $this->billId])
             ->andFilterWhere(['=', 'client.phone', $this->phone]);
 
-             if(Yii::$app->user->identity->client != null){
-                if (Yii::$app->user->can('userCanSeeOtherUsersSales')){
-                    $query->andFilterWhere(['in', 'clinet', explode(',' ,Yii::$app->user->identity->client)]);
-                  }else{
-                    $query->andFilterWhere(['in', 'clinet', explode(',' ,Yii::$app->user->identity->client)]);
-                  }
-             }else{
-                $query->andFilterWhere(['=', 'clinet', $this->clinet]);
-             }
+        if (Yii::$app->user->identity->client != null) {
+            if (Yii::$app->user->can('userCanSeeOtherUsersSales')) {
+                $query->andFilterWhere(['in', 'clinet', explode(',', Yii::$app->user->identity->client)]);
+            } else {
+                $query->andFilterWhere(['in', 'clinet', explode(',', Yii::$app->user->identity->client)]);
+            }
+        } else {
+            $query->andFilterWhere(['=', 'clinet', $this->clinet]);
+        }
 
-              if (Yii::$app->user->can('userCanSeeOtherUsersSales')){
-                $query->andFilterWhere(['=', 'user_insert', $this->user_insert]);
-              }else{
-                $query->andFilterWhere(['=', 'user_insert', Yii::$app->user->identity->id]);
-              }
+        if (Yii::$app->user->can('userCanSeeOtherUsersSales')) {
+            $query->andFilterWhere(['=', 'user_insert', $this->user_insert]);
+        } else {
+            $query->andFilterWhere(['=', 'user_insert', Yii::$app->user->identity->id]);
+        }
 
-            if(!empty($this->at) && strpos($this->at, '-') !== false) {
-                list($min_date, $max_date) = explode(' - ', $this->at);
+        if (!empty($this->at) && strpos($this->at, '-') !== false) {
+            list($min_date, $max_date) = explode(' - ', $this->at);
             $query->andFilterWhere(['between', 'at', $min_date, $max_date]);
-            
-            }
-            
-            if(!empty($this->deleviryAt) && strpos($this->deleviryAt, '-') !== false) {
-                list($min_date, $max_date) = explode(' - ', $this->deleviryAt);
+        }
+
+        if (!empty($this->deleviryAt) && strpos($this->deleviryAt, '-') !== false) {
+            list($min_date, $max_date) = explode(' - ', $this->deleviryAt);
             $query->andFilterWhere(['between', 'deleviryAt', $min_date, $max_date]);
-            
-            }
-           
+        }
+
         return $dataProvider;
     }
 }

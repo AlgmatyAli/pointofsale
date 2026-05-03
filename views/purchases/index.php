@@ -69,6 +69,14 @@ $this->title = Yii::t('app', 'Purchases');
             ],
 
             [
+                'label' => Yii::t('app', 'Payment Type'),
+                'format' => 'raw',
+                'value' => function ($data) {
+                    return $data->paymentType0->name;
+                }
+            ],
+
+            [
                 'label' => Yii::t('app', 'Br ID'),
                 'format' => 'raw',
                 'value' => function ($data) {
@@ -115,7 +123,7 @@ $this->title = Yii::t('app', 'Purchases');
                 'vAlign' => 'middle',
                 'value' => function ($model, $key, $index, $widget) {
                     $p = compact('model', 'key', 'index');
-                    return $widget->col(8, $p) + $widget->col(9, $p);
+                    return $widget->col(9, $p) + $widget->col(10, $p);
                 },
                 'headerOptions' => ['class' => 'kartik-sheet-style'],
                 'hAlign' => 'right',
@@ -126,7 +134,6 @@ $this->title = Yii::t('app', 'Purchases');
                 'footer' => true
 
             ],
-
 
             [
                 'class' => 'yii\grid\ActionColumn',
