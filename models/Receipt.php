@@ -41,11 +41,10 @@ class Receipt extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['rId', 'clinet', 'at', 'value', 'why', 'payWay', 'type', 'user_insert', 'created_at', 'branch', 'payment_type'], 'required'],
+            [['rId', 'clinet', 'at', 'value', 'why', 'type', 'user_insert', 'created_at', 'branch', 'payment_type'], 'required'],
             [['rId', 'clinet', 'type', 'user_insert', 'currancy', 'user_update', 'branch', 'payment_type'], 'integer'],
             [['at', 'created_at', 'currancy', 'update_at', 'tafqet'], 'safe'],
             [['value'], 'number'],
-            [['payWay'], 'string'],
             [['why'], 'string', 'max' => 255],
             [['clinet'], 'exist', 'skipOnError' => true, 'targetClass' => Client::class, 'targetAttribute' => ['clinet' => 'id']],
             [['user_insert'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_insert' => 'id']],
