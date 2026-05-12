@@ -16,7 +16,7 @@ class m250427_101143_transferitemsdetails extends \yii\db\Migration
             'transfer' => $this->integer(11)->notNull(),
             'category' => $this->integer(11)->notNull(),
             'quantity' => $this->integer(11)->notNull(),
-            'FOREIGN KEY ([[transfer]]) REFERENCES transferitems ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
+            'FOREIGN KEY ([[transfer]]) REFERENCES transferItems ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
             'FOREIGN KEY ([[category]]) REFERENCES category ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
         ], $tableOptions);
     }
