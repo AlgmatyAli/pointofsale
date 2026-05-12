@@ -22,7 +22,7 @@ class m250428_070101_customsoffice extends \yii\db\Migration
             'created_at' => $this->date()->notNull(),
             'user_update' => $this->integer(11),
             'update_at' => $this->date(),
-            'FOREIGN KEY ([[customId]]) REFERENCES customsdeclaration ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
+            'FOREIGN KEY ([[customId]]) REFERENCES customsDeclaration ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
             'FOREIGN KEY ([[user_update]]) REFERENCES user ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
         ], $tableOptions);
     }
