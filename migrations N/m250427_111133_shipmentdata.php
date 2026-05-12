@@ -29,7 +29,7 @@ class m250427_111133_shipmentdata extends \yii\db\Migration
             'FOREIGN KEY ([[created_by]]) REFERENCES user ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
             'FOREIGN KEY ([[updated_by]]) REFERENCES user ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
             'FOREIGN KEY ([[currancy]]) REFERENCES currancy ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
-            'FOREIGN KEY ([[customsOffice]]) REFERENCES customsdeclaration ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
+            'FOREIGN KEY ([[customsOffice]]) REFERENCES customsDeclaration ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
         ], $tableOptions);
     }
 
