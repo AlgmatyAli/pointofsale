@@ -11,7 +11,7 @@ class m250428_080101_shippingtype extends \yii\db\Migration
             $tableOptions = 'CHARACTER SET utf8 COLLATE utf8_general_ci ENGINE=InnoDB';
         }
 
-        $this->createTable('shippingtype', [
+        $this->createTable('shippingType', [
             'id' => $this->primaryKey(),
             'name' => $this->string(125)->notNull(),
             'created_by' => $this->integer(11),
@@ -44,6 +44,6 @@ class m250428_080101_shippingtype extends \yii\db\Migration
 
     public function down()
     {
-        $this->dropTable('shippingtype');
+        $this->dropTable('shippingType');
     }
 }

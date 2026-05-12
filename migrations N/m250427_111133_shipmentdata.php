@@ -10,12 +10,12 @@ class m250427_111133_shipmentdata extends \yii\db\Migration
         if ($this->getDb()->driverName === 'mysql') {
             $tableOptions = 'CHARACTER SET utf8 COLLATE utf8_general_ci ENGINE=InnoDB';
         }
-        
-        $this->createTable('shipmentdata', [
+
+        $this->createTable('shipmentData', [
             'id' => $this->primaryKey(),
             'shipmentId' => $this->integer(11)->notNull(),
             'at' => $this->date(),
-            'value' => $this->decimal(10,3),
+            'value' => $this->decimal(10, 3),
             'size' => $this->string(125),
             'country' => $this->string(255)->notNull(),
             'type' => $this->string(255)->notNull(),
@@ -30,12 +30,11 @@ class m250427_111133_shipmentdata extends \yii\db\Migration
             'FOREIGN KEY ([[updated_by]]) REFERENCES user ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
             'FOREIGN KEY ([[currancy]]) REFERENCES currancy ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
             'FOREIGN KEY ([[customsOffice]]) REFERENCES customsdeclaration ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
-            ], $tableOptions);
-                
+        ], $tableOptions);
     }
 
     public function down()
     {
-        $this->dropTable('shipmentdata');
+        $this->dropTable('shipmentData');
     }
 }

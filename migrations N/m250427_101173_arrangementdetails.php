@@ -10,8 +10,8 @@ class m250427_101173_arrangementdetails extends \yii\db\Migration
         if ($this->getDb()->driverName === 'mysql') {
             $tableOptions = 'CHARACTER SET utf8 COLLATE utf8_general_ci ENGINE=InnoDB';
         }
-        
-        $this->createTable('arrangementdetails', [
+
+        $this->createTable('arrangementDetails', [
             'id' => $this->primaryKey(),
             'arrangement' => $this->integer(11)->notNull(),
             'category' => $this->integer(11)->notNull(),
@@ -22,12 +22,11 @@ class m250427_101173_arrangementdetails extends \yii\db\Migration
             'stockTaking' => $this->integer(11),
             'FOREIGN KEY ([[category]]) REFERENCES category ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
             'FOREIGN KEY ([[arrangement]]) REFERENCES arrangement ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
-            ], $tableOptions);
-                
+        ], $tableOptions);
     }
 
     public function down()
     {
-        $this->dropTable('arrangementdetails');
+        $this->dropTable('arrangementDetails');
     }
 }

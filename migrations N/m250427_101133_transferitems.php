@@ -10,8 +10,8 @@ class m250427_101133_transferitems extends \yii\db\Migration
         if ($this->getDb()->driverName === 'mysql') {
             $tableOptions = 'CHARACTER SET utf8 COLLATE utf8_general_ci ENGINE=InnoDB';
         }
-        
-        $this->createTable('transferitems', [
+
+        $this->createTable('transferItems', [
             'id' => $this->primaryKey(),
             'fromBranch' => $this->integer(11)->notNull(),
             'toBranch' => $this->integer(11)->notNull(),
@@ -23,12 +23,11 @@ class m250427_101133_transferitems extends \yii\db\Migration
             'FOREIGN KEY ([[user_insert]]) REFERENCES user ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
             'FOREIGN KEY ([[user_update]]) REFERENCES user ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
             'FOREIGN KEY ([[toBranch]]) REFERENCES branches ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
-            ], $tableOptions);
-                
+        ], $tableOptions);
     }
 
     public function down()
     {
-        $this->dropTable('transferitems');
+        $this->dropTable('transferItems');
     }
 }

@@ -10,8 +10,8 @@ class m250428_070101_customsoffice extends \yii\db\Migration
         if ($this->getDb()->driverName === 'mysql') {
             $tableOptions = 'CHARACTER SET utf8 COLLATE utf8_general_ci ENGINE=InnoDB';
         }
-        
-        $this->createTable('customsoffice', [
+
+        $this->createTable('customsOffice', [
             'id' => $this->primaryKey(),
             'customId' => $this->integer(11)->notNull(),
             'at' => $this->date()->notNull(),
@@ -24,12 +24,11 @@ class m250428_070101_customsoffice extends \yii\db\Migration
             'update_at' => $this->date(),
             'FOREIGN KEY ([[customId]]) REFERENCES customsdeclaration ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
             'FOREIGN KEY ([[user_update]]) REFERENCES user ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
-            ], $tableOptions);
-                
+        ], $tableOptions);
     }
 
     public function down()
     {
-        $this->dropTable('customsoffice');
+        $this->dropTable('customsOffice');
     }
 }

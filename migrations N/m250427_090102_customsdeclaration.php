@@ -10,8 +10,8 @@ class m250427_090102_customsdeclaration extends \yii\db\Migration
         if ($this->getDb()->driverName === 'mysql') {
             $tableOptions = 'CHARACTER SET utf8 COLLATE utf8_general_ci ENGINE=InnoDB';
         }
-        
-        $this->createTable('customsdeclaration', [
+
+        $this->createTable('customsDeclaration', [
             'id' => $this->primaryKey(),
             'name' => $this->string(255)->notNull(),
             'phone' => $this->string(255),
@@ -22,12 +22,11 @@ class m250427_090102_customsdeclaration extends \yii\db\Migration
             'update_at' => $this->date(),
             'FOREIGN KEY ([[user_insert]]) REFERENCES user ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
             'FOREIGN KEY ([[user_update]]) REFERENCES user ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
-            ], $tableOptions);
-                
+        ], $tableOptions);
     }
 
     public function down()
     {
-        $this->dropTable('customsdeclaration');
+        $this->dropTable('customsDeclaration');
     }
 }

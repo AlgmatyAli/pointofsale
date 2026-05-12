@@ -10,11 +10,11 @@ class m250427_101123_temptransferitems extends \yii\db\Migration
         if ($this->getDb()->driverName === 'mysql') {
             $tableOptions = 'CHARACTER SET utf8 COLLATE utf8_general_ci ENGINE=InnoDB';
         }
-        
-        $this->createTable('temptransferitems', [
+
+        $this->createTable('tempTransferItems', [
             'id' => $this->integer(11)->notNull(),
             'category' => $this->integer(11)->notNull(),
-            'quantity' => $this->decimal(9,3)->notNull(),
+            'quantity' => $this->decimal(9, 3)->notNull(),
             'created_by' => $this->integer(11),
             'created_at' => $this->datetime(),
             'updated_by' => $this->integer(11),
@@ -23,12 +23,11 @@ class m250427_101123_temptransferitems extends \yii\db\Migration
             'FOREIGN KEY ([[updated_by]]) REFERENCES user ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
             'FOREIGN KEY ([[category]]) REFERENCES category ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
             'FOREIGN KEY ([[created_by]]) REFERENCES user ([[id]]) ON DELETE CASCADE ON UPDATE CASCADE',
-            ], $tableOptions);
-                
+        ], $tableOptions);
     }
 
     public function down()
     {
-        $this->dropTable('temptransferitems');
+        $this->dropTable('tempTransferItems');
     }
 }
