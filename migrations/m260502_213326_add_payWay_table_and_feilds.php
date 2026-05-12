@@ -31,44 +31,44 @@ class m260502_213326_add_payWay_table_and_feilds extends Migration
             'name' => 'حوالة',
         ));
 
-        $this->dropForeignKey(
-            'fk-sales-carpenter',
-            '{{%sales}}'
-        );
-        $this->dropForeignKey(
-            'fk-sales-upholstered',
-            '{{%sales}}'
-        );
-        $this->dropForeignKey(
-            'fk-sales-deleviryId',
-            '{{%sales}}'
-        );
-        $this->dropForeignKey(
-            'fk-sales-paint',
-            '{{%sales}}'
-        );
-        $this->dropIndex(
-            'idx-sales-carpenter',
-            '{{%sales}}'
-        );
-        $this->dropIndex(
-            'idx-sales-upholstered',
-            '{{%sales}}'
-        );
-        $this->dropIndex(
-            'idx-sales-deleviryId',
-            '{{%sales}}'
-        );
-        $this->dropIndex(
-            'idx-sales-user_paint',
-            '{{%sales}}'
-        );
-        $this->dropColumn('{{%sales}}', 'carpenter');
-        $this->dropColumn('{{%sales}}', 'upholstered');
-        $this->dropColumn('{{%sales}}', 'paintId');
-        $this->dropColumn('{{%sales}}', 'deleviryId');
-        $this->dropColumn('{{%sales}}', 'price_group');
-        $this->dropColumn('{{%receipt}}', 'payWay');
+        // $this->dropForeignKey(
+        //     'fk-sales-carpenter',
+        //     '{{%sales}}'
+        // );
+        // $this->dropForeignKey(
+        //     'fk-sales-upholstered',
+        //     '{{%sales}}'
+        // );
+        // $this->dropForeignKey(
+        //     'fk-sales-deleviryId',
+        //     '{{%sales}}'
+        // );
+        // $this->dropForeignKey(
+        //     'fk-sales-paint',
+        //     '{{%sales}}'
+        // );
+        // $this->dropIndex(
+        //     'idx-sales-carpenter',
+        //     '{{%sales}}'
+        // );
+        // $this->dropIndex(
+        //     'idx-sales-upholstered',
+        //     '{{%sales}}'
+        // );
+        // $this->dropIndex(
+        //     'idx-sales-deleviryId',
+        //     '{{%sales}}'
+        // );
+        // $this->dropIndex(
+        //     'idx-sales-user_paint',
+        //     '{{%sales}}'
+        // );
+        // $this->dropColumn('{{%sales}}', 'carpenter');
+        // $this->dropColumn('{{%sales}}', 'upholstered');
+        // $this->dropColumn('{{%sales}}', 'paintId');
+        // $this->dropColumn('{{%sales}}', 'deleviryId');
+        // $this->dropColumn('{{%sales}}', 'price_group');
+        // $this->dropColumn('{{%receipt}}', 'payWay');
 
         $this->addColumn('{{%sales}}', 'payment_type', $this->integer()->notNull()->after('notes')->defaultValue(1));
         $this->addColumn('{{%purchases}}', 'payment_type', $this->integer()->notNull()->after('notes')->defaultValue(1));
