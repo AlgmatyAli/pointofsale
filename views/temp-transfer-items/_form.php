@@ -6,9 +6,10 @@ use kartik\grid\GridView;
 use yii\helpers\Url;
 use kartik\select2\Select2;
 use yii\web\JsExpression;
-/* @var $this yii\web\View */
-/* @var $model app\models\TempTransferItems */
-/* @var $form yii\widgets\ActiveForm */
+
+/** @var yii\web\View $this */
+/** @var app\models\TempTransferItems $model*/
+/** @var yii\widgets\ActiveForm $form */
 
 ?>
 
@@ -18,7 +19,8 @@ use yii\web\JsExpression;
             <?php echo Html::button(
                 '<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Save'),
                 [
-                    'value' => Url::to(['transfer-items/create']), 'class' => 'btn btn-danger popup'
+                    'value' => Url::to(['transfer-items/create']),
+                    'class' => 'btn btn-danger popup'
                 ]
             ); ?>
 
@@ -34,7 +36,13 @@ use yii\web\JsExpression;
         </div>
     </div>
     <br><br>
-    <?php $form = ActiveForm::begin(); ?>
+
+    <?php $form = ActiveForm::begin([
+        'id' => 'temp-transfer-items-form',
+        'enableAjaxValidation' => false,
+        'enableClientValidation' => false,
+        'options' => ['class' => 'search-form mb-4']
+    ]) ?>
     <div class="row">
         <div class="col-md-12">
             <?= $form->errorSummary($model); ?>
@@ -61,7 +69,8 @@ use yii\web\JsExpression;
       '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الشركة - </i> ' + product.company + '</div>' +
       '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الكمية = </i> ' + '  ' + product.quantity + '</div>' +
       '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> - </i> <span class="label label-info"> ' + product.BRNAME + '</div>' +
-    '</div>';
+      '<div class="col-sm-1" style="display:none;"><i class="badge badge-primary badge-pill"> - </i> <span class="label label-info"> ' + product.branchId + '</div>' +
+      '</div>';
     return '<div style="overflow:hidden;">' + markup + '</div>';
   };                
     
@@ -88,9 +97,9 @@ JS;
 JS;
             echo $form->field($model, 'category')->widget(Select2::class, [
                 'name' => 'kv-repo-template',
-                'id' => 'focus_first',
                 'language' => 'en',
                 'options' => [
+                    'id' => 'kind',
                     'placeholder' => Yii::t('app', 'Search...'),
                     'dir' => 'rtl',
                     'multiple' => false,
@@ -116,6 +125,7 @@ JS;
     <div class="row">
         <div class="col-md-3">
             <?= $form->field($model, 'quantity')->textInput(['maxlength' => true, 'placeholder' => 'Quantity']) ?>
+            <?= $form->field($model, 'branch')->hiddenInput(['placeholder' => 'branch', 'id' => 'branch'])->label(''); ?>
         </div>
     </div>
     <br>

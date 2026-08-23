@@ -15,13 +15,14 @@ class TempTransferItems extends BaseTempTransferItems
      */
     public function rules()
     {
-        return array_replace_recursive(parent::rules(),
-	    [
-            [['id', 'category', 'quantity'], 'required'],
-            [['id', 'category', 'created_by', 'updated_by'], 'integer'],
-            [['quantity'], 'number'],
-            [['created_at', 'updated_at'], 'safe'],
-        ]);
+        return array_replace_recursive(
+            parent::rules(),
+            [
+                [['id', 'category', 'quantity'], 'required'],
+                [['id', 'category', 'created_by', 'updated_by'], 'integer'],
+                [['quantity'], 'number'],
+                [['created_at', 'updated_at', 'branch'], 'safe'],
+            ]
+        );
     }
-	
 }

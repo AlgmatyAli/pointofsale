@@ -42,23 +42,24 @@ class StocksSearch extends Stocks
     public function search($params)
     {
         $query = Stocks::find()
-        ->select('stocks.category, branch, max(category.name) as name, sum(stocks.quantity) as quantity, sum(stocks.type) as type, max(category.unit) as unit, 
+            ->select(
+                'stocks.category, branch, max(category.name) as name, sum(stocks.quantity) as quantity, sum(stocks.type) as type, max(category.unit) as unit, 
         max(category.company) as company, max(category.box) as box, max(category.class) as class, 
         max(category.serialNo) as serialNo, max(category.commCode) as commCode
         ,max(maxPrice) as maxPrice, max(costPrice) as costPrice, max(minPrice) as minPrice'
-        )
-        ->leftJoin('category', 'category.id = stocks.category')
-        ->leftJoin('prices', 'category.id = prices.category')
-        ->leftJoin('branches', 'branches.id = stocks.branch')
-        ->groupBy('stocks.branch, stocks.category')
-        ->having('sum(stocks.quantity) <> 0');
-         
+            )
+            ->leftJoin('category', 'category.id = stocks.category')
+            ->leftJoin('prices', 'category.id = prices.category')
+            ->leftJoin('branches', 'branches.id = stocks.branch')
+            ->groupBy('stocks.branch, stocks.category')
+            ->having('sum(stocks.quantity) <> 0');
+
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
-            'sort' =>[
+            'sort' => [
                 'defaultOrder' => ['category' => SORT_ASC]
             ],
-                'pagination' => false,
+            'pagination' => false,
         ]);
 
         $this->load($params);

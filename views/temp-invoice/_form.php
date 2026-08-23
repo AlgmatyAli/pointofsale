@@ -10,9 +10,10 @@ use yii\web\JsExpression;
 use yii\widgets\ActiveForm;
 use yii\widgets\Pjax;
 
-/* @var $this yii\web\View */
-/* @var $model app\models\TempInvoice */
-/* @var $form yii\widgets\ActiveForm */
+/** @var  yii\web\View $this*/
+/** @var  app\models\TempInvoice $model*/
+/** @var  yii\widgets\ActiveForm $form*/
+/** @var array $company */
 ?>
 
 <div class="temp-invoice-form">
@@ -176,7 +177,7 @@ use yii\widgets\Pjax;
      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> سعر البيع الأدنى - </i> ' + minPrice + '</div>' +
      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> مكان الصنف - </i> ' + product.place + '</div>' +
      '<div class="col-sm-1"><i class="badge badge-primary badge-pill"> - </i> <span class="label label-info"> ' + product.BRNAME + '</div>' +
-    '<div class="col-sm-1" style="display:none;"><i class="badge badge-primary badge-pill"> - </i> <span class="label label-info"> ' + product.branchId + '</div>' +
+     '<div class="col-sm-1" style="display:none;"><i class="badge badge-primary badge-pill"> - </i> <span class="label label-info"> ' + product.branchId + '</div>' +
      '</div>' +
      '<br>' +
      '<div class="row">' +
@@ -463,9 +464,9 @@ JS;
                 </div>
                 <div class="col-md-2">
                     <?php
-                    if ($company->repeatCategory == 1) {
-                        echo $form->field($model, 'branch')->hiddenInput(['placeholder' => 'branch', 'id' => 'branch'])->label('');
-                    }
+                    // if ($company->repeatCategory == 1) {
+                    echo $form->field($model, 'branch')->hiddenInput(['placeholder' => 'branch', 'id' => 'branch'])->label('');
+                    // }
                     ?>
                 </div>
                 <div class="col-md-2">

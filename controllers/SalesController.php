@@ -332,18 +332,18 @@ class SalesController extends Controller
         $sales = Sales::find()->select(['type'])->where(['id' => $id])->one();
         $salesDetails = SalesDetails::find()->where(['salesId' => $id])->all();
 
-        Yii::$app->db->createCommand("
-                INSERT INTO sales_deleted (
-                                           id, billId, at, clinet, payWay, branch, total, paid, notes, path, type, 
-                                            deleviryAt, carpenter, upholstered, paintId, deleviryId, user_insert, created_at, user_update,
-                                            update_at) 
-                    SELECT id, billId, at, clinet, payWay, branch, total, paid, notes, path, type, 
-                    deleviryAt, carpenter, upholstered, paintId, deleviryId, user_insert, created_at, user_update,
-                    update_at
-                FROM sales 
-                where id=" . $id . "
-                ")
-            ->execute();
+        // Yii::$app->db->createCommand("
+        //         INSERT INTO sales_deleted (
+        //                                    id, billId, at, clinet, payWay, branch, total, paid, notes, path, type, 
+        //                                     deleviryAt, carpenter, upholstered, paintId, deleviryId, user_insert, created_at, user_update,
+        //                                     update_at) 
+        //             SELECT id, billId, at, clinet, payWay, branch, total, paid, notes, path, type, 
+        //             deleviryAt, carpenter, upholstered, paintId, deleviryId, user_insert, created_at, user_update,
+        //             update_at
+        //         FROM sales 
+        //         where id=" . $id . "
+        //         ")
+        //     ->execute();
 
         foreach ($salesDetails as $data) {
             if ($sales->type == 1) {

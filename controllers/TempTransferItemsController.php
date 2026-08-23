@@ -120,19 +120,22 @@ class TempTransferItemsController extends Controller
             $post['TempTransferItems'] = $posted;
             if ($result->load($post)) {
 
-                if (Yii::$app->user->identity->seeOtherBranchQ == '0') {
-                    $branch = Yii::$app->user->identity->branch;
-                } else {
-                    $branch = [1, 2, 3];
-                }
+                // if (Yii::$app->user->identity->seeOtherBranchQ == '0') {
+                //     $branch = Yii::$app->user->identity->branch;
+                // } else {
+                //     $branch = [1, 2, 3];
+                // }
 
                 $data = Stocks::find()
                     ->select([
-                        'max(stocks.category) as category', 'sum(stocks.quantity) as quantity', 'max(prices.costPrice) as costPrice',
-                        'max(prices.minPrice) as minPrice', 'max(prices.maxPrice) as maxPrice'
+                        'max(stocks.category) as category',
+                        'sum(stocks.quantity) as quantity',
+                        'max(prices.costPrice) as costPrice',
+                        'max(prices.minPrice) as minPrice',
+                        'max(prices.maxPrice) as maxPrice'
                     ])
                     ->leftJoin('prices', 'stocks.category = prices.category')
-                    ->Where(['stocks.branch' => $branch])
+                    ->Where(['stocks.branch' => $model->branch])
                     ->andwhere(['stocks.category' => $result->category])
                     ->andwhere(['in', 'stocks.type', $type])
                     ->one();
@@ -146,8 +149,8 @@ class TempTransferItemsController extends Controller
                     $balance = abs($data->quantity) - abs($sumQnty);
                 } else {
                     if ($data != null) {
-                    $balance = abs($data->quantity); 
-                    }else{
+                        $balance = abs($data->quantity);
+                    } else {
                         $balance = 1;
                     }
                 }
@@ -177,22 +180,26 @@ class TempTransferItemsController extends Controller
                 Yii::$app->session->setFlash('error', Yii::t('app', "Sorry You Can not Add Empty Model"));
                 return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
             }
-            if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
-                $branch = Yii::$app->user->identity->branch;
-            } else {
-                $branch = [1, 2, 3];
-            }
+
+            // if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
+            //     $branch = Yii::$app->user->identity->branch;
+            // } else {
+            //     $branch = [1, 2, 3];
+            // }
 
             $item = Stocks::find()
-            ->select([
-                'max(stocks.category) as category', 'sum(stocks.quantity) as quantity', 'max(prices.costPrice) as costPrice',
-                'max(prices.minPrice) as minPrice', 'max(prices.maxPrice) as maxPrice'
-            ])
-            ->leftJoin('prices', 'stocks.category = prices.category')
-            ->Where(['stocks.branch' => $branch])
-            ->andwhere(['stocks.category' => $model->category])
-            ->andwhere(['in', 'stocks.type', 1])
-            ->one();
+                ->select([
+                    'max(stocks.category) as category',
+                    'sum(stocks.quantity) as quantity',
+                    'max(prices.costPrice) as costPrice',
+                    'max(prices.minPrice) as minPrice',
+                    'max(prices.maxPrice) as maxPrice'
+                ])
+                ->leftJoin('prices', 'stocks.category = prices.category')
+                ->Where(['stocks.branch' => $model->branch])
+                ->andwhere(['stocks.category' => $model->category])
+                ->andwhere(['in', 'stocks.type', 1])
+                ->one();
 
             $sumQnty = TempTransferItems::find()
                 ->where(['category' => $model->category, 'created_by' => Yii::$app->user->identity->id,])
@@ -218,7 +225,6 @@ class TempTransferItemsController extends Controller
                     Yii::$app->response->format = Response::FORMAT_JSON;
                     // return ['error' => true, 'message' => Yii::t('app', "عفوا لقد تجاوزت الكمية الموجودة لايمكنك الاستمرار")];
                     return "عفوا لقد تجاوزت الكمية الموجودة لايمكنك الاستمرار";
-
                 }
             } else {
                 Yii::$app->response->format = Response::FORMAT_JSON;

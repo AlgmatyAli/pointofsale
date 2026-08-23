@@ -404,15 +404,57 @@ $(document).ready(function () {
   });
 });
 
-$("#kind").on("change", function () {
-  var data = $(this).select2("data");
-  $("#branch").val(data[0].branchId);
-});
+// $("#kind").on("change", function () {
+//   var data = $(this).select2("data");
+//   $("#branch").val("");
+//   $("#branch").val(data[0].branchId);
+// });
+// دالة موحدة لتحديث حقل الفرع بناءً على الاختيار
+function updateBranch(e) {
+  var data = e.params.data;
 
-$("#cat").on("change", function () {
-  var data = $(this).select2("data");
-  $("#branch").val(data[0].branchId);
-});
+  // 1. تصفير الحقل وإطلاق الحدث لتحديث أي واجهة مرتبطة
+  $("#branch").val(null).trigger("change");
+
+  // 2. تعيين القيمة الجديدة وإطلاق الحدث
+  if (data && data.branchId) {
+    $("#branch").val(data.branchId).trigger("change");
+  }
+}
+
+// دالة لتصفير الحقل عند مسح الاختيار
+function resetBranch() {
+  $("#branch").val(null).trigger("change");
+}
+
+// ربط العناصر بالحدث المباشر لـ Select2
+$("#kind, #cat")
+  .on("select2:select", updateBranch)
+  .on("select2:unselect", resetBranch);
+
+// $("#kind").on("change", function () {
+//   var data = $(this).select2("data");
+
+//   // تصفير القيمة وتحديث واجهة Select2
+//   $("#branch").val(null).trigger("change");
+
+//   // وضع القيمة الجديدة إذا كانت موجودة
+//   if (data && data[0] && data[0].branchId) {
+//     $("#branch").val(data[0].branchId).trigger("change");
+//   }
+// });
+
+// $("#cat").on("change", function () {
+//   var data = $(this).select2("data");
+
+//   // تصفير القيمة وتحديث واجهة Select2
+//   $("#branch").val(null).trigger("change");
+
+//   // وضع القيمة الجديدة إذا كانت موجودة
+//   if (data && data[0] && data[0].branchId) {
+//     $("#branch").val(data[0].branchId).trigger("change");
+//   }
+// });
 
 // $('#delete-all-button').on('click', function(e) {
 //     e.preventDefault();

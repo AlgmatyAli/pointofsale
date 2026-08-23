@@ -42,8 +42,8 @@ class Category extends \yii\db\ActiveRecord
     /**
      * {@inheritdoc}
      */
-     public $file;
-     public static function tableName()
+    public $file;
+    public static function tableName()
     {
         return 'category';
     }
@@ -62,7 +62,7 @@ class Category extends \yii\db\ActiveRecord
             [['unit'], 'string', 'max' => 100],
             [['user_insert'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['user_insert' => 'id']],
             [['user_update'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['user_update' => 'id']],
-            [['file'], 'file']
+            [['file'], 'file', 'extensions' => ['jpg', 'jpeg', 'png', 'webp'], 'maxSize' => 1024 * 1024 * 2],
         ];
     }
 

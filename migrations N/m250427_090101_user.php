@@ -1,7 +1,4 @@
 <?php
-
-use yii\db\Schema;
-
 class m250427_090101_user extends \yii\db\Migration
 {
     public function up()
@@ -35,7 +32,7 @@ class m250427_090101_user extends \yii\db\Migration
 
         $this->insert('user', [
             'username' => 'admin',
-            'password' => '200ceb26807d6bf99fd6f4f0d1ca54d4',
+            'password' => MD5('admin@123'),
             'isActive' => 'active',
             'createedDate' => date('Y-m-d'),
             'phone' => '0',

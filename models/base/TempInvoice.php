@@ -39,9 +39,9 @@ class TempInvoice extends \yii\db\ActiveRecord
 
 
     /**
-    * This function helps \mootensai\relation\RelationTrait runs faster
-    * @return array relation names of this model
-    */
+     * This function helps \mootensai\relation\RelationTrait runs faster
+     * @return array relation names of this model
+     */
     public function relationNames()
     {
         return [
@@ -60,10 +60,10 @@ class TempInvoice extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['invoice_number','type', 'category', 'box', 'state', 'created_by', 'updated_by', 'cat', 'kind'], 'integer'],
+            [['invoice_number', 'type', 'category', 'box', 'state', 'created_by', 'updated_by', 'cat', 'kind'], 'integer'],
             //[['category'], 'required'],
             [['quantity', 'costPrice', 'salePrice', 'branch'], 'number'],
-            [['expire', 'mac_address','type','created_at', 'updated_at', 'waitQnty', 'branch'], 'safe'],
+            [['expire', 'mac_address', 'type', 'created_at', 'updated_at', 'waitQnty', 'branch'], 'safe'],
         ];
     }
 
@@ -98,7 +98,7 @@ class TempInvoice extends \yii\db\ActiveRecord
             'branch' => Yii::t('app', 'Branch'),
         ];
     }
-    
+
     /**
      * @return \yii\db\ActiveQuery
      */
@@ -106,7 +106,7 @@ class TempInvoice extends \yii\db\ActiveRecord
     {
         return $this->hasOne(\app\models\User::className(), ['id' => 'created_by']);
     }
-        
+
     /**
      * @return \yii\db\ActiveQuery
      */
@@ -114,7 +114,7 @@ class TempInvoice extends \yii\db\ActiveRecord
     {
         return $this->hasOne(\app\models\User::className(), ['id' => 'updated_by']);
     }
-        
+
     /**
      * @return \yii\db\ActiveQuery
      */
@@ -122,7 +122,7 @@ class TempInvoice extends \yii\db\ActiveRecord
     {
         return $this->hasOne(\app\models\Category::className(), ['id' => 'category']);
     }
-    
+
     public function getPrice()
     {
         return $this->hasOne(\app\models\Prices::className(), ['category' => 'category']);
@@ -132,8 +132,8 @@ class TempInvoice extends \yii\db\ActiveRecord
     // {
     //     return $this->hasMany(\app\models\Inventory::className(), ['id' => 'category'])->sum('quantity') ;
     // }
-    
-    
+
+
     /**
      * @inheritdoc
      * @return array mixed

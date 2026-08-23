@@ -19,8 +19,7 @@ use app\models\Totalinventory;
 use Exception;
 use yii\helpers\Json;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
-
-
+use yii\helpers\FileHelper;
 
 /**
  * CategoryController implements the CRUD actions for Category model.
@@ -148,7 +147,8 @@ class CategoryController extends Controller
             $model->user_insert = Yii::$app->user->identity->id;
             //=========
             if (!is_dir("img/category")) {
-                mkdir("img/category");
+                // mkdir("img/category");
+                FileHelper::createDirectory(Yii::getAlias('@webroot/img/category'));
                 $path = "img/category";
             } else {
                 $path = "img/category";
@@ -182,6 +182,10 @@ class CategoryController extends Controller
             $name = trim($model->name, " \t\n\r");
             $model->name = $name;
             $model->save(false);
+            // if (!$model->save()) {
+            //     Yii::$app->session->setFlash('error', 'تعذر حفظ الصنف');
+            //     return $this->render('create', ['model' => $model]);
+            // }
             return $this->redirect(['view', 'id' => $model->id]);
         }
 
@@ -206,7 +210,9 @@ class CategoryController extends Controller
             $model->user_update = Yii::$app->user->id;
             //=========
             if (!is_dir("img/category")) {
-                mkdir("img/category");
+                // mkdir("img/category");
+                FileHelper::createDirectory(Yii::getAlias('@webroot/img/category'));
+
                 $path = "img/category";
             } else {
                 $path = "img/category";
@@ -523,8 +529,7 @@ class CategoryController extends Controller
                 ->select('max(name)name, max(serialNo)serialNo, sum(quantity)quantity, max(costPrice)totalCost')
                 ->where(['branch' => Yii::$app->user->identity->branch])
                 ->andWhere(['type' => 1])
-                ->groupBy('id')
-                ->all(),
+                ->groupBy('id'),
 
             'pagination' => [
                 'pageSize' => false
@@ -581,11 +586,11 @@ class CategoryController extends Controller
             ->leftJoin('salesDetails', 'sales.id = salesDetails.salesId')
             ->where(['sales.type' => 1])
             ->andWhere(['=', 'salesDetails.category', $id])
-           ->limit(3)
-           ->orderBy(['sales.at' => SORT_DESC])
-           ->all();
-           
-           
+            ->limit(3)
+            ->orderBy(['sales.at' => SORT_DESC])
+            ->all();
+
+
 
         if ($model->load(Yii::$app->request->post())) {
             return $this->redirect(Yii::$app->request->referrer);
