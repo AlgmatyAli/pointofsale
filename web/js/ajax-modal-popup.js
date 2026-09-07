@@ -322,23 +322,34 @@ $(document).ready(function () {
     e.preventDefault();
     e.stopImmediatePropagation();
     var form = $(this);
+
     $.ajax({
       url: form.attr("action"),
       type: "POST",
       data: form.serialize(),
       success: function (response) {
         if (response.success) {
+          // 1. إعادة تحميل الأجزاء المطلوبة عبر Pjax
           $.pjax.reload({ container: "#pjax-grid-view", async: false });
-          $.pjax.reload({
-            container: "#w0",
-            url: "?r=temp-invoice/create",
-            async: true,
-          });
-          counter = response.counter;
-          $("#submit-counter").text(counter);
-          $("input").each(function () {
-            $(this).val("");
-          });
+          $.pjax
+            .reload({
+              container: "#w0",
+              url: "?r=temp-invoice/create",
+              async: true,
+            })
+            .done(function () {
+              // إعادة التركيز على Select2 بعد تحديث الـ Pjax إذا لزم الأمر
+              $("#kind").select2("open");
+            });
+
+          // 2. تحديث العداد
+          $("#submit-counter").text(response.counter);
+
+          // 3. تفريغ جميع مدخلات النص والمدخلات المخفية
+          form.find("input[type='text'], input[type='hidden']").val("");
+
+          // 4. تفريغ حقل Select2 بالشكل الصحيح ليسمح باختيار نفس العنصر مجدداً
+          $("#kind").val(null).trigger("change");
         } else {
           swal({
             title: "منظومة المبيعات",
@@ -352,13 +363,61 @@ $(document).ready(function () {
         swal({
           title: "منظومة المبيعات",
           text: "حدث خطأ اثناء التخزين",
-          type: "wrong",
+          type: "error", // تم تصحيح الكلمة من wrong إلى error
           confirmButtonText: "حسنا",
         });
       },
     });
   });
 });
+
+// $(document).ready(function () {
+//   $("#temp-invoice-form").submit(function (e) {
+//     e.preventDefault();
+//     e.stopImmediatePropagation();
+//     var form = $(this);
+//     $.ajax({
+//       url: form.attr("action"),
+//       type: "POST",
+//       data: form.serialize(),
+//       success: function (response) {
+//         if (response.success) {
+//           $.pjax.reload({ container: "#pjax-grid-view", async: false });
+//           $.pjax.reload({
+//             container: "#w0",
+//             url: "?r=temp-invoice/create",
+//             async: true,
+//           });
+//           alert();
+//           var $el = $(this);
+//           setTimeout(function () {
+//             $el.val(null).trigger("change.select2");
+//           }, 100);
+//           counter = response.counter;
+//           $("#submit-counter").text(counter);
+//           $("input").each(function () {
+//             $(this).val("");
+//           });
+//         } else {
+//           swal({
+//             title: "منظومة المبيعات",
+//             text: response.message,
+//             type: "warning",
+//             confirmButtonText: "حسنا",
+//           });
+//         }
+//       },
+//       error: function () {
+//         swal({
+//           title: "منظومة المبيعات",
+//           text: "حدث خطأ اثناء التخزين",
+//           type: "wrong",
+//           confirmButtonText: "حسنا",
+//         });
+//       },
+//     });
+//   });
+// });
 
 $(document).ready(function () {
   $("#temp-invoice-purchase-form").submit(function (e) {
@@ -406,31 +465,53 @@ $(document).ready(function () {
 
 // $("#kind").on("change", function () {
 //   var data = $(this).select2("data");
+//   alert(data[0].branchId);
 //   $("#branch").val("");
 //   $("#branch").val(data[0].branchId);
 // });
-// دالة موحدة لتحديث حقل الفرع بناءً على الاختيار
-function updateBranch(e) {
+
+$("#kind").on("select2:select", function (e) {
+  // الحصول على بيانات العنصر المحدد مباشرة من حدث Select2
   var data = e.params.data;
 
-  // 1. تصفير الحقل وإطلاق الحدث لتحديث أي واجهة مرتبطة
-  $("#branch").val(null).trigger("change");
+  $("#branch").val(data.branchId);
+  // var $el = $(this);
+  // setTimeout(function () {
+  //   $el.val(null).trigger("change.select2");
+  // }, 100);
+});
 
-  // 2. تعيين القيمة الجديدة وإطلاق الحدث
-  if (data && data.branchId) {
-    $("#branch").val(data.branchId).trigger("change");
-  }
-}
+$("#cat").on("select2:select", function (e) {
+  // الحصول على بيانات العنصر المحدد مباشرة من حدث Select2
+  var data = e.params.data;
 
-// دالة لتصفير الحقل عند مسح الاختيار
-function resetBranch() {
-  $("#branch").val(null).trigger("change");
-}
+  $("#branch").val(data.branchId);
+  // var $el = $(this);
+  // setTimeout(function () {
+  //   $el.val(null).trigger("change.select2");
+  // }, 100);
+});
 
-// ربط العناصر بالحدث المباشر لـ Select2
-$("#kind, #cat")
-  .on("select2:select", updateBranch)
-  .on("select2:unselect", resetBranch);
+// دالة موحدة لتحديث حقل الفرع بناءً على الاختيار
+
+// function updateBranch(e) {
+//   var data = e.params.data;
+
+//   $("#branch").val(null).trigger("change");
+
+//   if (data && data.branchId) {
+//     alert(data.branchId);
+//     $("#branch").val(data.branchId).trigger("change");
+//   }
+// }
+
+// function resetBranch() {
+//   $("#branch").val(null).trigger("change");
+// }
+
+// $("#kind, #cat")
+//   .on("select2:select", updateBranch)
+//   .on("select2:unselect", resetBranch);
 
 // $("#kind").on("change", function () {
 //   var data = $(this).select2("data");

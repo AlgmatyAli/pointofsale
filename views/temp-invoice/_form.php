@@ -212,7 +212,6 @@ JS;
 JS;
                 echo $form->field($model, 'kind')->widget(Select2::classname(), [
                     'name' => 'kv-repo-template1',
-                    // 'id' => 'kind',
                     'language' => 'en',
                     'options' => [
                         'placeholder' => Yii::t('app', 'Search...'),
@@ -259,7 +258,10 @@ JS;
                }
            });
        }',
+
+
                     ],
+
                 ]);
             } else {
                 $formatJs = <<< 'JS'
