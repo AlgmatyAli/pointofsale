@@ -307,7 +307,7 @@ class ClientController extends Controller
         $model = new HistransClient();
         if ($model->load(Yii::$app->request->post())) {
             if ($model->allData != 0) {
-                $model->min_date = '2020-01-30';
+                $model->min_date = '2020-01-01';
                 $model->max_date = date('Y-m-d');
             }
 
