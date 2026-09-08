@@ -269,7 +269,7 @@ class ClientController extends Controller
                     'coun' => 1,
                     'count' => 0,
                 ]);
-            } elseif ($model->type == 1) {
+            } elseif ($model->type == 1 && Yii::$app->user->can('seeVendorCredit')) {
                 $model->type = '1';
                 $sql = " SELECT dept_supp.id, dept_supp.type as type, MAX(dept_supp.name) as name,  SUM(dept_supp.credt) as credt,
                 MAX(dept_supp.Phone) as phone, '1' as post_paid FROM dept_supp
@@ -290,6 +290,9 @@ class ClientController extends Controller
                     'coun' => 1,
                     'count' => 0,
                 ]);
+            } else {
+                Yii::$app->session->setFlash('error', Yii::t('app', "You don't have permission to view vendor credits."));
+                return $this->redirect(Yii::$app->request->referrer);
             }
         }
         return $this->render('credits', [
