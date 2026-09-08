@@ -27,11 +27,11 @@ use yii\widgets\ActiveForm;
 
         <h3> السنة- <?php echo date('Y') ?>
           <?php
-          echo IpInfo::widget([
-            'showFlag' => true,
-            'showPopover' => true,
-            'template' => ['inlineContent' => '{flag} {city} {countryCode}'],
-          ]);
+          // echo IpInfo::widget([
+          //   'showFlag' => true,
+          //   'showPopover' => true,
+          //   'template' => ['inlineContent' => '{flag} {city} {countryCode}'],
+          // ]);
           ?>
         </h3>
       </div>
