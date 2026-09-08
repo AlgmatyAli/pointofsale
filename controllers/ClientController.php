@@ -390,7 +390,7 @@ class ClientController extends Controller
 
         if ($model->load(Yii::$app->request->post())) {
             if ($model->allData != 0) {
-                $model->min_date = '2020-01-01';
+                $model->min_date = '2020-01-02';
                 $model->max_date = date('Y-m-d');
             }
 
