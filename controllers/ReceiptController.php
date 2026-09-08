@@ -55,8 +55,13 @@ class ReceiptController extends Controller
 
                     [
                         'allow' => true,
-                        'actions' => ['index', 'index_'],
+                        'actions' => ['index'],
                         'roles' => ['indexReciept'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['index_'],
+                        'roles' => ['canCreateVendorReceipt'],
                     ],
                 ],
             ],
@@ -115,7 +120,12 @@ class ReceiptController extends Controller
      */
     public function actionCreate()
     {
+
         $model = new Receipt();
+
+        if ($_GET['type'] == 2 && !Yii::$app->user->can('canCreateVendorReceipt')) {
+            throw new \yii\web\ForbiddenHttpException(Yii::t('app', 'You are not allowed to access this page'));
+        }
 
         if ($model->load(Yii::$app->request->post())) {
             $exist = Receipt::find()->where(['=', 'value', $model->value])

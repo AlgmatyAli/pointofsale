@@ -393,5 +393,6 @@ return [
     'Create Temp Back Sales By Client' => 'تسجيل مسترجع مبيعات حسب الزبون',
     'Print with place' => 'طباعة حسب المخزن',
     'Payment Type' => 'كيفية التسديد',
+    'You are not allowed to access this page' => 'عفواً ليس لديك صلاحية الوصول لهذه الصفحة',
 
 ];

@@ -302,67 +302,184 @@ class ClientController extends Controller
      * If creation is successful, the browser will be redirected to the 'view' page.
      * @return mixed
      */
+    // public function actionHistrans()
+    // {
+    //     $model = new HistransClient();
+    //     if ($model->load(Yii::$app->request->post())) {
+    //         if ($model->allData != 0) {
+    //             $model->min_date = '2020-01-01';
+    //             $model->max_date = date('Y-m-d');
+    //         }
+
+    //         if ($model->type == 0 || $model->type == 2) {
+    //             $types = '0,2';
+    //             $sqlSum = " SELECT 
+    //         sum(histrans_client.dept) as sader, sum(histrans_client.credt) as wared, max(histrans_client.type) as type,
+    //         max(histrans_client.deleviried) as deleviried
+    //         FROM histrans_client
+    //         where histrans_client.Type in(" . $types . ") and histrans_client.id = " . $model->id . " 
+    //         and histrans_client.trandate < '" . $model->min_date . "' and histrans_client.currency in( 0, " . $model->currency . ")";
+    //             $connection = Yii::$app->db;
+    //             $data = $connection->createCommand($sqlSum);
+    //             $lastBalance = $data->queryAll();
+    //         }
+
+    //         if ($model->type == 1) {
+    //             $sqlSum = " SELECT
+    //         sum(histrans_supplier.dept) as sader, sum(histrans_supplier.credt) as wared, max(histrans_supplier.type) as type FROM histrans_supplier
+    //         where histrans_supplier.Type in(" . $model->type . ") and histrans_supplier.id = " . $model->id . "
+    //         and histrans_supplier.trandate < '" . $model->min_date . "' and histrans_supplier.currency in( 0, " . $model->currency . ")";
+    //             $connection = Yii::$app->db;
+    //             $data = $connection->createCommand($sqlSum);
+    //             $lastBalance = $data->queryAll();
+    //         }
+
+    //         if ($model->type == 0 || $model->type == 2) {
+    //             $types = '0,2';
+    //             $sql = " SELECT histrans_client.id, histrans_client.trandate, histrans_client.name as name,
+    //     histrans_client.dept as sader, histrans_client.billId as billId, histrans_client.kind as kind,
+    //     histrans_client.credt as wared, histrans_client.printId as printId, histrans_client.type as type, histrans_client.deleviried as deleviried 
+    //     FROM histrans_client
+    //     where histrans_client.Type in(" . $types . ") and histrans_client.id = " . $model->id . "
+    //     and histrans_client.trandate between '" . $model->min_date . "' and '" . $model->max_date . "'
+    //     and histrans_client.sort <> 1  and histrans_client.currency in( 0, " . $model->currency . ")
+    //     order by  histrans_client.trandate, histrans_client.billId";
+    //         } elseif ($model->type == 1) {
+    //             $sql = " SELECT histrans_supplier.id, histrans_supplier.kind, histrans_supplier.trandate, histrans_supplier.name as name, 
+    //         histrans_supplier.dept as wared, histrans_supplier.credt as sader, histrans_supplier.billId as billId,
+    //         histrans_supplier.printId as printId, histrans_supplier.type as type
+    //          FROM histrans_supplier
+    //         where histrans_supplier.Type in(" . $model->type . ") and histrans_supplier.id = " . $model->id . " and histrans_supplier.trandate 
+    //         between '" . $model->min_date . "' and '" . $model->max_date . "'
+    //         and histrans_supplier.sort <> 1 and histrans_supplier.currency in( 0, " . $model->currency . ")
+    //         order by histrans_supplier.trandate, histrans_supplier.billId";
+    //         }
+
+    //         $connection = Yii::$app->db;
+    //         $data = $connection->createCommand($sql);
+    //         $info = $data->queryAll();
+
+    //         if (count($info) === 0) {
+    //             Yii::$app->session->setFlash('error', Yii::t('app', "Pardon There is no data to view"));
+    //             return $this->redirect(['histrans', 'model' => $model]);
+    //         }
+    //         return $this->render('histransrep', [
+    //             'models' => $info,
+    //             'min_date' => $model->min_date,
+    //             'max_date' => $model->max_date,
+    //             'sumwared' => 0,
+    //             'sumsader' => 0,
+    //             'sum' => 0,
+    //             'coun' => 1,
+    //             'count' => 0,
+    //             'lastBalance' => $lastBalance,
+    //             'balance' => 0,
+    //             'id' => null,
+    //             'deleviried' => 0,
+    //         ]);
+    //     }
+
+    //     return $this->render('histrans', [
+    //         'model' => $model,
+    //     ]);
+    // }
+
     public function actionHistrans()
     {
         $model = new HistransClient();
+
         if ($model->load(Yii::$app->request->post())) {
             if ($model->allData != 0) {
                 $model->min_date = '2020-01-01';
                 $model->max_date = date('Y-m-d');
             }
 
-            if ($model->type == 0 || $model->type == 2) {
-                $types = '0,2';
-                $sqlSum = " SELECT 
-            sum(histrans_client.dept) as sader, sum(histrans_client.credt) as wared, max(histrans_client.type) as type,
-            max(histrans_client.deleviried) as deleviried
-            FROM histrans_client
-            where histrans_client.Type in(" . $types . ") and histrans_client.id = " . $model->id . " 
-            and histrans_client.trandate < '" . $model->min_date . "' and histrans_client.currency in( 0, " . $model->currency . ")";
-                $connection = Yii::$app->db;
-                $data = $connection->createCommand($sqlSum);
-                $lastBalance = $data->queryAll();
-            }
+            $db = Yii::$app->db;
+            $lastBalance = [];
 
-            if ($model->type == 1) {
-                $sqlSum = " SELECT
-            sum(histrans_supplier.dept) as sader, sum(histrans_supplier.credt) as wared, max(histrans_supplier.type) as type FROM histrans_supplier
-            where histrans_supplier.Type in(" . $model->type . ") and histrans_supplier.id = " . $model->id . "
-            and histrans_supplier.trandate < '" . $model->min_date . "' and histrans_supplier.currency in( 0, " . $model->currency . ")";
-                $connection = Yii::$app->db;
-                $data = $connection->createCommand($sqlSum);
-                $lastBalance = $data->queryAll();
-            }
-
+            // 1. حساب الرصيد السابق (Last Balance)
             if ($model->type == 0 || $model->type == 2) {
-                $types = '0,2';
-                $sql = " SELECT histrans_client.id, histrans_client.trandate, histrans_client.name as name,
-        histrans_client.dept as sader, histrans_client.billId as billId, histrans_client.kind as kind,
-        histrans_client.credt as wared, histrans_client.printId as printId, histrans_client.type as type, histrans_client.deleviried as deleviried 
-        FROM histrans_client
-        where histrans_client.Type in(" . $types . ") and histrans_client.id = " . $model->id . "
-        and histrans_client.trandate between '" . $model->min_date . "' and '" . $model->max_date . "'
-        and histrans_client.sort <> 1  and histrans_client.currency in( 0, " . $model->currency . ")
-        order by  histrans_client.trandate, histrans_client.billId";
+                $sqlSum = "SELECT 
+                COALESCE(SUM(dept), 0) as sader, 
+                COALESCE(SUM(credt), 0) as wared, 
+                MAX(type) as type,
+                MAX(deleviried) as deleviried
+                FROM histrans_client
+                WHERE type IN (0, 2) 
+                  AND id = :id 
+                  AND trandate < :min_date 
+                  AND currency IN (0, :currency)";
+
+                $lastBalance = $db->createCommand($sqlSum, [
+                    ':id' => $model->id,
+                    ':min_date' => $model->min_date,
+                    ':currency' => $model->currency,
+                ])->queryAll();
             } elseif ($model->type == 1) {
-                $sql = " SELECT histrans_supplier.id, histrans_supplier.kind, histrans_supplier.trandate, histrans_supplier.name as name, 
-            histrans_supplier.dept as wared, histrans_supplier.credt as sader, histrans_supplier.billId as billId,
-            histrans_supplier.printId as printId, histrans_supplier.type as type
-             FROM histrans_supplier
-            where histrans_supplier.Type in(" . $model->type . ") and histrans_supplier.id = " . $model->id . " and histrans_supplier.trandate 
-            between '" . $model->min_date . "' and '" . $model->max_date . "'
-            and histrans_supplier.sort <> 1 and histrans_supplier.currency in( 0, " . $model->currency . ")
-            order by histrans_supplier.trandate, histrans_supplier.billId";
+                $sqlSum = "SELECT 
+                COALESCE(SUM(dept), 0) as sader, 
+                COALESCE(SUM(credt), 0) as wared, 
+                MAX(type) as type 
+                FROM histrans_supplier
+                WHERE type = :type 
+                  AND id = :id 
+                  AND trandate < :min_date 
+                  AND currency IN (0, :currency)";
+
+                $lastBalance = $db->createCommand($sqlSum, [
+                    ':type' => $model->type,
+                    ':id' => $model->id,
+                    ':min_date' => $model->min_date,
+                    ':currency' => $model->currency,
+                ])->queryAll();
             }
 
-            $connection = Yii::$app->db;
-            $data = $connection->createCommand($sql);
-            $info = $data->queryAll();
+            // 2. جلب الحركات (Transactions)
+            if ($model->type == 0 || $model->type == 2) {
+                $sql = "SELECT id, trandate, name, dept as sader, billId, kind,
+                           credt as wared, printId, type, deleviried 
+                    FROM histrans_client
+                    WHERE type IN (0, 2) 
+                      AND id = :id 
+                      AND trandate BETWEEN :min_date AND :max_date
+                      AND sort <> 1 
+                      AND currency IN (0, :currency)
+                    ORDER BY trandate, billId";
 
-            if (count($info) === 0) {
-                Yii::$app->session->setFlash('error', Yii::t('app', "Pardon There is no data to view"));
-                return $this->redirect(['histrans', 'model' => $model]);
+                $info = $db->createCommand($sql, [
+                    ':id' => $model->id,
+                    ':min_date' => $model->min_date,
+                    ':max_date' => $model->max_date,
+                    ':currency' => $model->currency,
+                ])->queryAll();
+            } elseif ($model->type == 1) {
+                $sql = "SELECT id, kind, trandate, name, dept as wared, credt as sader, 
+                           billId, printId, type
+                    FROM histrans_supplier
+                    WHERE type = :type 
+                      AND id = :id 
+                      AND trandate BETWEEN :min_date AND :max_date
+                      AND sort <> 1 
+                      AND currency IN (0, :currency)
+                    ORDER BY trandate, billId";
+
+                $info = $db->createCommand($sql, [
+                    ':type' => $model->type,
+                    ':id' => $model->id,
+                    ':min_date' => $model->min_date,
+                    ':max_date' => $model->max_date,
+                    ':currency' => $model->currency,
+                ])->queryAll();
+            } else {
+                $info = [];
             }
+
+            // 3. إضافة تنبيه اختياري للمستخدم دون منع عرض الصفحة
+            if (empty($info)) {
+                Yii::$app->session->setFlash('info', Yii::t('app', "لا توجد حركات خلال الفترة المحددة، تم عرض الرصيد السابق فقط."));
+            }
+
+            // 4. عرض التقرير دائماً
             return $this->render('histransrep', [
                 'models' => $info,
                 'min_date' => $model->min_date,

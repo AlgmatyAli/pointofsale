@@ -104,50 +104,60 @@ class UserController extends Controller
     public function actionChangepassword()
     {
         if (Yii::$app->user->isGuest) {
+            return $this->redirect(['site/login']);
+        }
 
-            return $this->redirect(Yii::$app->urlManager->createUrl("site/login"));
-        } else {
+        $model = new PasswordForm();
 
-            $model = new PasswordForm;
-            $modeluser = User::find()->where([
-                'username' => Yii::$app->user->identity->username
-            ])->one();
+        $modeluser = User::find()
+            ->where(['username' => Yii::$app->user->identity->username])
+            ->one();
 
-            if ($model->load(Yii::$app->request->post())) {
-                if ($model->validate()) {
-                    try {
-                        $modeluser->password = md5($_POST['PasswordForm']['newpass']);
-                        if ($modeluser->save()) {
-                            echo '<script type="text/javascript"> alert(\'تم تعديل كلمة السر الخاصة بك بنجاح\');
-                        window.location.href="index";
-                        </script>';
-                        } else {
-                            echo '<script type="text/javascript"> alert(\'لم يتم تعديل كلمة السر الخاصة بك الرجاء اعادة المحاولة\');
-                        window.location.href="index.php";
-                        </script>';
-                        }
-                    } catch (Exception $e) {
-                        Yii::$app->getSession()->setFlash(
-                            'error',
-                            "{$e->getMessage()}"
-                        );
-                        return $this->render('changepassword', [
-                            'model' => $model
-                        ]);
-                    }
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            try {
+
+                $modeluser->password = md5($model->newpass);
+
+                if ($modeluser->save()) {
+
+                    Yii::$app->session->setFlash(
+                        'success',
+                        'تم تعديل كلمة السر الخاصة بك بنجاح'
+                    );
+
+                    return $this->redirect([
+                        'view',
+                        'id' => $modeluser->id
+                    ]);
                 } else {
-                    return $this->render('changepassword', [
-                        'model' => $model
+
+                    Yii::$app->session->setFlash(
+                        'error',
+                        'لم يتم تعديل كلمة السر الخاصة بك، الرجاء إعادة المحاولة'
+                    );
+
+                    return $this->redirect([
+                        'view',
+                        'id' => $modeluser->id
                     ]);
                 }
-            } else {
+            } catch (\Exception $e) {
+
+                Yii::$app->session->setFlash(
+                    'error',
+                    $e->getMessage()
+                );
+
                 return $this->render('changepassword', [
                     'model' => $model
                 ]);
             }
         }
-    }
 
+        return $this->render('changepassword', [
+            'model' => $model
+        ]);
+    }
     public function actionPrint()
     {
         $user = User::find()->all();
