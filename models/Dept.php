@@ -22,7 +22,7 @@ class Dept extends \yii\db\ActiveRecord
     {
         return 'dept';
     }
-
+    public $indebtedness;
     /**
      * {@inheritdoc}
      */
@@ -30,11 +30,11 @@ class Dept extends \yii\db\ActiveRecord
     {
         return [
             [['id', 'type'], 'integer'],
-            [['name', 'credt', 'phone', 'type', 'deserving', 'currency'], 'default', 'value' => null],
+            [['name', 'credt', 'phone', 'type', 'deserving', 'currency', 'indebtedness'], 'default', 'value' => null],
             [['id'], 'default', 'value' => 0],
             [['id', 'type', 'currency'], 'integer'],
             [['credt'], 'number'],
-            [['deserving'], 'safe'],
+            [['deserving', 'indebtedness'], 'safe'],
             [['name', 'phone'], 'string', 'max' => 255],
         ];
     }
@@ -52,6 +52,7 @@ class Dept extends \yii\db\ActiveRecord
             'type' => Yii::t('app', 'Type'),
             'deserving' => Yii::t('app', 'Deserving'),
             'currency' => Yii::t('app', 'Currency'),
+            'indebtedness' => Yii::t('app', 'Indebtedness'),
         ];
     }
 }

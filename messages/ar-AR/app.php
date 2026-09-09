@@ -395,6 +395,8 @@ return [
     'Payment Type' => 'كيفية التسديد',
     'You are not allowed to access this page' => 'عفواً ليس لديك صلاحية الوصول لهذه الصفحة',
     'You don\'t have permission to view vendor credits.' => 'ليس لديك صلاحية لعرض أرصدة الموردين.',
-    'Print For Driver' => 'طباعة لسائق'
+    'Print For Driver' => 'طباعة لسائق',
+    'Create Indebtedness' => 'تقرير اجمالي المديونية',
+    'Indebtedness' => 'اجمالي المديونية',
 
 ];

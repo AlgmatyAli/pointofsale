@@ -33,7 +33,7 @@ class Client extends \yii\db\ActiveRecord
     /**
      * {@inheritdoc}
      */
-    public $sumwared, $sumsader, $count;
+    public $sumwared, $sumsader, $count, $indebtedness;
     public static function tableName()
     {
         return 'client';
@@ -47,7 +47,7 @@ class Client extends \yii\db\ActiveRecord
         return [
             [['name', 'type', 'branch', 'user_insert', 'created_at'], 'required'],
             [['type', 'branch', 'user_insert', 'user_update'], 'integer'],
-            [['created_at', 'update_at'], 'safe'],
+            [['created_at', 'update_at', 'indebtedness'], 'safe'],
             [['debt', 'post_paid'], 'number'],
             [['name', 'phone', 'mobile', 'address', 'email', 'balance'], 'string', 'max' => 255],
             [['user_insert'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['user_insert' => 'id']],
@@ -76,6 +76,7 @@ class Client extends \yii\db\ActiveRecord
             'update_at' => Yii::t('app', 'Update At'),
             'debt' => Yii::t('app', 'Debt'),
             'post_paid' => Yii::t('app', 'Post Paid'),
+            'indebtedness' => Yii::t('app', 'Indebtedness'),
         ];
     }
 
@@ -121,13 +122,13 @@ class Client extends \yii\db\ActiveRecord
     public function getDebit()
     {
         return $this->hasMany(Receipt::className(), ['clinet' => 'id'])
-        ->andwhere(['type' => 2])
+            ->andwhere(['type' => 2])
         ;
     }
     public function getCredit()
     {
         return $this->hasMany(Receipt::className(), ['clinet' => 'id'])
-        ->andwhere(['type' => 1])
+            ->andwhere(['type' => 1])
         ;
     }
 
@@ -139,15 +140,14 @@ class Client extends \yii\db\ActiveRecord
     public function getSales()
     {
         return $this->hasMany(Sales::className(), ['clinet' => 'id'])
-        ->andwhere(['type' => 1])
+            ->andwhere(['type' => 1])
         ;
     }
 
     public function getInitsales()
     {
         return $this->hasMany(Sales::className(), ['clinet' => 'id'])
-        ->andwhere(['type' => 3])
+            ->andwhere(['type' => 3])
         ;
     }
-    
 }

@@ -55,7 +55,7 @@ class ClientController extends Controller
                     ],
                     [
                         'allow' => true,
-                        'actions' => ['credts'],
+                        'actions' => ['credts', 'indebtedness'],
                         'roles' => ['clientDepts'],
                     ],
                     [
@@ -535,5 +535,63 @@ class ClientController extends Controller
                 ->select(['id', 'name'])->asArray()->all();
             return $data;
         }
+    }
+
+    public function actionIndebtedness()
+    {
+        $model = new Dept();
+        if ($model->load(Yii::$app->request->post())) {
+            if ($model->indebtedness == 0) {
+                $model->type = '0,2';
+                $sql = " SELECT dept.id, dept.type as type, MAX(dept.name) as name, SUM(dept.credt) as credt, 
+                MAX(dept.Phone) as phone, max(dept.deserving) as deserving, max(post_paid) as post_paid FROM dept
+                where dept.Type in(" . $model->type . ")  and dept.currency in( 0, " . $model->currency . ")
+                GROUP BY dept.id, dept.type having SUM(dept.credt) > 0";
+                $connection = Yii::$app->db;
+                $model = $connection->createCommand($sql);
+                $info = $model->queryAll();
+                if ($info == null) {
+                    Yii::$app->session->setFlash('error', Yii::t('app', "There is Nothing to Show !"));
+                    return $this->redirect(Yii::$app->request->referrer);
+                }
+
+                return $this->render('indebtedness_report', [
+                    'models' => $info,
+                    'dept' => 0,
+                    'credt' => 0,
+                    'coun' => 1,
+                    'count' => 0,
+                    'indebtedness' => 0
+                ]);
+            } elseif ($model->indebtedness == 1 && Yii::$app->user->can('seeVendorCredit')) {
+                $model->type = '0,2';
+                $sql = " SELECT dept_supp.id, dept_supp.type as type, MAX(dept_supp.name) as name,  SUM(dept_supp.credt) as credt,
+                MAX(dept_supp.Phone) as phone, '1' as post_paid FROM dept_supp
+                where dept_supp.Type in(" . $model->type . ") and dept_supp.currency in( 0, " . $model->currency . ")
+                GROUP BY dept_supp.id, dept_supp.type having SUM(dept_supp.credt) < 0";
+                $connection = Yii::$app->db;
+                $model = $connection->createCommand($sql);
+                $info = $model->queryAll();
+                if ($info == null) {
+                    Yii::$app->session->setFlash('error', Yii::t('app', "There is Nothing to Show !"));
+                    return $this->redirect(Yii::$app->request->referrer);
+                }
+                return $this->render('indebtedness_report', [
+                    'models' => $info,
+                    'dept' => 0,
+                    'credt' => 0,
+                    'coun' => 1,
+                    'count' => 0,
+                    'indebtedness' => 1
+                ]);
+            } else {
+                Yii::$app->session->setFlash('error', Yii::t('app', "You don't have permission to view vendor credits."));
+                return $this->redirect(Yii::$app->request->referrer);
+            }
+        }
+
+        return $this->render('indebtedness_', [
+            'model' => $model,
+        ]);
     }
 }

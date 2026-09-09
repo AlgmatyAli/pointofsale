@@ -130,7 +130,9 @@ class ReceiptController extends Controller
         if ($model->load(Yii::$app->request->post())) {
             $exist = Receipt::find()->where(['=', 'value', $model->value])
                 ->andWhere(['=', 'at', $model->at])
-                ->andWhere(['=', 'clinet', $model->clinet])->one();
+                ->andWhere(['=', 'clinet', $model->clinet])
+                ->andWhere(['=', 'type', $model->type])
+                ->one();
             if ($exist <> null) {
                 Yii::$app->session->setFlash('error', Yii::t('app', "Sorry, this customer recorded the value today"));
             }
