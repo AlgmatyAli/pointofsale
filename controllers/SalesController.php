@@ -46,13 +46,13 @@ class SalesController extends Controller
                 'rules' => [
                     [
                         'allow' => true,
-                        'actions' => ['create', 'view', 'print', 'print-with-place', 'noprice', 'itemlist', 'deserving', 'stop-credit', 'done', 'itemlistid', 'print-no-price', 'fast', 'save-pdf', 'delev'],
+                        'actions' => ['create', 'view', 'print', 'print-with-place', 'noprice', 'itemlist', 'deserving', 'stop-credit', 'done', 'itemlistid', 'print-no-price', 'fast', 'save-pdf', 'delev', 'print-for-driver'],
                         'roles' => ['createSales'],
                     ],
 
                     [
                         'allow' => true,
-                        'actions' => ['update', 'view', 'print', 'print-with-place', 'noprice', 'remove', 'pdf', 'itemlist', 'deserving', 'stop-credit', 'done', 'transfer-to-temp-invoice', 'itemlistid', 'print-no-price', 'save-pdf', 'delev'],
+                        'actions' => ['update', 'view', 'print', 'print-with-place', 'noprice', 'remove', 'pdf', 'itemlist', 'deserving', 'stop-credit', 'done', 'transfer-to-temp-invoice', 'itemlistid', 'print-no-price', 'save-pdf', 'delev', 'print-for-driver'],
                         'roles' => ['updateSales'],
                     ],
 
@@ -562,7 +562,6 @@ class SalesController extends Controller
                             $modelDetails->type = $data->type;
                             $modelDetails->original_price = $data->salePrice;
                             $modelDetails->serial_number = $data->serial_number;
-                            $modelDetails->mac_address = $data->mac_address;
                             $modelDetails->branch = $data->branch;
                             if ($model->type != 4) {
                                 if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
@@ -672,7 +671,6 @@ class SalesController extends Controller
                         $modelDetails->type = $data->type;
                         $modelDetails->original_price = $data->salePrice;
                         $modelDetails->serial_number = $data->serial_number;
-                        $modelDetails->mac_address = $data->mac_address;
                         $modelDetails->branch = $data->branch;
                         if ($model->type != 4) {
                             if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
@@ -999,6 +997,34 @@ class SalesController extends Controller
             'providerSalesDetails' => $providerSalesDetails,
             'company' => $company,
             'balance' => $balance,
+            'totalInvoice' => $totalInvoice,
+        ]);
+    }
+
+    public function actionPrintForDriver($id)
+    {
+        $totalInvoice = SalesDetails::find()->where(['salesId' => $id])
+            //->andWhere(['=', 'branch', Yii::$app->user->identity->branch])
+            ->sum('salePrice * quantity');
+
+        $company = CompanyInfo::find()->one();
+        $model = $this->findModel($id);
+        $providerSalesDetails = new ActiveDataProvider([
+            'query' => SalesDetails::find()
+                ->where(['=', 'salesId', $id]),
+            //->andWhere(['=', 'branch', Yii::$app->user->identity->branch]),
+            'sort' => [
+                'defaultOrder' => [
+                    'id' => SORT_DESC,
+                ]
+            ],
+            'pagination' => false,
+        ]);
+        // $this->layout = false;
+        return $this->render('print_for_driver', [
+            'model' => $this->findModel($id),
+            'providerSalesDetails' => $providerSalesDetails,
+            'company' => $company,
             'totalInvoice' => $totalInvoice,
         ]);
     }
@@ -1440,7 +1466,6 @@ class SalesController extends Controller
                 $modelDetails->type = $data->type;
                 $modelDetails->original_price = $data->salePrice;
                 $modelDetails->serial_number = $data->serial_number;
-                $modelDetails->mac_address = $data->mac_address;
                 $modelDetails->save(false);
                 //Yii::$app->db->createCommand("UPDATE `stocks` SET `quantity`= `quantity` - '$data->quantity' WHERE `category`='$data->category'")->execute();
 

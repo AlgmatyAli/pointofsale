@@ -2,6 +2,11 @@
 
 use yii\helpers\Html;
 use yii\grid\GridView;
+
+/** @var yii\web\View $this */
+/** @var app\models\Sales $model */
+/** @var app\models\CompanyInfo $company */
+/** @var yii\data\ActiveDataProvider $providerSalesDetails */
 ?>
 
 <!DOCTYPE html>
@@ -20,7 +25,7 @@ use yii\grid\GridView;
 
     <?= Html::a('<i class="fa fa-fw fa-print"></i>' . ' ' . Yii::t('app', 'Print without price'), ['noprice', 'id' => $model->id], ['class' => 'btn btn-secondary']) ?>
 
-    <?php //Html::a('<i class="fa fa-fw fa-print"></i>' . ' ' . Yii::t('app', 'Print without price'), ['print-no-price', 'id' => $model->id], ['class' => 'btn btn-success']) 
+    <?= Html::a('<i class="fa fa-fw fa-print"></i>' . ' ' . Yii::t('app', 'Print For Driver'), ['print-for-driver', 'id' => $model->id], ['class' => 'btn btn-success'])
     ?>
 
     <?php if ($model->type == 1 || $model->type == 4) {
