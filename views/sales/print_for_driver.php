@@ -3,6 +3,7 @@
 use yii\helpers\Html;
 use yii\grid\GridView;
 
+
 /** @var yii\web\View $this */
 /** @var app\models\Sales $model */
 /** @var app\models\CompanyInfo $company */
@@ -17,20 +18,43 @@ use yii\grid\GridView;
     <style>
         /* CSS عام وتجهيز الصفحة للطباعة */
         @media print {
+
+            /* نستخدم هامش الصفحة نفسه بدل هامش الـ body حتى لا يتضاعف الهامش
+               مع هامش الطباعة الافتراضي للمتصفح (سبب رئيسي لظهور صفحة زائدة) */
+            @page {
+                size: A4;
+                margin: 10mm;
+            }
+
             .no-print {
                 display: none !important;
             }
 
+            /* تصفير أي حدود/ظلال متبقية على html و body قد تظهر كخط رأسي
+               ممتد على طول الصفحة */
+            html,
             body {
-                background: #fff;
-                margin: 0;
-                padding: 0;
+                background: #fff !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                width: auto !important;
+                height: auto !important;
+                border: none !important;
+                box-shadow: none !important;
+                outline: none !important;
             }
 
             #container {
                 width: 100%;
                 margin: 0;
-                box-shadow: none;
+                /* min-height الأصلي في template.css (1078px) وحده أطول تقريباً
+                   من مساحة صفحة A4 القابلة للطباعة، وهذا هو سبب الصفحة الفارغة
+                   الزائدة حتى مع فاتورة قصيرة. نلغيه هنا فقط عند الطباعة */
+                min-height: 0 !important;
+                height: auto !important;
+                border: none !important;
+                box-shadow: none !important;
+                outline: none !important;
             }
 
             /* إزالة الحدود والخطوط العمودية غير المرغوبة أثناء الطباعة */
@@ -40,9 +64,22 @@ use yii\grid\GridView;
                 border-right: none !important;
             }
 
+            /* #items table في template.css محددة بمعرّف (ID) فتتغلب في
+               الأولوية على .grid-view table وتمنع تطبيق border-collapse:collapse،
+               فتبقى الحدود منفصلة (separate) وتظهر كخطوط/فراغات غير مرغوبة.
+               نجبر الدمج هنا بأولوية عالية لضمان تطبيقه */
+            #items table {
+                border-collapse: collapse !important;
+            }
+
             .grid-view table {
                 border: 1px solid #dee2e6;
-                border-collapse: collapse;
+            }
+
+            /* الهامش العلوي الكبير (100px) في template.css كان يضيف ارتفاعاً
+               زائداً يساهم في دفع المحتوى إلى صفحة ثانية فارغة */
+            #terms {
+                margin-top: 30px !important;
             }
         }
 
@@ -77,8 +114,7 @@ use yii\grid\GridView;
                         <img src="<?= Html::encode($company->path) ?>" class="logo company-logo" alt="Company Logo">
                     </div>
                 <?php endif; ?>
-                <br><br>
-
+                <br>
                 <div class="company-info">
                     <span class="company-name"><?= Html::encode($company->name) ?></span>
                     <span class="spacer"></span>
@@ -191,7 +227,6 @@ use yii\grid\GridView;
 
             </section>
 
-            <br><br><br>
             <section id="terms">
                 <div class="row">
                     <div class="col-md-12">

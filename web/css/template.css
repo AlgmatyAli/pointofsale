@@ -26,7 +26,8 @@ html {
   line-height: 1;
 }
 
-ol, ul {
+ol,
+ul {
   list-style: none;
 }
 
@@ -35,16 +36,22 @@ table {
   border-spacing: 0;
 }
 
-caption, th, td {
+caption,
+th,
+td {
   text-align: right;
   /* font-weight: normal; */
   vertical-align: middle;
 }
 
-q, blockquote {
+q,
+blockquote {
   quotes: none;
 }
-q:before, q:after, blockquote:before, blockquote:after {
+q:before,
+q:after,
+blockquote:before,
+blockquote:after {
   content: "";
   content: none;
 }
@@ -53,7 +60,19 @@ a img {
   border: none;
 }
 
-article, aside, details, figcaption, figure, footer, header, hgroup, main, menu, nav, section, summary {
+article,
+aside,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+main,
+menu,
+nav,
+section,
+summary {
   display: block;
 }
 
@@ -63,7 +82,8 @@ article, aside, details, figcaption, figure, footer, header, hgroup, main, menu,
  * Instead wrap everything in one main <div id="container"> element where you may change
  * something like the font or the background of the invoice
  */
-html, body {
+html,
+body {
   /* MOVE ALONG, NOTHING TO CHANGE HERE! */
 }
 
@@ -80,12 +100,16 @@ html, body {
   display: none;
 }
 
-b, strong, .bold {
+b,
+strong,
+.bold {
   font-weight: bold;
 }
 
 #container {
-  font: normal 13px/1.4em 'Open Sans', Sans-serif;
+  font:
+    normal 13px/1.4em "Open Sans",
+    Sans-serif;
   margin: 0 auto;
   min-height: 1078px;
 }
@@ -138,7 +162,7 @@ b, strong, .bold {
   margin: 0 3px 3px 0;
 }
 #memo:after {
-  content: '';
+  content: "";
   display: block;
   clear: both;
 }
@@ -161,7 +185,7 @@ b, strong, .bold {
   text-align: right;
 }
 #invoice-info:after {
-  content: '';
+  content: "";
   display: block;
   clear: both;
 }
@@ -199,20 +223,23 @@ b, strong, .bold {
 table {
   table-layout: auto;
 }
-table th, table td {
+table th,
+table td {
   vertical-align: top;
   word-break: keep-all;
   word-wrap: break-word;
 }
 
-#items .first-cell, #items table th:first-child, #items table td:first-child {
+#items .first-cell,
+#items table th:first-child,
+#items table td:first-child {
   width: 40px;
   text-align: right;
 }
 #items table {
   border-collapse: separate;
   width: 100%;
-} 
+}
 #items table th {
   font-weight: bold;
   /* padding: 12px 10px; */
@@ -251,7 +278,8 @@ table th, table td {
   float: left;
   margin-top: 5px;
 }
-#sums table tr th, #sums table tr td {
+#sums table tr th,
+#sums table tr td {
   min-width: 100px;
   padding: 10px;
   text-align: right;
@@ -273,7 +301,8 @@ table th, table td {
 #sums table tr.amount-total th {
   color: black;
 }
-#sums table tr.amount-total th, #sums table tr.amount-total td {
+#sums table tr.amount-total th,
+#sums table tr.amount-total td {
   font-weight: bold;
 }
 #sums table tr.amount-total td:last-child {
@@ -290,14 +319,15 @@ table th, table td {
 }
 #sums table tr.amount-total td:last-child:before {
   display: block;
-  content: '';
+  content: "";
   border-top: 1px solid #444;
   position: absolute;
   top: 0;
   left: -740px;
   right: 0;
 }
-#sums table tr:last-child th, #sums table tr:last-child td {
+#sums table tr:last-child th,
+#sums table tr:last-child td {
   color: black;
 }
 
@@ -308,10 +338,9 @@ table th, table td {
   min-height: 70px;
 }
 
-
 .ib_drop_zone {
-  color: #F8ED31 !important;
-  border-color: #F8ED31 !important;
+  color: #f8ed31 !important;
+  border-color: #f8ed31 !important;
 }
 
 /**

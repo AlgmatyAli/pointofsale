@@ -39,7 +39,7 @@ class SalesDetails extends \yii\db\ActiveRecord
             // [['salesId', 'category', 'quantity', 'costPrice', 'box'], 'required'],
             [['salesId', 'type', 'category', 'box'], 'integer'],
             [['quantity', 'costPrice', 'salePrice', 'original_price'], 'number'],
-            [['expire', 'type', 'mac_address', 'serial_number', 'packing', 'waitQnty', 'company', 'serialNo', 'commCode', 'class', 'client', 'Qtotalinventory', 'reservation', 'otherQtotalinventory', 'branchName'], 'safe'],
+            [['expire', 'type', 'serial_number', 'packing', 'waitQnty', 'company', 'serialNo', 'commCode', 'class', 'client', 'Qtotalinventory', 'reservation', 'otherQtotalinventory', 'branchName'], 'safe'],
             [['category'], 'exist', 'skipOnError' => true, 'targetClass' => Category::class, 'targetAttribute' => ['category' => 'id']],
             [['salesId'], 'exist', 'skipOnError' => true, 'targetClass' => Sales::class, 'targetAttribute' => ['salesId' => 'id']],
         ];
@@ -59,7 +59,6 @@ class SalesDetails extends \yii\db\ActiveRecord
             'salePrice' => Yii::t('app', 'Sale Price'),
             'serial_number' => Yii::t('app', 'Serial Number'),
             'box' => Yii::t('app', 'Box'),
-            'mac_address' => Yii::t('app', 'Mac Address'),
             'original_price' => Yii::t('app', 'Original Price'),
             'expire' => Yii::t('app', 'Expire'),
             'packing' => Yii::t('app', 'Packing'),
