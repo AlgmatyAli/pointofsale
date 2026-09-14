@@ -32,7 +32,11 @@ class m999999_210104_view_dept_supp_v2 extends Migration
         select receipt.clinet as id, max(client.name) as name, sum(receipt.value)*-1 as credt, max(client.phone) as phone, max(client.type) as type, receipt.currancy
         FROM receipt, client where receipt.clinet = client.id and receipt.type = 2 and (receipt.currancy in (select currancy from company_info))
         group by receipt.clinet, receipt.currancy
-        ");    
+        UNION
+        select disscount_clients.client as id, max(client.name) as name, sum(disscount_clients.value)*-1 as credt, max(client.phone) as phone, max(client.type) as type, disscount_clients.currancy
+        FROM disscount_clients, client where disscount_clients.client = client.id and disscount_clients.type = 2
+        group by disscount_clients.client
+        ");
     }
 
     /**

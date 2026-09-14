@@ -7,12 +7,12 @@ use yii\db\Migration;
  */
 class m999999_210104_view_histrans_supplier_v2 extends Migration
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function safeUp()
-    {
-        $this->execute(" 
+  /**
+   * {@inheritdoc}
+   */
+  public function safeUp()
+  {
+    $this->execute(" 
         CREATE OR REPLACE 
 
         ALGORITHM = UNDEFINED 
@@ -42,20 +42,26 @@ class m999999_210104_view_histrans_supplier_v2 extends Migration
           `purchases`.`at` AS `at`, `purchases`.`id` AS `printId`, `purchases`.`currancy` AS currency from (  `purchases` join   `client`) where ((  `purchases`.`payWay` in (1,2)) 
         and (  `purchases`.`clinet` =   `client`.`id`) and (  `purchases`.`type` = 2) and (  `purchases`.`payWay` = 2))
         and (purchases.currancy in (select currancy from company_info))
+        union 
+        select 5 AS `5`,'  تخفيض - ' AS `kind`,  `disscount_clients`.`client` AS `clinet`,  `client`.`name` AS `name`,
+          `disscount_clients`.`value` AS `value`,0 AS `0`,  `client`.`phone` AS `phone`,  `client`.`type` AS `type`,
+          `disscount_clients`.`branch` AS `branch`,  `disscount_clients`.`notes` AS `billId`,  `disscount_clients`.`at` AS `at`, `disscount_clients`.`id` AS `printId`, `disscount_clients`.`currancy`
+        from (  `disscount_clients` join   `client`) where ((  `disscount_clients`.`client` =   `client`.`id`) and (  `disscount_clients`.`type` = 2)) 
+        and (disscount_clients.currancy in (select currancy from company_info))
        ");
-    }
+  }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function safeDown()
-    {
-        echo "m999999_210104_view_histrans_supplier_v2 cannot be reverted.\n";
+  /**
+   * {@inheritdoc}
+   */
+  public function safeDown()
+  {
+    echo "m999999_210104_view_histrans_supplier_v2 cannot be reverted.\n";
 
-        return false;
-    }
+    return false;
+  }
 
-    /*
+  /*
     // Use up()/down() to run migration code without a transaction.
     public function up()
     {

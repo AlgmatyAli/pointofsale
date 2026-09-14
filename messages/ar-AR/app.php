@@ -398,5 +398,9 @@ return [
     'Print For Driver' => 'طباعة لسائق',
     'Create Indebtedness' => 'تقرير اجمالي المديونية',
     'Indebtedness' => 'اجمالي المديونية',
+    'Create Disscount Clients' => 'تسجيل حركات الخصم على العملاء',
+    'Create Disscount Suppliers' => 'تسجيل حركات الخصم على الموردين',
+    'Disscount Clients' => 'الاستفسار عن خصومات العملاء',
+    'Disscount Suppliers' => 'الاستفسار عن خصومات الموردين'
 
 ];

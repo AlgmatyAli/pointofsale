@@ -45,6 +45,15 @@ use yii\helpers\Url;
                     ],
                 ],
                 ['label' => 'ايصالات الصرف', 'icon' => 'file-text-o', 'url' => ['/receipt/create', 'type' => '2'],],
+                [
+                    'label' => 'عمليات اخرى',
+                    'icon' => 'calculator',
+                    'url' => '#',
+                    'items' => [
+                        ['label' => 'تسجيل خصم على الزبائن', 'icon' => 'shopping-cart', 'url' => ['/disscount-clients/create-clients', 'type' => '1'],],
+                        ['label' => 'تسجيل خصم على الموردين', 'icon' => 'shopping-cart', 'url' => ['/disscount-clients/create-suppliers', 'type' => '2'],],
+                    ],
+                ],
                 ['label' => 'تسجيل العملاء', 'icon' => 'address-card', 'url' => ['/client/create'],],
                 ['label' => Yii::t('app', "Dashboard"), 'icon' => 'windows', 'url' => ['/site/dashboard'],],
                 ['label' => 'نقل الأصناف بين الفروع', 'icon' => 'plane', 'url' => ['/temp-transfer-items/create'],],

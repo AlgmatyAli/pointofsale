@@ -112,7 +112,7 @@ $title = CompanyInfo::find()->select(['*'])->asArray()->one();
             $sumwared += $waredVal;
             $sumsader += $saderVal;
             $lastModelType = $model['type'];
-
+            // die(var_dump($model["billId"]));
             if ($model['type'] != 1) {
               if ($model["deleviried"] == 0) {
                 $deleviried += $saderVal;

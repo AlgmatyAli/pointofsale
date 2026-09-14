@@ -58,10 +58,10 @@ use yii\widgets\DetailView;
     </div>
 
     <div class="col-md-4">
-      <?php //Html::a(Yii::t('app', 'تقرير مسترجع المشتريات'), ['/purchases/index', 'type' => 2], ['class' => 'btn btn-default btn-block repBtn']) 
+      <?= Html::a(Yii::t('app', 'تقرير  الخصومات على العملاء'), ['/disscount-clients/index'], ['class' => 'btn btn-default btn-block repBtn'])
       ?>
 
-      <?php //Html::a(Yii::t('app', 'تقرير المشتريات المعلقة'), ['/purchases/index', 'type' => 3], ['class' => 'btn btn-default btn-block repBtn']) 
+      <?= Html::a(Yii::t('app', 'تقرير الخصومات على الموردين'), ['/disscount-clients/index_'], ['class' => 'btn btn-default btn-block repBtn'])
       ?>
 
       <?= Html::a(Yii::t('app', 'تقرير عن الايصالات الملغية '), ['/receipt-arch/index'], ['class' => 'btn btn-default btn-block repBtn']) ?>
