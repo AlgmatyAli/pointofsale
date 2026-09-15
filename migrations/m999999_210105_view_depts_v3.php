@@ -37,6 +37,10 @@ class m999999_210105_view_depts_v3 extends Migration
         null, receipt.currancy, client.post_paid FROM receipt, client where receipt.clinet = client.id and receipt.type = 1 and (receipt.currancy in (select currancy from company_info))
         group by receipt.clinet, receipt.currancy
         UNION
+        select disscount_clients.client as id, max(client.name) as name, sum(disscount_clients.value)*-1 as credt, max(client.phone) as phone, max(client.type) as type, null as deserving, disscount_clients.currancy, client.post_paid
+        FROM disscount_clients, client where disscount_clients.client = client.id and disscount_clients.type = 2
+        group by disscount_clients.client
+        UNION
         SELECT purchases.clinet, max(client.name), sum(purchases.total - purchases.paid)*-1, max(client.phone), max(client.type) as type, null, purchases.currancy, client.post_paid
         from purchases, client
         where purchases.clinet=client.id and purchases.type=1 and purchases.payWay in(1,2) and (purchases.currancy in (select currancy from company_info))
@@ -45,6 +49,10 @@ class m999999_210105_view_depts_v3 extends Migration
         select receipt.clinet as id, max(client.name) as name, sum(receipt.value) as credt, max(client.phone) as phone, max(client.type) as type, null, receipt.currancy, client.post_paid
         FROM receipt, client where receipt.clinet = client.id and receipt.type = 2 and (receipt.currancy in (select currancy from company_info))
         group by receipt.clinet, receipt.currancy
+        UNION
+        select disscount_clients.client as id, max(client.name) as name, sum(disscount_clients.value) as credt, max(client.phone) as phone, max(client.type) as type, null as deserving, disscount_clients.currancy, client.post_paid
+        FROM disscount_clients, client where disscount_clients.client = client.id and disscount_clients.type = 1
+        group by disscount_clients.client
         ");
     }
 

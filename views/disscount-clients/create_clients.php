@@ -13,7 +13,7 @@ $this->title = Yii::t('app', 'Create Disscount Clients');
     <h1><?= Html::encode($this->title) ?></h1>
     <hr>
 
-    <?= $this->render('_form', [
+    <?= $this->render('_form_client', [
         'model' => $model,
     ]) ?>
 

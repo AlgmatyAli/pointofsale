@@ -41,6 +41,7 @@ $this->params['breadcrumbs'][] = $this->title;
             'notes:ntext',
             [
                 'class' => ActionColumn::class,
+                'template' => '{view}',
                 'urlCreator' => function ($action, DisscountClients $model, $key, $index, $column) {
                     return Url::toRoute([$action, 'id' => $model->id]);
                 }

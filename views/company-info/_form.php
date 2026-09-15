@@ -3,15 +3,14 @@
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use kartik\file\FileInput;
-use dosamigos\ckeditor\CKEditor;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
 use app\models\Currancy;
 use kartik\widgets\SwitchInput;
 
-/* @var $this yii\web\View */
-/* @var $model app\models\CompanyInfo */
-/* @var $form yii\widgets\ActiveForm */
+/** @var  yii\web\View $this */
+/** @var  app\models\CompanyInfo $model */
+/** @var  yii\widgets\ActiveForm $form */
 ?>
 
 <div class="company-info-form">
@@ -95,7 +94,7 @@ use kartik\widgets\SwitchInput;
 
     <div class='row'>
         <div class='col-md-6'>
-        <?= $form->field($model, 'terms')->textarea(['rows' => 6]) ?>
+            <?= $form->field($model, 'terms')->textarea(['rows' => 6]) ?>
 
         </div>
         <div class='col-md-2' style="height: 3%;">
@@ -140,7 +139,7 @@ use kartik\widgets\SwitchInput;
                     'offColor' => 'danger',
                 ]
             ]); ?>
-                        <?php
+            <?php
             echo $form->field($model, 'zeroQnty')->widget(SwitchInput::class, [
                 'pluginOptions' => [
                     'size' => 'small',
@@ -150,8 +149,6 @@ use kartik\widgets\SwitchInput;
             ]); ?>
         </div>
     </div>
-    <?php //echo $form->field($model, 'file')->widget(FileInput::class,['options' => ['accept' => '*/*','id'=>'files'],]);  
-    ?>
 
     <div class="form-group">
         <?= Html::submitButton($model->isNewRecord ? '<i class="fa fa-fw fa-save"></i>' . '' . Yii::t('app', 'Create') : '<i class="fa fa-fw fa-save"></i>' . '' . Yii::t('app', 'Update'), ['class' => $model->isNewRecord ? 'btn btn-success btn-lg' : 'btn btn-success btn-lg']) ?>

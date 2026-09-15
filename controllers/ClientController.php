@@ -447,7 +447,7 @@ class ClientController extends Controller
                       AND trandate BETWEEN :min_date AND :max_date
                       AND sort <> 1 
                       AND currency IN (0, :currency)
-                    ORDER BY trandate, billId";
+                    ORDER BY sort, trandate, billId";
 
                 $info = $db->createCommand($sql, [
                     ':id' => $model->id,
@@ -464,7 +464,7 @@ class ClientController extends Controller
                       AND trandate BETWEEN :min_date AND :max_date
                       AND sort <> 1 
                       AND currency IN (0, :currency)
-                    ORDER BY trandate, billId";
+                    ORDER BY sort, trandate, billId";
 
                 $info = $db->createCommand($sql, [
                     ':type' => $model->type,

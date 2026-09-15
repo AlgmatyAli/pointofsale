@@ -98,7 +98,7 @@ class DisscountClientsController extends Controller
                 }
                 $model->created_at    = date('Y-m-d H:i:s');
                 $model->created_by = Yii::$app->user->id;
-                $model->branch = Yii::$app->user->branch;
+                $model->branch = Yii::$app->user->identity->branch;
                 $model->save();
                 return $this->redirect(['view', 'id' => $model->id]);
             }
