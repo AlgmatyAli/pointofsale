@@ -39,7 +39,7 @@ class m999999_210105_view_depts_v3 extends Migration
         UNION
         select disscount_clients.client as id, max(client.name) as name, sum(disscount_clients.value)*-1 as credt, max(client.phone) as phone, max(client.type) as type, null as deserving, disscount_clients.currancy, client.post_paid
         FROM disscount_clients, client where disscount_clients.client = client.id and disscount_clients.type = 2
-        group by disscount_clients.client
+        group by disscount_clients.client, disscount_clients.currancy
         UNION
         SELECT purchases.clinet, max(client.name), sum(purchases.total - purchases.paid)*-1, max(client.phone), max(client.type) as type, null, purchases.currancy, client.post_paid
         from purchases, client
@@ -52,7 +52,7 @@ class m999999_210105_view_depts_v3 extends Migration
         UNION
         select disscount_clients.client as id, max(client.name) as name, sum(disscount_clients.value) as credt, max(client.phone) as phone, max(client.type) as type, null as deserving, disscount_clients.currancy, client.post_paid
         FROM disscount_clients, client where disscount_clients.client = client.id and disscount_clients.type = 1
-        group by disscount_clients.client
+        group by disscount_clients.client, disscount_clients.currancy
         ");
     }
 
