@@ -37,10 +37,22 @@ class CompanyInfo extends \yii\db\ActiveRecord
         return 'company_info';
     }
 
+    public function afterSave($insert, $changedAttributes)
+    {
+        parent::afterSave($insert, $changedAttributes);
+        Yii::$app->cache->delete('company-info');
+    }
+
+    public function afterDelete()
+    {
+        parent::afterDelete();
+        Yii::$app->cache->delete('company-info');
+    }
+
     /**
      * {@inheritdoc}
      */
-    public $file ;
+    public $file;
     public function rules()
     {
         return [
