@@ -6,9 +6,10 @@ use kartik\select2\Select2;
 use kartik\switchinput\SwitchInput;
 use yii\helpers\Url;
 use yii\web\JsExpression;
-/* @var $this yii\web\View */
-/* @var $model app\models\PricesSearch */
-/* @var $form yii\widgets\ActiveForm */
+
+/** @var  yii\web\View $this*/
+/** @var  app\models\PricesSearch $model*/
+/** @var  yii\widgets\ActiveForm $form*/
 ?>
 
 <div class="prices-search">
@@ -43,7 +44,6 @@ use yii\web\JsExpression;
       '<div class="col-sm-3"><i class="badge badge-primary badge-pill"> رقم القطعة 1 - </i> ' + product.serialNo + '</div>' +
       '<div class="col-sm-3"><i class="badge badge-primary badge-pill"> رقم القطعة 2 - </i> ' + product.commCode + '</div>' +
       '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> رقم التسلسل - </i> '  + product.id + '</div>' +
-      //'<div class="col-sm-2"><i class="badge badge-primary badge-pill">حالة القطعة</i> ' +product.type+ '</div>' +
       '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الشركة - </i> ' + product.company + '</div>' +
       '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الكمية = </i> ' + '  ' + product.quantity + '</div>' +
     '</div>';
@@ -71,7 +71,6 @@ JS;
         };
     } 
 JS;
-            //var salesId= getElementById("sales-id").value;
             echo $form->field($model, 'category')->widget(Select2::classname(), [
                 'name' => 'kv-repo-template',
                 'id' => 'focus_first',
@@ -126,14 +125,13 @@ JS;
         </div>
     </div>
 
-    <?php // echo $form->field($model, 'maxPrice') 
-    ?>
 
+    <br>
     <div class="form-group">
         <?= Html::submitButton(Yii::t('app', 'Search'), ['class' => 'btn btn-primary']) ?>
         <?= Html::resetButton(Yii::t('app', 'Reset'), ['class' => 'btn btn-outline-secondary']) ?>
     </div>
-
+    <br>
     <?php ActiveForm::end(); ?>
 
 </div>

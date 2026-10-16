@@ -11,9 +11,8 @@ use app\models\User;
 use app\models\Currancy;
 use app\models\PaymentTypes;
 
-/* @var $this yii\web\View */
-/* @var $model app\models\SalesSearch */
-/* @var $form yii\widgets\ActiveForm */
+/** @var yii\web\View $this */
+/** @var app\models\Sales $model */
 ?>
 
 <div class="sales-search">
@@ -63,9 +62,11 @@ use app\models\PaymentTypes;
             ?>
         </div>
         <div class="col-sm-2">
-            <?= $form->field($model, 'user_insert')->widget(Select2::classname(), [
+            <?= $form->field($model, 'user_insert')->widget(Select2::class, [
+                // من لا يملك userCanSeeOtherUsersSales لا يرى إلا نفسه (والخادم يفرض ذلك أيضاً)
                 'data' => ArrayHelper::map(User::find()
                     ->where(['=', 'isActive', 'active'])
+                    ->andFilterWhere(['id' => Yii::$app->user->can('userCanSeeOtherUsersSales') ? null : Yii::$app->user->identity->id])
                     ->all(), 'id', 'username'),
                 'language' => 'ar',
                 'options' => ['placeholder' => 'الرجاء اختيار اسم المستخدم ...'],
@@ -78,7 +79,7 @@ use app\models\PaymentTypes;
 
             <?php
             if (Yii::$app->user->identity->client <> null) {
-                echo $form->field($model, 'clinet')->widget(\kartik\widgets\Select2::classname(), [
+                echo $form->field($model, 'clinet')->widget(\kartik\widgets\Select2::class, [
                     'data' => \yii\helpers\ArrayHelper::map(\app\models\Client::find()
                         ->where(['in', 'type', [0, 2]])
                         //->andWhere(['branch' => Yii::$app->user->identity->branch])
@@ -93,7 +94,7 @@ use app\models\PaymentTypes;
                     ],
                 ]);
             } else {
-                echo $form->field($model, 'clinet')->widget(\kartik\widgets\Select2::classname(), [
+                echo $form->field($model, 'clinet')->widget(\kartik\widgets\Select2::class, [
                     'data' => \yii\helpers\ArrayHelper::map(\app\models\Client::find()
                         ->where(['in', 'type', [0, 2]])
                         //->andWhere(['branch' => Yii::$app->user->identity->branch])                       
@@ -137,53 +138,23 @@ use app\models\PaymentTypes;
         <div class="col-sm-2">
 
             <?php
-            if (Yii::$app->user->can('can_see_other_branch_sales')) {
-                echo  $form->field($model, 'branch')->widget(Select2::classname(), [
-                    'value' => [Yii::$app->user->identity->branch],
-                    'data' => ArrayHelper::map(Branches::find()
-                        //  ->where(['in', 'type', [0,2]])
-                        //->andWhere(['branch' => Yii::$app->user->identity->branch])
-                        ->all(), 'id', 'name'),
-                    'language' => 'ar',
-                    'options' => [
-                        'value' => Yii::$app->user->identity->branch,
-                        //  'placeholder' => 'الرجاء اختيار اسم العميل ...'
-                        // 'disabled' => true,
-                    ],
-                    'pluginOptions' => [
-                        'allowClear' => true,
-                        'multiple' => false,
-
-
-                    ],
-                ]);
-            } else {
-                echo   $form->field($model, 'branch')->widget(Select2::classname(), [
-                    'value' => [Yii::$app->user->identity->branch],
-                    'data' => ArrayHelper::map(Branches::find()
-                        //  ->where(['in', 'type', [0,2]])
-                        //->andWhere(['branch' => Yii::$app->user->identity->branch])
-                        ->all(), 'id', 'name'),
-                    'language' => 'ar',
-                    'options' => [
-                        'value' => Yii::$app->user->identity->branch,
-                        //  'placeholder' => 'الرجاء اختيار اسم العميل ...'
-                        //'disabled' => true,
-                    ],
-                    'pluginOptions' => [
-                        'allowClear' => true,
-                        'multiple' => false,
-
-
-                    ],
-                ]);
-            }
+            // الفرع: يبقى المختار في البحث ظاهراً. من لا يملك can_see_other_branch_sales يُثبَّت على فرعه (والخادم يفرض ذلك)
+            $canSeeOtherBranches = Yii::$app->user->can('can_see_other_branch_sales');
+            echo $form->field($model, 'branch')->widget(Select2::class, [
+                'data' => ArrayHelper::map(Branches::find()->all(), 'id', 'name'),
+                'language' => 'ar',
+                'disabled' => !$canSeeOtherBranches,
+                'pluginOptions' => [
+                    'allowClear' => $canSeeOtherBranches,
+                    'multiple' => false,
+                ],
+            ]);
             ?>
-            <?= $form->field($model, 'type')->widget(Select2::classname(), [
+            <?= $form->field($model, 'type')->widget(Select2::class, [
                 'data' => [
                     '1' => 'مبيعات',
                     '2' => 'مسترجع مبيعات',
-                    '3' => 'فاتورة معلقة',
+                    '3' => 'فاتورة حجز',
                     '4' => 'فاتورة مبدئية'
                 ],
                 'language' => 'ar',
@@ -202,7 +173,7 @@ use app\models\PaymentTypes;
             <?= $form->field($model, 'wholesale')->dropDownList(['0' => 'بيع عادي', '1' => 'بيع بجملة الجملة'], ['prompt' => 'اختيار حالة البيـع']) ?>
 
             <?php
-            echo $form->field($model, 'currancy')->widget(Select2::classname(), [
+            echo $form->field($model, 'currancy')->widget(Select2::class, [
                 'data' => ArrayHelper::map(Currancy::find()->all(), 'id', 'name'),
                 'language' => 'ar',
                 'pluginOptions' => [
@@ -213,16 +184,17 @@ use app\models\PaymentTypes;
             ?>
         </div>
     </div>
+    <br>
     <div class="row">
         <div class="col-sm-4">
-            <br>
+
             <div class="form-group">
-                <?= Html::submitButton('<i class="fa fa-fw fa-search"></i>' . ' ' . Yii::t('app', 'Search'), ['class' => 'btn btn-primary btn-lg']) ?>
-                <?= Html::a('<i class="fa fa-fw fa-eraser"></i>' . ' ' . Yii::t('app', "Erase"), Url::toRoute(['index']), ['class' => 'btn btn-danger btn-lg']) ?>
+                <?= Html::submitButton('<i class="bi bi-search"></i>' . ' ' . Yii::t('app', 'Search'), ['class' => 'btn btn-primary btn-lg']) ?>
+                <?= Html::a('<i class="bi bi-eraser"></i>' . ' ' . Yii::t('app', "Erase"), Url::toRoute(['index']), ['class' => 'btn btn-danger btn-lg']) ?>
             </div>
         </div>
     </div>
-
+    <br>
     <?php ActiveForm::end(); ?>
 
 </div>

@@ -1,16 +1,32 @@
-$(function () {
-  $(".popup").click(function () {
-    $("#modal").modal("show").find("#modalContent").load($(this).attr("value"));
-    $.fn.modal.Constructor.prototype.enforceFocus = $.noop;
-  });
+// ========================
+// أدوات مساعدة
+// ========================
+
+// الاستجابة قد تصل نصاً (قديماً) أو كائناً جاهزاً (عند ترويسة JSON). هذه الدالة تقبل الحالتين
+// ($.parseJSON مهجورة وتُحذف في jQuery 4)
+function parseJson(data) {
+  if (typeof data === "string") {
+    return JSON.parse(data);
+  }
+  return data;
+}
+
+// ========================
+// النوافذ المنبثقة
+// المعالجات مفوَّضة على document حتى تعمل مع العناصر التي تُرسم لاحقاً
+// (بعد تحديث Pjax أو داخل محتوى محمَّل بالنافذة المنبثقة).
+// ملاحظة: داخل حاويات Pjax يجب أن يحمل الرابط data-pjax="0" حتى لا يعترضه Pjax قبل وصول النقرة إلى هنا.
+// ========================
+$(document).on("click", ".popup", function () {
+  $("#modal").modal("show").find("#modalContent").load($(this).attr("value"));
+  $.fn.modal.Constructor.prototype.enforceFocus = $.noop;
 });
 
-$(function () {
-  $(".popupModal").click(function (e) {
-    e.preventDefault();
-    $("#modal").modal("show").find(".modal-content").load($(this).attr("href"));
-  });
+$(document).on("click", ".popupModal", function (e) {
+  e.preventDefault();
+  $("#modal").modal("show").find(".modal-content").load($(this).attr("href"));
 });
+
 // ========================
 // "kartik-v/yii2-widget-datecontrol"
 var $hasDateControl = $(this).find("[data-krajee-datecontrol]");
@@ -42,10 +58,9 @@ function printContent(el) {
 function netTotalsPurchases() {
   var paid = $("#purchases-paid").val();
   var total = $("#purchases-total").val();
-  var netTotal = 0;
+  var netTotal = parseFloat(total) - parseFloat(paid);
 
-  netTotal = parseFloat(total) - parseFloat(paid);
-  if (paid != "") {
+  if (paid != "" && !isNaN(netTotal)) {
     $("#purchases-netTotal").val(parseFloat(netTotal));
   }
 }
@@ -53,114 +68,87 @@ function netTotalsPurchases() {
 function netTotalSales() {
   var paid = $("#sales-paid").val();
   var total = $("#sales-total").val();
-  var netTotal = 0;
+  var netTotal = parseFloat(total) - parseFloat(paid);
 
-  netTotal = parseFloat(total) - parseFloat(paid);
-  if (paid != "") {
+  if (paid != "" && !isNaN(netTotal)) {
     $("#sales-netTotal").val(parseFloat(netTotal));
   }
 }
 // ========================
+// إجمالي فاتورة المشتريات: نفس المعادلة (سعر التكلفة × الكمية لكل صف).
+// الحلقة تتوقف عند أول صف لا توجد حقوله، وتتخطى الصف الذي كميته أو سعره فارغ
+// (كانت تدور بلا نهاية إذا بقيت الكمية فارغة).
 function totalsCalculate() {
-  id = 0;
-  suma = 0;
-  sumaMIN = 0;
-  existe = true;
-  while (existe) {
-    var costPrice = "purchasesdetails-" + id + "-costprice";
-    var quantity = "purchasesdetails-" + id + "-quantity";
-    var total = "purchasesdetails" + id + "item_total";
+  var id = 0;
+  var suma = 0;
 
-    try {
-      if (document.getElementById(costPrice).value != "") {
-        suma =
-          suma +
-          parseFloat(document.getElementById(costPrice).value) *
-            parseFloat(document.getElementById(quantity).value);
-        total =
-          parseFloat(document.getElementById(costPrice).value) *
-          parseFloat(document.getElementById(quantity).value);
-        $("#purchasesdetails-" + id + "-item_total").val(total);
-        $("#purchases-total").val(suma);
-        $("#purchases-netTotal").val(suma);
-      }
-      if (document.getElementById(quantity).value != "") {
-        sumaMIN = sumaMIN + parseInt(document.getElementById(quantity).value);
-        id = id + 1;
-      }
-    } catch (e) {
-      existe = false;
+  while (true) {
+    var costEl = document.getElementById("purchasesdetails-" + id + "-costprice");
+    var qtyEl = document.getElementById("purchasesdetails-" + id + "-quantity");
+    if (!costEl || !qtyEl) {
+      break;
     }
+
+    if (costEl.value != "" && qtyEl.value != "") {
+      var rowTotal = parseFloat(costEl.value) * parseFloat(qtyEl.value);
+      suma = suma + rowTotal;
+      $("#purchasesdetails-" + id + "-item_total").val(rowTotal);
+      $("#purchases-total").val(suma);
+      $("#purchases-netTotal").val(suma);
+    }
+    id = id + 1;
   }
 }
 
 // ========================
+// إجمالي فاتورة المبيعات: نفس المعادلة (سعر البيع × الكمية لكل صف) مع نفس حراسة الحلقة
 function totalsSalesCalculate() {
-  id = 0;
-  suma = 0;
-  sumaMIN = 0;
-  existe = true;
+  var id = 0;
+  var suma = 0;
 
-  while (existe) {
-    var select2 = "salesdetails-" + id + "-category";
-    var saleprice = "salesdetails-" + id + "-saleprice";
-    var quantity = "salesdetails-" + id + "-quantity";
-    try {
-      if (document.getElementById(saleprice).value != "") {
-        suma =
-          suma +
-          parseFloat(document.getElementById(saleprice).value) *
-            parseFloat(document.getElementById(quantity).value);
-        $("#sales-total").val(suma);
-        $("#sales-netTotal").val(suma);
-      }
-      if (document.getElementById(quantity).value != "") {
-        sumaMIN = sumaMIN + parseInt(document.getElementById(quantity).value);
-        id = id + 1;
-      }
-    } catch (e) {
-      existe = false;
+  while (true) {
+    var priceEl = document.getElementById("salesdetails-" + id + "-saleprice");
+    var qtyEl = document.getElementById("salesdetails-" + id + "-quantity");
+    if (!priceEl || !qtyEl) {
+      break;
     }
+
+    if (priceEl.value != "" && qtyEl.value != "") {
+      suma = suma + parseFloat(priceEl.value) * parseFloat(qtyEl.value);
+      $("#sales-total").val(suma);
+      $("#sales-netTotal").val(suma);
+    }
+    id = id + 1;
   }
 }
 
+// جلب السعر الأدنى لكل صف في فاتورة المبيعات (رقم الصف يُحفظ لكل طلب حتى لا تتداخل الطلبات غير المتزامنة)
 function getInfo() {
-  id = 0;
-  suma = 0;
-  sumaMIN = 0;
-  existe = true;
+  var id = 0;
 
-  while (existe) {
-    var select2 = "salesdetails-" + id + "-category";
-    var saleprice = "salesdetails-" + id + "-saleprice";
-    var quantity = "salesdetails-" + id + "-quantity";
+  while (true) {
+    var catEl = document.getElementById("salesdetails-" + id + "-category");
+    var priceEl = document.getElementById("salesdetails-" + id + "-saleprice");
+    if (!catEl || !priceEl) {
+      break;
+    }
 
-    var category = document.getElementById(select2).value;
-    try {
-      if (document.getElementById(select2).value != "") {
+    if (catEl.value != "") {
+      (function (rowId, category) {
         $.get(
           "index.php?r=sales/get-prices",
           { id: category },
           function (data) {
-            data = $.parseJSON(data);
-
-            if (data.id != "") {
-              console.log(data.minPrice);
-            } else {
-              console.log("no data");
+            data = parseJson(data);
+            if (!data) {
+              return;
             }
-
-            $("#salesdetails-" + id + "-saleprice").val(data.minPrice);
+            $("#salesdetails-" + rowId + "-saleprice").val(data.minPrice);
           },
         );
-      }
-      if (document.getElementById(saleprice).value != "") {
-        sumaMIN = sumaMIN + parseInt(document.getElementById(quantity).value);
-        id = id + 1;
-      }
-    } catch (e) {
-      existe = false;
+      })(id, catEl.value);
     }
+    id = id + 1;
   }
 }
 
@@ -171,33 +159,43 @@ function getInv() {
       "index.php?r=temp-invoice-purchase/get-inv",
       { category: category },
       function (data) {
-        var data = $.parseJSON(data);
-        $("#tempinvoicepurchase-quantity").attr("value", data.quantity);
-        $("#tempinvoicepurchase-costprice").attr("value", data.costPrice);
-        $("#tempinvoicepurchase-saleprice").attr("value", data.maxPrice);
-        $("#tempinvoicepurchase-saleprice_").attr("value", data.minPrice);
-        $("#tempinvoicepurchase-saleprice_2").attr("value", data.minPrice2);
-        $("#tempinvoicepurchase-saleprice_3").attr("value", data.minPrice3);
-        $("#category-serialno").attr("value", data.serialNo);
+        data = parseJson(data);
+        if (!data) {
+          return;
+        }
+        // .val() بدل .attr("value"): الأخيرة لا تحدّث القيمة المعروضة بعد أن يكتب المستخدم في الحقل
+        $("#tempinvoicepurchase-quantity").val(data.quantity);
+        $("#tempinvoicepurchase-costprice").val(data.costPrice);
+        $("#tempinvoicepurchase-saleprice").val(data.maxPrice);
+        $("#tempinvoicepurchase-saleprice_").val(data.minPrice);
+        $("#tempinvoicepurchase-saleprice_2").val(data.minPrice2);
+        $("#tempinvoicepurchase-saleprice_3").val(data.minPrice3);
+        $("#category-serialno").val(data.serialNo);
       },
     );
   });
 }
 
+// معامل الفاتورة = (إجمالي الفاتورة + إجمالي المصاريف) ÷ إجمالي الفاتورة (المعادلة لم تتغير).
+// لا يُكتب شيء إذا كانت النتيجة غير رقم أو لا نهائية (إجمالي فارغ أو صفر).
 function totalRate() {
-  var rate = 0;
   var totalinvoice = document.getElementById(
     "tempinvoicepurchase-totalinvoice",
   ).value;
   var totalcost = document.getElementById(
     "tempinvoicepurchase-totalcost",
   ).value;
-  rate =
+  var rate =
     parseFloat(parseFloat(totalinvoice) + parseFloat(totalcost)) /
     parseFloat(totalinvoice);
-  $("#tempinvoicepurchase-rate").attr("value", rate.toFixed(3));
+
+  if (!isFinite(rate)) {
+    return;
+  }
+  $("#tempinvoicepurchase-rate").val(rate.toFixed(3));
 }
 
+// تكلفة الصنف بعد سعر الصرف والمعامل (المعادلة لم تتغير). لا يُكتب شيء إذا كانت النتيجة غير رقم.
 function totalCost() {
   var total = 0;
   var exchange = 0;
@@ -210,12 +208,12 @@ function totalCost() {
 
   if (derhamRarte != 0) {
     exchange = parseFloat(costprice) / parseFloat(derhamRarte);
-    $("#tempinvoicepurchase-costprice").val(exchange.toFixed(3));
+    if (isFinite(exchange)) {
+      $("#tempinvoicepurchase-costprice").val(exchange.toFixed(3));
+    }
   }
 
-  var costprice = document.getElementById(
-    "tempinvoicepurchase-costprice",
-  ).value;
+  costprice = document.getElementById("tempinvoicepurchase-costprice").value;
   var rate = document.getElementById("tempinvoicepurchase-rate").value;
 
   if (rate == 0) {
@@ -224,9 +222,13 @@ function totalCost() {
     total = parseFloat(parseFloat(costprice) * parseFloat(rate));
   }
 
-  $("#tempinvoicepurchase-costtotal").attr("value", total.toFixed(3));
+  if (isNaN(total)) {
+    return;
+  }
+  $("#tempinvoicepurchase-costtotal").val(total.toFixed(3));
 }
 
+// أسعار البيع = التكلفة + نسبة الربح (المعادلة لم تتغير). لا يُكتب شيء إذا كانت النتيجة غير رقم.
 function profit() {
   var total = 0;
   var costprice = document.getElementById(
@@ -235,10 +237,14 @@ function profit() {
   var profit = document.getElementById("tempinvoicepurchase-profit").value;
   total = parseFloat(parseFloat(costprice) * parseFloat(profit / 100));
   total = parseFloat(total) + parseFloat(costprice);
-  $("#tempinvoicepurchase-saleprice").attr("value", total.toFixed(3));
-  $("#tempinvoicepurchase-saleprice_").attr("value", total.toFixed(3));
-  $("#tempinvoicepurchase-saleprice_2").attr("value", total.toFixed(3));
-  $("#tempinvoicepurchase-saleprice_3").attr("value", total.toFixed(3));
+
+  if (isNaN(total)) {
+    return;
+  }
+  $("#tempinvoicepurchase-saleprice").val(total.toFixed(3));
+  $("#tempinvoicepurchase-saleprice_").val(total.toFixed(3));
+  $("#tempinvoicepurchase-saleprice_2").val(total.toFixed(3));
+  $("#tempinvoicepurchase-saleprice_3").val(total.toFixed(3));
 }
 
 function getData() {
@@ -248,9 +254,12 @@ function getData() {
       "index.php?r=category/get-data",
       { category: category },
       function (data) {
-        var data = $.parseJSON(data);
-        $("#category-serialno").attr("value", data.serialNo);
-        $("#category-name").attr("value", data.name);
+        data = parseJson(data);
+        if (!data) {
+          return;
+        }
+        $("#category-serialno").val(data.serialNo);
+        $("#category-name").val(data.name);
       },
     );
   });
@@ -276,22 +285,28 @@ function getSalary() {
       "index.php?r=employee/get-salary",
       { user_id: user_id },
       function (data) {
-        var data = $.parseJSON(data);
+        data = parseJson(data);
+        if (!data) {
+          return;
+        }
         $("#empsalary-salary").val(data.salary);
       },
     );
   });
 }
 
-// $(document).ready(function(){
-//     $("body").addClass("sidebar-collapse");
-// });
-
-$(document).on("select2:open", () => {
-  document.querySelector(".select2-search__field").focus();
+// عند فتح أي Select2: التركيز على حقل البحث الخاص بالقائمة المفتوحة نفسها
+// (كان يأخذ أول حقل بحث في الصفحة، وقد يكون لقائمة أخرى، وقد لا يوجد فيحدث خطأ)
+$(document).on("select2:open", function () {
+  var field = document.querySelector(
+    ".select2-container--open .select2-search__field",
+  );
+  if (field) {
+    field.focus();
+  }
 });
 
-$(".check-all").click(function () {
+$(document).on("click", ".check-all", function () {
   var selector = $(this).is(":checked") ? ":not(:checked)" : ":checked";
   $('#root-container-id input[type="checkbox"]' + selector).each(function () {
     $(this).trigger("click");
@@ -299,18 +314,30 @@ $(".check-all").click(function () {
 });
 
 function getKestVal() {
-  var total = 0;
   var loanVal = document.getElementById("loans-loanvalue").value;
   var parts = document.getElementById("loans-parts").value;
-  total = parseFloat(parseFloat(loanVal) / parseFloat(parts));
-  $("#loans-kestvalue").attr("value", total.toFixed(3));
+  var total = parseFloat(parseFloat(loanVal) / parseFloat(parts));
+
+  if (!isFinite(total)) {
+    return;
+  }
+  $("#loans-kestvalue").val(total.toFixed(3));
 }
 
-$("#todayis").click(function () {
-  var selector = $(this).is(":checked") ? ":not(:checked)" : ":checked";
-  if (selector != ":checked") {
+// التأشير: تاريخ اليوم في حقل الاستلام، وإلغاء التأشير: تفريغ الحقل (نفس السلوك السابق).
+// التاريخ محلي (كان toISOString يعطي تاريخ UTC فيظهر أمس بين 12 و2 صباحاً).
+$(document).on("click", "#todayis", function () {
+  if (this.checked) {
     var today = new Date();
-    var formattedDate = today.toISOString().substr(0, 10);
+    var pad = function (n) {
+      return (n < 10 ? "0" : "") + n;
+    };
+    var formattedDate =
+      today.getFullYear() +
+      "-" +
+      pad(today.getMonth() + 1) +
+      "-" +
+      pad(today.getDate());
     $("#sales-deleviryat").val(formattedDate);
   } else {
     $("#sales-deleviryat").val("");
@@ -328,7 +355,7 @@ $(document).ready(function () {
       type: "POST",
       data: form.serialize(),
       success: function (response) {
-        if (response.success) {
+        if (response && response.success) {
           // 1. إعادة تحميل الأجزاء المطلوبة عبر Pjax
           $.pjax.reload({ container: "#pjax-grid-view", async: false });
           $.pjax
@@ -353,7 +380,7 @@ $(document).ready(function () {
         } else {
           swal({
             title: "منظومة المبيعات",
-            text: response.message,
+            text: response ? response.message : "",
             type: "warning",
             confirmButtonText: "حسنا",
           });
@@ -363,61 +390,13 @@ $(document).ready(function () {
         swal({
           title: "منظومة المبيعات",
           text: "حدث خطأ اثناء التخزين",
-          type: "error", // تم تصحيح الكلمة من wrong إلى error
+          type: "error",
           confirmButtonText: "حسنا",
         });
       },
     });
   });
 });
-
-// $(document).ready(function () {
-//   $("#temp-invoice-form").submit(function (e) {
-//     e.preventDefault();
-//     e.stopImmediatePropagation();
-//     var form = $(this);
-//     $.ajax({
-//       url: form.attr("action"),
-//       type: "POST",
-//       data: form.serialize(),
-//       success: function (response) {
-//         if (response.success) {
-//           $.pjax.reload({ container: "#pjax-grid-view", async: false });
-//           $.pjax.reload({
-//             container: "#w0",
-//             url: "?r=temp-invoice/create",
-//             async: true,
-//           });
-//           alert();
-//           var $el = $(this);
-//           setTimeout(function () {
-//             $el.val(null).trigger("change.select2");
-//           }, 100);
-//           counter = response.counter;
-//           $("#submit-counter").text(counter);
-//           $("input").each(function () {
-//             $(this).val("");
-//           });
-//         } else {
-//           swal({
-//             title: "منظومة المبيعات",
-//             text: response.message,
-//             type: "warning",
-//             confirmButtonText: "حسنا",
-//           });
-//         }
-//       },
-//       error: function () {
-//         swal({
-//           title: "منظومة المبيعات",
-//           text: "حدث خطأ اثناء التخزين",
-//           type: "wrong",
-//           confirmButtonText: "حسنا",
-//         });
-//       },
-//     });
-//   });
-// });
 
 $(document).ready(function () {
   $("#temp-invoice-purchase-form").submit(function (e) {
@@ -429,7 +408,7 @@ $(document).ready(function () {
       type: "POST",
       data: form.serialize(),
       success: function (response) {
-        if (response.success) {
+        if (response && response.success) {
           //$.pjax.reload({ container: '#pjax-grid-view', async: true });
           $.pjax.reload({
             container: "#w0",
@@ -445,7 +424,7 @@ $(document).ready(function () {
         } else {
           swal({
             title: "منظومة المبيعات",
-            text: response.message,
+            text: response ? response.message : "",
             type: "warning",
             confirmButtonText: "حسنا",
           });
@@ -455,7 +434,7 @@ $(document).ready(function () {
         swal({
           title: "منظومة المبيعات",
           text: "حدث خطأ اثناء التخزين",
-          type: "wrong",
+          type: "error", // كانت "wrong" وهي قيمة غير صالحة فلا تظهر الأيقونة
           confirmButtonText: "حسنا",
         });
       },
@@ -463,94 +442,10 @@ $(document).ready(function () {
   });
 });
 
-// $("#kind").on("change", function () {
-//   var data = $(this).select2("data");
-//   alert(data[0].branchId);
-//   $("#branch").val("");
-//   $("#branch").val(data[0].branchId);
-// });
-
-$("#kind").on("select2:select", function (e) {
+// اختيار صنف في البحث: تعبئة حقل الفرع. مفوَّض على document فيعمل ولو رُسم الحقل بعد تحميل الملف.
+$(document).on("select2:select", "#kind, #cat", function (e) {
   // الحصول على بيانات العنصر المحدد مباشرة من حدث Select2
   var data = e.params.data;
 
   $("#branch").val(data.branchId);
-  // var $el = $(this);
-  // setTimeout(function () {
-  //   $el.val(null).trigger("change.select2");
-  // }, 100);
 });
-
-$("#cat").on("select2:select", function (e) {
-  // الحصول على بيانات العنصر المحدد مباشرة من حدث Select2
-  var data = e.params.data;
-
-  $("#branch").val(data.branchId);
-  // var $el = $(this);
-  // setTimeout(function () {
-  //   $el.val(null).trigger("change.select2");
-  // }, 100);
-});
-
-// دالة موحدة لتحديث حقل الفرع بناءً على الاختيار
-
-// function updateBranch(e) {
-//   var data = e.params.data;
-
-//   $("#branch").val(null).trigger("change");
-
-//   if (data && data.branchId) {
-//     alert(data.branchId);
-//     $("#branch").val(data.branchId).trigger("change");
-//   }
-// }
-
-// function resetBranch() {
-//   $("#branch").val(null).trigger("change");
-// }
-
-// $("#kind, #cat")
-//   .on("select2:select", updateBranch)
-//   .on("select2:unselect", resetBranch);
-
-// $("#kind").on("change", function () {
-//   var data = $(this).select2("data");
-
-//   // تصفير القيمة وتحديث واجهة Select2
-//   $("#branch").val(null).trigger("change");
-
-//   // وضع القيمة الجديدة إذا كانت موجودة
-//   if (data && data[0] && data[0].branchId) {
-//     $("#branch").val(data[0].branchId).trigger("change");
-//   }
-// });
-
-// $("#cat").on("change", function () {
-//   var data = $(this).select2("data");
-
-//   // تصفير القيمة وتحديث واجهة Select2
-//   $("#branch").val(null).trigger("change");
-
-//   // وضع القيمة الجديدة إذا كانت موجودة
-//   if (data && data[0] && data[0].branchId) {
-//     $("#branch").val(data[0].branchId).trigger("change");
-//   }
-// });
-
-// $('#delete-all-button').on('click', function(e) {
-//     e.preventDefault();
-//     $.ajax({
-//         url: '/temp-invoice/delete-all',
-//         type: 'POST',
-//         success: function(response) {
-//             if (response.success) {
-//                 alert('All records have been deleted.');
-//             } else {
-//                 alert('Failed to delete all records.');
-//             }
-//         },
-//         error: function() {
-//             alert('An error occurred while deleting all records.');
-//         }
-//     });
-// });

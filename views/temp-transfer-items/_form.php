@@ -1,220 +1,276 @@
 <?php
 
-use yii\helpers\Html;
-use yii\widgets\ActiveForm;
 use kartik\grid\GridView;
-use yii\helpers\Url;
 use kartik\select2\Select2;
+use yii\bootstrap5\ActiveForm;
+use yii\helpers\Html;
+use yii\helpers\Url;
 use yii\web\JsExpression;
 
 /** @var yii\web\View $this */
-/** @var app\models\TempTransferItems $model*/
-/** @var yii\widgets\ActiveForm $form */
+/** @var app\models\TempTransferItems $model */
+/** @var yii\data\ActiveDataProvider $dataProvider */
+/** @var yii\bootstrap5\ActiveForm $form */
 
+$pjaxId = 'w1';   // معرّف Pjax للجدول (كما في الأصل)
+
+// ---- تنسيق عناصر القائمة المنسدلة (يبقى الاسمان formatProduct و formatProductSelection كما كانا) ----
+$formatJs = <<<'JS'
+var esc = function (v) {
+    return (v === undefined || v === null) ? '' : $('<div>').text(v).html();
+};
+var chip = function (label, value, cls) {
+    return '<span class="badge ' + (cls || 'text-bg-light border') + ' fw-normal">' +
+        '<span class="text-body-secondary">' + label + ':</span> ' + esc(value) + '</span>';
+};
+
+var formatProduct = function (product) {
+    if (product.loading) {
+        return product.text;
+    }
+    var markup =
+        '<div class="fw-semibold mb-1">' + esc(product.text) + '</div>' +
+        '<div class="d-flex flex-wrap gap-3">' +
+            chip('سعر البيع', product.maxPrice) +
+            chip('السعر الأدنى', product.minPrice) +
+            chip('المكان', product.place) +
+            chip('رقم القطعة 1', product.serialNo) +
+            chip('رقم القطعة 2', product.commCode) +
+            chip('التسلسل', product.id) +
+            chip('الشركة', product.company) +
+            chip('الكمية', product.quantity, 'text-bg-success') +
+            chip('الفرع', product.BRNAME, 'text-bg-info') +
+            '<span class="d-none">' + esc(product.branchId) + '</span>' +
+        '</div>';
+    return '<div style="overflow:hidden;">' + markup + '</div>';
+};
+
+var formatProductSelection = function (product) {
+    return esc(product.name || product.text);
+};
+JS;
+$this->registerJs($formatJs, $this::POS_HEAD);
+
+// تحويل نتائج البحث إلى الشكل الذي يتوقعه Select2
+$resultsJs = <<<'JS'
+function (data, params) {
+    params.page = params.page || 5;
+    return {
+        results: data.results
+    };
+}
+JS;
+
+// تحرير الكمية داخل الخلية (بدل النافذة المنبثقة) مع إعادة رسم الجدول بعد كل حفظ ناجح
+$editable = [
+    'asPopover' => false,
+    'bsVersion' => '5.x',
+    'submitButton' => ['icon' => '<i class="bi bi-check-lg"></i>'],
+    'resetButton' => ['icon' => '<i class="bi bi-arrow-counterclockwise"></i>'],
+    'pluginEvents' => [
+        'editableSuccess' => new JsExpression("function () { $.pjax.reload({container: '#{$pjaxId}'}); }"),
+    ],
+];
+
+$gridColumns = [
+    ['attribute' => 'id', 'visible' => false],
+
+    [
+        'label' => Yii::t('app', 'ID'),
+        'headerOptions' => ['style' => 'width:10%'],
+        'value' => function ($data) {
+            return $data->category;
+        },
+    ],
+
+    [
+        'attribute' => Yii::t('app', 'Category'),
+        'headerOptions' => ['style' => 'width:30%'],
+        'format' => 'raw',
+        'value' => function ($data) {
+            $category = $data->category0;
+            if ($category === null) {
+                return '';
+            }
+            return Html::a(
+                Html::encode($category->name),
+                ['category/info', 'id' => $category->id],
+                ['class' => 'btn-link popupModal', 'data-pjax' => '0']
+            );
+        },
+    ],
+
+    [
+        'label' => Yii::t('app', 'Serial No'),
+        'headerOptions' => ['style' => 'width:20%'],
+        'value' => function ($data) {
+            return $data->category0?->serialNo;
+        },
+    ],
+
+    [
+        'label' => Yii::t('app', 'Company'),
+        'headerOptions' => ['style' => 'width:10%'],
+        'value' => function ($data) {
+            return $data->category0?->company;
+        },
+    ],
+
+    [
+        'class' => 'kartik\grid\EditableColumn',
+        'attribute' => 'quantity',
+        'headerOptions' => ['style' => 'width:10%'],
+        'label' => Yii::t('app', 'quantity'),
+        'editableOptions' => $editable,
+        'format' => ['decimal', 3],
+        'pageSummary' => true,
+        'footer' => true,
+    ],
+
+    [
+        'class' => 'yii\grid\ActionColumn',
+        'template' => '{delete}',
+        'headerOptions' => ['style' => 'width:1%'],
+        'contentOptions' => ['class' => 'text-nowrap'],
+        'buttons' => [
+            'delete' => function ($url) {
+                return Html::a('<i class="bi bi-trash"></i>', $url, [
+                    'class' => 'btn btn-sm btn-outline-danger',
+                    'title' => Yii::t('app', 'Delete'),
+                    'aria-label' => Yii::t('app', 'Delete'),
+                    'data-pjax' => '0',
+                    'data-confirm' => Yii::t('app', 'Are you sure you want to delete this item?'),
+                    'data-method' => 'post',
+                ]);
+            },
+        ],
+    ],
+];
 ?>
 
 <div class="temp-transfer-items-form">
-    <div class="row">
-        <div class="col-md-12" style="margin-top: 15px">
-            <?php echo Html::button(
-                '<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Save'),
-                [
-                    'value' => Url::to(['transfer-items/create']),
-                    'class' => 'btn btn-danger popup'
-                ]
-            ); ?>
 
-            <?= Html::a('<i class="fa fa-fw fa-trash"></i>' . ' ' . Yii::t('app', 'Delete All'), ['delete-all'], [
-                'class' => 'btn btn-warning pull-left',
+    <!-- شريط الإجراءات -->
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <?= Html::button(
+            '<i class="bi bi-check2-circle"></i> ' . Yii::t('app', 'Save'),
+            [
+                'value' => Url::to(['transfer-items/create']),
+                'class' => 'btn btn-danger popup',
+            ]
+        ) ?>
+
+        <?= Html::a(
+            '<i class="bi bi-trash"></i> ' . Yii::t('app', 'Delete All'),
+            ['delete-all'],
+            [
+                'class' => 'btn btn-outline-warning ms-auto',
                 'data' => [
                     'confirm' => Yii::t('app', 'Are you sure you want to delete this item?'),
                     'method' => 'post',
                 ],
-            ])
-            ?>
-
-        </div>
-    </div>
-    <br><br>
-
-    <?php $form = ActiveForm::begin([
-        'id' => 'temp-transfer-items-form',
-        'enableAjaxValidation' => false,
-        'enableClientValidation' => false,
-        'options' => ['class' => 'search-form mb-4']
-    ]) ?>
-    <div class="row">
-        <div class="col-md-12">
-            <?= $form->errorSummary($model); ?>
-            <?php
-            $formatJs = <<< 'JS'
-   var formatProduct = function (product) {
-   if (product.loading) {
-    return product.text;
-   }
- var markup = 
-    '<div class="row">' + 
-      '<div class="col-sm-6">' +
-        '<b style="margin-center:5px">' + product.text + '</b>' + 
-      '</div>' +
-      '<div class="col-sm-2"><i class="badge badge-primary badge-pill">  سعر البيع - </i> ' + product.maxPrice + '</div>' +
-      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> سعر البيع الأدنى - </i> ' + product.minPrice + '</div>' +
-      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> مكان الصنف - </i> ' + product.place + '</div>' +
-      '</div>' +
-      '<br>'+
-      '<div class="row">' + 
-      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> رقم القطعة 1 - </i> ' + product.serialNo + '</div>' +
-      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> رقم القطعة 2 - </i> ' + product.commCode + '</div>' +
-      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> رقم التسلسل - </i> '  + product.id + '</div>' +
-      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الشركة - </i> ' + product.company + '</div>' +
-      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الكمية = </i> ' + '  ' + product.quantity + '</div>' +
-      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> - </i> <span class="label label-info"> ' + product.BRNAME + '</div>' +
-      '<div class="col-sm-1" style="display:none;"><i class="badge badge-primary badge-pill"> - </i> <span class="label label-info"> ' + product.branchId + '</div>' +
-      '</div>';
-    return '<div style="overflow:hidden;">' + markup + '</div>';
-  };                
-    
-
-  var formatProductSelection = function (product) {
-    return product.name || product.text;
-  }
-JS;
-
-            // Register the formatting script
-            $this->registerJs($formatJs, $this::POS_HEAD);
-
-            // script to parse the results into the format expected by Select2
-            $resultsJs = <<< JS
-    function (data, params) {
-       params.page = params.page || 5;
-        return {
-            // Change `data.items` to `data.results`.
-            // `results` is the key that you have been selected on
-            // `actionJsonlist`.
-            results: data.results
-        };
-    }
-JS;
-            echo $form->field($model, 'category')->widget(Select2::class, [
-                'name' => 'kv-repo-template',
-                'language' => 'en',
-                'options' => [
-                    'id' => 'kind',
-                    'placeholder' => Yii::t('app', 'Search...'),
-                    'dir' => 'rtl',
-                    'multiple' => false,
-                ],
-                'pluginOptions' => [
-                    'autofocus' => true,
-                    'minimumInputLength' => 1,
-                    'ajax' => [
-                        'url' => Url::to(['/except/itemlist']),
-                        'dataType' => 'json',
-                        'data' => new JsExpression('function(params) { return {q:params.term, page: params.page}; }'),
-                        'processResults' => new JsExpression($resultsJs),
-                        'cache' => true
-                    ],
-                    'escapeMarkup' => new JsExpression('function (markup) { return markup; }'),
-                    'templateResult' => new JsExpression('formatProduct'),
-                    'templateSelection' => new JsExpression('formatProductSelection'),
-                ],
-            ]);
-            ?>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-3">
-            <?= $form->field($model, 'quantity')->textInput(['maxlength' => true, 'placeholder' => 'Quantity']) ?>
-            <?= $form->field($model, 'branch')->hiddenInput(['placeholder' => 'branch', 'id' => 'branch'])->label(''); ?>
-        </div>
-    </div>
-    <br>
-    <div class="form-group">
-        <?= Html::submitButton($model->isNewRecord ? '<i class="fa fa-fw fa-plus"></i>' . ' ' . Yii::t('app', 'Add') : Yii::t('app', 'Update'), ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']) ?>
-    </div>
-
-    <?php ActiveForm::end(); ?>
-    <?php
-    $gridColumn = [
-        ['attribute' => 'id', 'visible' => false],
-
-        [
-            'label' => Yii::t('app', 'ID'),
-            'headerOptions' => ['style' => 'width:10%'],
-            'value' => function ($data) {
-                return $data->category;
-            },
-
-        ],
-
-        [
-            'attribute' => Yii::t('app', 'Category'),
-            'headerOptions' => ['style' => 'width:30%'],
-            'value' => function ($data) {
-                return Html::a(Yii::t('app', ' {modelClass}', [
-                    'modelClass' => $data->category0->name,
-                ]), ['category/info', 'id' => $data->category0->id], ['class' => 'btn-link popupModal']);
-            },
-            'format' => 'raw',
-        ],
-
-        [
-            'label' => Yii::t('app', 'Serial No'),
-            'headerOptions' => ['style' => 'width:20%'],
-            'value' => function ($data) {
-                return $data->category0->serialNo;
-            },
-
-        ],
-
-        [
-            'label' => Yii::t('app', 'Company'),
-            'headerOptions' => ['style' => 'width:10%'],
-            'value' => function ($data) {
-                return $data->category0->company;
-            },
-
-        ],
-
-        [
-            'class' => 'kartik\grid\EditableColumn',
-            'attribute' => 'quantity',
-            'headerOptions' => ['style' => 'width:10%'],
-            'label' => Yii::t('app', 'quantity'),
-            'editableOptions' => [
-                'asPopover' => true,
-            ],
-            'format' => ['decimal', 3],
-            'pageSummary' => true,
-            'footer' => true
-        ],
-
-        [
-            'class' => 'yii\grid\ActionColumn',
-            'template' => '{delete}',
-            'buttons' => [
-                'save-as-new' => function ($url) {
-                    return Html::a('<h1><span class="glyphicon btn-lg glyphicon-copy"></span></h1>', $url, ['title' => 'Save As New']);
-                },
-            ],
-        ],
-
-    ];
-    ?>
-    <?= GridView::widget([
-        'dataProvider' => $dataProvider,
-        'containerOptions' => ['style' => 'overflow: auto'],
-        'layout' => '{items}{pager}',
-        'summary' => true,
-        'columns' => $gridColumn,
-        'pjax' => true,
-        'pjaxSettings' => [
-            'neverTimeout' => true,
-            'options' => [
-                'id' => 'w1',
             ]
-        ],
-        // 'pjaxSettings' => ['options' => ['id' => 'kv-pjax-container-temp-transfer-items']],
-        'showPageSummary' => true,
-    ]); ?>
+        ) ?>
+    </div>
+
+    <!-- إضافة صنف -->
+    <div class="card mb-3">
+        <div class="card-header fw-semibold"><i class="bi bi-plus-circle"></i> إضافة صنف للنقل</div>
+        <div class="card-body">
+            <?php $form = ActiveForm::begin([
+                'id' => 'temp-transfer-items-form',
+                'enableAjaxValidation' => false,
+                'enableClientValidation' => false,
+                'options' => ['class' => 'search-form'],
+            ]) ?>
+
+            <?= $form->errorSummary($model) ?>
+
+            <div class="row g-3 align-items-end">
+                <div class="col-lg-8">
+                    <?= $form->field($model, 'category')->widget(Select2::class, [
+                        'language' => 'ar',
+                        'options' => [
+                            'id' => 'kind',
+                            'placeholder' => Yii::t('app', 'Search...'),
+                            'dir' => 'rtl',
+                            'multiple' => false,
+                            'autofocus' => true,
+                        ],
+                        'pluginOptions' => [
+                            'minimumInputLength' => 1,
+                            'ajax' => [
+                                'url' => Url::to(['/except/itemlist']),
+                                'dataType' => 'json',
+                                'data' => new JsExpression('function(params) { return {q:params.term, page: params.page}; }'),
+                                'processResults' => new JsExpression($resultsJs),
+                                'cache' => true,
+                            ],
+                            'escapeMarkup' => new JsExpression('function (markup) { return markup; }'),
+                            'templateResult' => new JsExpression('formatProduct'),
+                            'templateSelection' => new JsExpression('formatProductSelection'),
+                        ],
+                    ]) ?>
+                </div>
+
+                <div class="col-6 col-lg-2">
+                    <?= $form->field($model, 'quantity')->textInput([
+                        'maxlength' => true,
+                        'placeholder' => Yii::t('app', 'Quantity'),
+                        'inputmode' => 'decimal',
+                    ]) ?>
+                    <?= $form->field($model, 'branch')->hiddenInput(['placeholder' => 'branch', 'id' => 'branch'])->label(false) ?>
+                </div>
+
+                <div class="col-6 col-lg-2">
+                    <div class="mb-3">
+                        <?= Html::submitButton(
+                            $model->isNewRecord
+                                ? '<i class="bi bi-plus-lg"></i> ' . Yii::t('app', 'Add')
+                                : '<i class="bi bi-check-lg"></i> ' . Yii::t('app', 'Update'),
+                            ['class' => ($model->isNewRecord ? 'btn btn-success' : 'btn btn-primary') . ' w-100']
+                        ) ?>
+                    </div>
+                </div>
+            </div>
+
+            <?php ActiveForm::end(); ?>
+        </div>
+    </div>
+
+    <!-- الأصناف المضافة -->
+    <div class="card">
+        <div class="card-header fw-semibold"><i class="bi bi-list-check"></i> الأصناف المضافة</div>
+        <div class="card-body p-0">
+            <?= GridView::widget([
+                'dataProvider' => $dataProvider,
+                'layout' => '{items}{pager}',
+                'summary' => true,
+                'columns' => $gridColumns,
+                'bordered' => false,
+                'striped' => true,
+                'condensed' => true,
+                'hover' => true,
+                'responsive' => true,
+                'pjax' => true,
+                'pjaxSettings' => [
+                    'neverTimeout' => true,
+                    'options' => ['id' => $pjaxId],
+                ],
+                'showPageSummary' => true,
+            ]) ?>
+        </div>
+    </div>
 </div>
+
+<?php
+// فتح رابط اسم الصنف في النافذة. الربط على document لأن الجدول يُعاد رسمه بـ Pjax،
+// ويتجاهل الحدث إن عالجه ajax-modal-popup.js أصلاً (لتفادي فتح النافذة مرتين).
+$this->registerJs(<<<'JS'
+$(document).off('click.ttiPopup').on('click.ttiPopup', '.popupModal', function (e) {
+    if (e.isDefaultPrevented()) { return; }
+    e.preventDefault();
+    $('#modal').modal('show').find('.modal-content').load($(this).attr('href'));
+});
+JS, \yii\web\View::POS_READY, 'tti-popup');
+?>

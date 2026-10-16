@@ -23,6 +23,9 @@ public static function tableName() { return 'user'; }
         [['branch', 'permission', 'seeCostPrice', 'editSalePrice', 'makeDiscount', 'printPurtchaseInvoice', 'seeOtherBranchQ'], 'integer'],
         [['maxDiscount', 'maxExpenses', 'maxReceipt'], 'number'],
         [['username', 'password', 'phone', 'email', 'path'], 'string', 'max' => 255],
+        [['username'], 'unique'],
+        [['email'], 'email'],
+        [['file'], 'file', 'extensions' => ['jpg', 'jpeg', 'png', 'webp'], 'maxSize' => 2 * 1024 * 1024],
     ];
 }
 
@@ -55,29 +58,32 @@ public function attributeLabels()
 }
 
 
+/**
+ * @inheritdoc
+ * يعيد null إذا لم يوجد المستخدم أو كان موقوفاً (فيُنهى دخوله عند الطلب التالي).
+ */
 public static function findIdentity($id) {
-    $user = self::find()
-            ->where([
-                "id" => $id
-            ])
-            ->one();
-    return new static($user);
+    $user = static::findOne(['id' => $id]);
+    if ($user === null || $user->isActive === 'disabled') {
+        return null;
+    }
+    return $user;
 }
- 
+
 /**
  * @inheritdoc
  */
 public static function findIdentityByAccessToken($token, $userType = null) {
- 
-    $user = self::find()
-            ->where(["accessToken" => $token])
-            ->one();
-    if (!count($user)) {
+    if ($token === null || $token === '') {
         return null;
     }
-    return new static($user);
+    $user = static::findOne(['accessToken' => $token]);
+    if ($user === null || $user->isActive === 'disabled') {
+        return null;
+    }
+    return $user;
 }
- 
+
 /**
  * Finds user by username
  *
@@ -85,56 +91,101 @@ public static function findIdentityByAccessToken($token, $userType = null) {
  * @return static|null
  */
 public static function findByUsername($username) {
-    $user = self::find()
-            ->where([
-                "username" => $username
-            ])
-            ->one();
-    return new static($user);
+    return static::findOne(['username' => $username]);
 }
- 
+
 public static function findByUser($username) {
-    $user = self::find()
-            ->where([
-                "username" => $username
-            ])
-            ->one();
-    if (!count($user)) {
-        return null;
-    }
-    return $user;
+    return static::findOne(['username' => $username]);
 }
- 
+
 /**
  * @inheritdoc
  */
 public function getId() {
     return $this->id;
 }
- 
+
 /**
+ * مفتاح الدخول التلقائي (remember me). يُولَّد تلقائياً عند أول طلب إن كان فارغاً.
  * @inheritdoc
  */
 public function getAuthKey() {
-    //return $this->authKey;
+    if (!$this->hasAttribute('authKey')) {
+        return null;
+    }
+    if (empty($this->authKey) && !$this->isNewRecord) {
+        $this->authKey = Yii::$app->security->generateRandomString(32);
+        $this->updateAttributes(['authKey' => $this->authKey]);
+    }
+    return $this->authKey;
 }
- 
+
 /**
  * @inheritdoc
  */
 public function validateAuthKey($authKey) {
-    return $this->authKey === $authKey;
+    $key = $this->getAuthKey();
+    if (empty($key) || !is_string($authKey) || $authKey === '') {
+        return false;
+    }
+    return hash_equals((string)$key, $authKey);
 }
- 
+
 /**
- * Validates password
+ * يولّد authKey للمستخدمين الجدد.
+ * @inheritdoc
+ */
+public function beforeSave($insert) {
+    if (!parent::beforeSave($insert)) {
+        return false;
+    }
+    if ($insert && $this->hasAttribute('authKey') && empty($this->authKey)) {
+        $this->authKey = Yii::$app->security->generateRandomString(32);
+    }
+    return true;
+}
+
+/**
+ * Validates password.
+ * يدعم النظامين: bcrypt/argon (الجديد) و md5 (القديم) حتى يتم ترحيل كل المستخدمين.
  *
  * @param  string  $password password to validate
  * @return boolean if password provided is valid for current user
  */
 public function validatePassword($password) {
-   // return md5($this->password) ===  ($password);
-    return $this->password === md5($password);
+    $stored = (string)$this->password;
+    if ($stored === '' || !is_string($password) || $password === '') {
+        return false;
+    }
+    if (strncmp($stored, '$2y$', 4) === 0 || strncmp($stored, '$argon', 6) === 0) {
+        return Yii::$app->security->validatePassword($password, $stored);
+    }
+    return hash_equals($stored, md5($password));
+}
+
+/**
+ * يرقّي hash قديم (md5) إلى bcrypt بعد نجاح الدخول بكلمة المرور الصحيحة.
+ * لا يفعل شيئاً إن كان الـ hash جديداً أو كان عمود password أصغر من 60 حرفاً.
+ */
+public function upgradePasswordHash($password) {
+    $stored = (string)$this->password;
+    if (strncmp($stored, '$2y$', 4) === 0 || strncmp($stored, '$argon', 6) === 0) {
+        return;
+    }
+    $col = static::getTableSchema()->getColumn('password');
+    if ($col === null || ($col->size !== null && (int)$col->size < 60)) {
+        return;
+    }
+    $this->setPassword($password);
+    $this->updateAttributes(['password' => $this->password]);
+}
+
+/**
+ * يحوّل كلمة المرور النصية إلى hash آمن (bcrypt). لم تُستخدم بعد في الشاشات.
+ * @param string $password
+ */
+public function setPassword($password) {
+    $this->password = Yii::$app->security->generatePasswordHash($password);
 }
 
  /**
@@ -144,22 +195,11 @@ public function validatePassword($password) {
      */
     public function getBr()
     {
-        return $this->hasOne(Branches::className(), ['id' => 'branch']);
+        return $this->hasOne(Branches::class, ['id' => 'branch']);
     }
 
     public function getAuth()
     {
-        return $this->hasOne(\app\models\AuthItem::className(), ['type' => 'permission']);
-    }
-
-    public function actionSubscriber()
-    {
-    $subscriber_model  = new Subscriber();
-
-    $request = Yii::$app->request;
-    if($request->isAjax && $subscriber_model->load($request->post()) && $subscriber_model->validate() && $subscriber_model->save())
-    {
-        // return something here
-    }
+        return $this->hasOne(\app\models\AuthItem::class, ['type' => 'permission']);
     }
 }

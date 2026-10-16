@@ -1,84 +1,98 @@
 <?php
+
+use yii\bootstrap5\ActiveForm;
 use yii\helpers\Html;
-use yii\bootstrap\ActiveForm;
-use yii\helpers\Url;
+use yii\web\View;
 
-/* @var $this yii\web\View */
-/* @var $form yii\bootstrap\ActiveForm */
-/* @var $model \common\models\LoginForm */
+/** @var yii\web\View $this */
+/** @var app\models\LoginForm $model */
 
-$this->title = 'Sign In';
- 
+// يعتمد على التخطيط main-login (يوفّر <html> و Bootstrap 5 و AppAsset) — لا حاجة لوسوم html/head/body هنا
+$this->title = Yii::t('app', 'Sign in');
+
+$this->registerCss(<<<'CSS'
+.login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.login-card { width: 100%; max-width: 26rem; border: 0; box-shadow: 0 .5rem 1.5rem rgba(0, 0, 0, .12); }
+.login-badge { width: 4rem; height: 4rem; }
+.login-card .form-control { min-height: 3rem; }
+.login-card .input-group-text { min-width: 3rem; justify-content: center; }
+.login-card .field-loginform-username, .login-card .field-loginform-password { margin-bottom: 1rem; }
+CSS);
 ?>
 
-<!DOCTYPE html>
-<html lang="ar">
-<head>
-	<title>Login V11</title>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-</head>
-<body>
+<div class="card login-card">
+    <div class="card-body p-4 p-sm-5">
 
-	<div class="limiter">
-		<div class="container-login100">
-			<div class="wrap-login100 p-l-50 p-r-50 p-t-77 p-b-30">
-				
-					 <span class="login100-form-title p-b-55">
-						شاشة تسجيل الدخول
-                    </span>
+        <div class="text-center mb-4">
+            <span class="login-badge d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary mb-3">
+                <i class="bi bi-shop fs-2"></i>
+            </span>
+            <h1 class="h4 fw-bold mb-1">شاشة تسجيل الدخول</h1>
+            <p class="text-body-secondary small mb-0">أدخل بيانات حسابك للمتابعة</p>
+        </div>
 
-                    <?php $form = ActiveForm::begin(['id' => 'login-form', 'enableClientValidation' => false]); ?>
-                    <div class="wrap-input100 validate-input m-b-16">
-                        <?= $form
-                        ->field($model, 'username')
-                        ->label(false)
-                        ->textInput(['placeholder' => $model->getAttributeLabel('username'), 'class' => 'input100']) ?>						<span class="focus-input100"></span>
-						<span class="symbol-input100">
-							<span class="lnr lnr-lock"></span>
-						</span>
-					</div>
-                    
-                    <div class="wrap-input100 validate-input m-b-16" data-validate = "Password is required">
-                    <?= $form
-                        ->field($model, 'password')
-                        ->label(false)
-                        ->passwordInput(['placeholder' => $model->getAttributeLabel('password'), 'class' => 'input100']) ?>
-                        <span class="focus-input100"></span>
-						<span class="symbol-input100">
-							<span class="lnr lnr-lock"></span>
-						</span>
-					</div>
-                     <br> <br> <br>
-                   
-					<div class="container-login100-form-btn p-t-25">
-					<?= Html::submitButton(Yii::t('app','Sign in'), 
-                           ['class' => 'login100-form-btn',
-                            'name' => 'login-button']) ?>
-					</div>
-					
-                    
-                    <?php ActiveForm::end(); ?>
-        
-                  <div class="text-center w-full p-t-42 p-b-22">
-						<span class="txt1">
-							<!-- Or login with -->
-						</span>
-					</div>
-                    
-					<div class="text-center w-full p-t-115">
-						<span class="txt1">
-							<!-- Not a member? -->
-						</span>
+        <?php $form = ActiveForm::begin([
+            'id' => 'login-form',
+            'enableClientValidation' => false,
+        ]); ?>
 
-						<a class="txt1 bo1 hov1" href="#">
-							<!-- Sign up now							 -->
-						</a>
-					</div>
-			</div>
-		</div>
-	</div>
-</body>
-<?php  $this->registerCssFile("@web/css/util.css"); ?>
+        <?= $form->field($model, 'username', [
+            'template' => '<div class="input-group"><span class="input-group-text"><i class="bi bi-person"></i></span>{input}</div>{error}',
+        ])->textInput([
+            'placeholder' => $model->getAttributeLabel('username'),
+            'autofocus' => true,
+            'autocomplete' => 'username',
+            'autocapitalize' => 'none',
+            'spellcheck' => 'false',
+        ])->label(false) ?>
 
-</html>
+        <?= $form->field($model, 'password', [
+            'template' => '<div class="input-group"><span class="input-group-text"><i class="bi bi-lock"></i></span>{input}'
+                . '<button type="button" class="btn btn-outline-secondary" id="toggle-password" tabindex="-1" aria-label="إظهار / إخفاء كلمة المرور">'
+                . '<i class="bi bi-eye"></i></button></div>{error}',
+        ])->passwordInput([
+            'placeholder' => $model->getAttributeLabel('password'),
+            'autocomplete' => 'current-password',
+        ])->label(false) ?>
+
+        <div id="caps-warning" class="small text-warning d-none mb-3">
+            <i class="bi bi-exclamation-triangle"></i> زر Caps Lock مفعّل
+        </div>
+
+        <?= Html::submitButton(
+            '<i class="bi bi-box-arrow-in-left"></i> ' . Yii::t('app', 'Sign in'),
+            ['class' => 'btn btn-primary btn-lg w-100 mt-2', 'name' => 'login-button', 'id' => 'login-submit']
+        ) ?>
+
+        <?php ActiveForm::end(); ?>
+
+    </div>
+</div>
+
+<?php
+$this->registerJs(<<<'JS'
+(function () {
+    var $pwd = $('#loginform-password');
+
+    // إظهار / إخفاء كلمة المرور
+    $('#toggle-password').on('click', function () {
+        var show = $pwd.attr('type') === 'password';
+        $pwd.attr('type', show ? 'text' : 'password');
+        $(this).find('i').toggleClass('bi-eye', !show).toggleClass('bi-eye-slash', show);
+        $pwd.trigger('focus');
+    });
+
+    // تنبيه Caps Lock
+    $pwd.on('keyup keydown', function (e) {
+        if (e.originalEvent && e.originalEvent.getModifierState) {
+            $('#caps-warning').toggleClass('d-none', !e.originalEvent.getModifierState('CapsLock'));
+        }
+    });
+
+    // منع الضغط المزدوج وإظهار حالة الانتظار
+    $('#login-form').on('submit', function () {
+        $('#login-submit').prop('disabled', true)
+            .html('<span class="spinner-border spinner-border-sm"></span> جارٍ الدخول ...');
+    });
+})();
+JS, View::POS_READY, 'login-js');

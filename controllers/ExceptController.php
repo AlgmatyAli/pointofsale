@@ -5,6 +5,7 @@ namespace app\controllers;
 use Yii;
 
 use yii\web\Controller;
+use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
 use app\models\CompanyInfo;
 use app\models\SalesDetails;
@@ -16,6 +17,13 @@ class ExceptController extends Controller
     public function behaviors()
     {
         return [
+            // كل نقاط البحث هذه تتطلب تسجيل الدخول (كانت مفتوحة بلا قيد)
+            'access' => [
+                'class' => AccessControl::class,
+                'rules' => [
+                    ['allow' => true, 'roles' => ['@']],
+                ],
+            ],
             'verbs' => [
                 'class' => VerbFilter::class,
                 'actions' => [
@@ -25,60 +33,68 @@ class ExceptController extends Controller
         ];
     }
 
+    /**
+     * أعمدة نتائج البحث عن الأصناف: التكلفة لمن يملك seeCostPrice فقط، والسعر الأدنى للموظف دون العميل.
+     */
+    private function itemColumns(array $extra = [])
+    {
+        $identity = Yii::$app->user->identity;
+        $cols = [
+            'category.id',
+            'category.name AS text',
+            'company AS company',
+            'stocks.quantity as quantity',
+            'maxPrice as maxPrice',
+            'serialNo AS serialNo',
+            'place',
+            'commCode',
+        ];
+        if ($identity->seeCostPrice == 1) {
+            $cols[] = 'costPrice as costPrice';
+        }
+        if ($identity->client == null) {
+            $cols[] = 'minPrice AS minPrice';
+        }
+        return array_merge($cols, $extra);
+    }
+
     public function actionItemlist($q = null, $id = null)
     {
-        // if(Yii::$app->user->Identity->seeOtherBranchQ == 0){
-        //     $whereBranch = 'branch='.Yii::$app->user->Identity->branch;
-        // }else{
-        //     $whereBranch = 'branch in (1,2,3,4,5,6,7,8,9)';
-        // }
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         $out = ['results' => ['id' => '', 'text' => '']];
         if (!is_null($q)) {
-            $q = str_replace(' ', '%', $q);
+            $q = str_replace(' ', '%', mb_substr((string) $q, 0, 100));
             $query = new Query;
-            $secript = [
-                'category.id',
-                'category.name AS text',
-                'company AS company',
-                'stocks.quantity as quantity',
-                'maxPrice as maxPrice',
-                'costPrice as costPrice',
-                'serialNo AS serialNo',
-                'minPrice AS minPrice',
-                'place',
-                'commCode',
+            $query->select($this->itemColumns([
                 'branches.name AS BRNAME',
-                'branches.id AS branchId'
-            ];
-            $query->select(
-                $secript
-            )
+                'branches.id AS branchId',
+            ]))
                 ->from('category')
                 ->leftJoin('prices', 'prices.category = category.id')
                 ->leftJoin('stocks', 'stocks.category = category.id')
                 ->leftJoin('branches', 'branches.id = stocks.branch')
-                ->where('category.name like' . "'%" . $q . "%'")
-                //->andWhere($whereBranch)
-                // ->orWhere(['like', 'category.serialNo', $q])
+                // معاملات مربوطة بدل دمج النص في الاستعلام (كانت ثغرة حقن SQL)
+                ->where(['like', 'category.name', '%' . $q . '%', false])   // false: يبقى % (من المسافات) علامة بحث مفتوح كما في الأصل
                 ->orWhere(['like', "REPLACE(category.serialNo, '-', '')", str_replace('-', '', $q)])
                 ->orWhere(['like', 'category.commCode', $q])
-                ->orWhere((['like', 'category.id', $q]))
-                ->orWhere((['like', 'category.place', $q]))
-                ->orWhere((['like', 'category.company', $q]))
-                //->andWhere($whereBranch)
+                ->orWhere(['like', 'category.id', $q])
+                ->orWhere(['like', 'category.place', $q])
+                ->orWhere(['like', 'category.company', $q])
                 ->andWhere(['=', 'category.status', 0])
                 ->andWhere(['!=', 'stocks.type', 3])
                 ->limit(60);
-            $command = $query->createCommand();
-            $data = $command->queryAll();
-            $out['results'] = array_values($data);
+            $out['results'] = array_values($query->all());
         }
         return $out;
     }
 
     public function actionGetInv($category)
     {
+        $identity = Yii::$app->user->identity;
+        if ($identity === null) {
+            throw new \yii\web\ForbiddenHttpException();
+        }
+
         $company = CompanyInfo::find()->one();
         if ($company->criteriaـvalue != 0) {
             $criteriaـvalue = $company->criteriaـvalue;
@@ -102,22 +118,34 @@ class ExceptController extends Controller
             $minPrice = 'minPrice';
         }
 
+        // الأعمدة الأساسية المتاحة للجميع
+        $select = [
+            'stocks.category AS id',
+            'stocks.quantity as quantity',
+            $maxPrice,
+        ];
+
+        // الموظف فقط (وليس العميل) يرى الأسعار الدنيا
+        if ($identity->client == null) {
+            $select[] = $minPrice;
+            $select[] = 'prices.minPrice2';
+            $select[] = 'prices.minPrice3';
+
+            // سعر التكلفة لمن يملك الصلاحية فقط
+            if ($identity->seeCostPrice == 1) {
+                $select[] = 'costPrice';
+            }
+        }
+
         $value = Stocks::find()
             ->leftJoin('prices', 'stocks.category = prices.category')
-            ->select([
-                'stocks.category AS id',
-                'stocks.quantity as quantity',
-                'costPrice',
-                $maxPrice,
-                $minPrice,
-                'prices.minPrice2',
-                'prices.minPrice3'
-            ])
-            // ->Where(['stocks.branch' => Yii::$app->user->identity->branch])
-            ->andwhere(['stocks.category' => $category])
-            ->andwhere(['in', 'type',  [1, 2]])
+            ->select($select)
+            // ->andWhere(['stocks.branch' => $identity->branch])
+            ->andWhere(['stocks.category' => $category])
+            ->andWhere(['in', 'type', [1, 2]])
             ->asArray()->one();
-        Yii::$app->response->format = Yii\web\Response::FORMAT_JSON;
+
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         return $value;
     }
 
@@ -126,104 +154,74 @@ class ExceptController extends Controller
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         $out = ['results' => ['id' => '', 'text' => '']];
         if (!is_null($q)) {
-            $q = str_replace(' ', '%', $q);
+            $q = str_replace(' ', '%', mb_substr((string) $q, 0, 100));
             $query = new Query;
-            $secript = [
-                'category.id',
-                'category.name AS text',
-                'company AS company',
-                'stocks.quantity as quantity',
-                'maxPrice as maxPrice',
-                'costPrice as costPrice',
-                'serialNo AS serialNo',
-                'minPrice AS minPrice',
-                'place',
-                'commCode',
-                'CASE 
-            WHEN `type` =1 
-            THEN "متوفر" 
-            WHEN `type` =2 
-            THEN "متوفر" 
+            $query->select($this->itemColumns([
+                'CASE
+            WHEN `type` =1
+            THEN "متوفر"
+            WHEN `type` =2
+            THEN "متوفر"
             ELSE "قريبا" END as type'
-            ];
-            $query->select(
-                $secript
-            )
+            ]))
                 ->from('category')
                 ->leftJoin('prices', 'prices.category = category.id')
                 ->leftJoin('stocks', 'stocks.category = category.id')
-                ->Where((['=', 'category.id', $q]))
+                ->where(['=', 'category.id', $q])
                 ->andWhere(['=', 'category.status', 0])
                 ->andWhere(['!=', 'stocks.type', 3])
                 ->limit(60);
-            $command = $query->createCommand();
-            $data = $command->queryAll();
-            $out['results'] = array_values($data);
+            $out['results'] = array_values($query->all());
         }
-        // elseif ($id > 0) {
-        //     $out['results'] = [
-        //         'id' => $id,
-        //         'text' => TotalInventory::find($id)->name,
-        //         'company' => TotalInventory::find($id)->company,
-        //         'quantity' => TotalInventory::find($id)->quantity,
-        //         'maxPrice' => TotalInventory::find($id)->maxPrice,
-        //         'minPrice' => TotalInventory::find($id)->minPrice,
-        //         'serialNo' => TotalInventory::find($id)->serialNo,
-        //         'type' => TotalInventory::find($id)->type,
-        //         'commCode' => TotalInventory::find($id)->commCode
-        //     ];
-        // }
         return $out;
     }
 
+    /**
+     * حركات بيع سابقة لعميل (لتعبئة المرتجع). مستخدم العميل يرى عملاءه فقط، والتكلفة لمن يملك seeCostPrice.
+     */
     public function actionItemListByClient($q = null,  $client = null, $id = null)
     {
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $identity = Yii::$app->user->identity;
         $out = ['results' => ['id' => '', 'text' => '']];
+
+        if ($identity->client !== null && $identity->client !== '') {
+            $allowed = array_map('trim', explode(',', (string) $identity->client));
+            if (!in_array((string) $client, $allowed, true)) {
+                return $out;
+            }
+        }
+
         if (!is_null($q)) {
-            $q = str_replace(' ', '%', $q);
+            $q = str_replace(' ', '%', mb_substr((string) $q, 0, 100));
+            $cols = [
+                'salesDetails.id as id',
+                'sales.at',
+                'sales.clinet',
+                'salesDetails.category as category',
+                'category.name AS text',
+                'category.serialNo',
+                'category.company',
+                'category.commCode',
+                'salesDetails.quantity',
+                'salesDetails.salePrice',
+            ];
+            if ($identity->seeCostPrice == 1) {
+                $cols[] = 'salesDetails.costPrice';
+            }
             $query = new Query;
-            $query->select(
-                [
-                    'salesDetails.id as id',
-                    'sales.at',
-                    'sales.clinet',
-                    'salesDetails.category as category',
-                    'category.name AS text',
-                    'category.serialNo',
-                    'category.company',
-                    'category.commCode',
-                    'salesDetails.quantity',
-                    'salesDetails.salePrice',
-                    'salesDetails.costPrice'
-                ]
-            )
+            $query->select($cols)
                 ->from('salesDetails')
                 ->leftJoin('sales', 'salesDetails.salesId = sales.id')
                 ->leftJoin('client', 'sales.clinet = client.id')
                 ->leftJoin('category', 'category.id = salesDetails.category ')
                 ->where(['sales.clinet' => $client])
-                ->andWhere('category.name like' . "'%" . $q . "%'")
+                ->andWhere(['like', 'category.name', '%' . $q . '%', false])
                 ->andWhere(['=', 'category.status', 0])
                 ->andWhere(['=', 'sales.type', '1'])
                 ->limit(60)
                 ->orderBy(['sales.at' => SORT_ASC]);
-            $command = $query->createCommand();
-            $data = $command->queryAll();
-            $out['results'] = array_values($data);
-        } elseif ($id > 0) {
-            $out['results'] = [
-                'id' => $id,
-                'text' => SalesDetails::find($id)->name,
-                'category' =>  SalesDetails::find($id)->category,
-                'company' =>  SalesDetails::find($id)->company,
-                'quantity' => SalesDetails::find($id)->quantity,
-                'maxPrice' => SalesDetails::find($id)->maxPrice,
-                'minPrice' => SalesDetails::find($id)->minPrice,
-                'serialNo' => SalesDetails::find($id)->serialNo,
-                'type' => SalesDetails::find($id)->type,
-                'commCode' => SalesDetails::find($id)->commCode
-            ];
+            $out['results'] = array_values($query->all());
         }
         return $out;
     }

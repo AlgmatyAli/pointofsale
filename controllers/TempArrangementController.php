@@ -9,16 +9,16 @@ use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use app\models\Category;
-use app\models\Inventory;
-use yii\helpers\Json;
 use yii\filters\AccessControl;
 use app\models\ArrangementDetails;
 use app\models\CompanyInfo;
 use app\models\Stocks;
 use yii\db\Query;
+use yii\web\Response;
 
 /**
  * TempArrangementController implements the CRUD actions for TempArrangement model.
+ * (قائمة تسوية الجرد المؤقتة لكل مستخدم قبل «إتمام»؛ لا تحرّك المخزون.)
  */
 class TempArrangementController extends Controller
 {
@@ -29,6 +29,7 @@ class TempArrangementController extends Controller
                 'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['post'],
+                    'delete-all' => ['post'],   // الواجهة ترسله POST أصلاً
                 ],
             ],
             'access' => [
@@ -66,7 +67,6 @@ class TempArrangementController extends Controller
      */
     public function actionView($id)
     {
-        $model = $this->findModel($id);
         return $this->render('view', [
             'model' => $this->findModel($id),
         ]);
@@ -75,73 +75,71 @@ class TempArrangementController extends Controller
     /**
      * Creates a new TempArrangement model.
      * If creation is successful, the browser will be redirected to the 'view' page.
+     *
+     * الحقول في النموذج:  realQuantity = رصيد النظام (تعبئه الواجهة من get-inv)،  quantity = الكمية المجرودة فعلياً.
+     * الفرق = المجرود - رصيد النظام:  ≥ 0 يُسجَّل «إضافة» (type 1)، وإلا «إنقاص» (type -1) بقيمة مطلقة.
+     * رصيد النظام يُقرأ الآن من جدول stocks على الخادم (القيمة المرسلة من المتصفح تُهمل).
      * @return mixed
      */
     public function actionCreate()
     {
         $model = new TempArrangement();
+        $userId = (int) Yii::$app->user->identity->id;
+        $branch = Yii::$app->user->identity->branch;
 
         $searchModel = new TempArrangementSearch();
-        $searchModel->created_by = Yii::$app->user->identity->id;
+        $searchModel->created_by = $userId;
         $searchModel->state = 0;
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
-        if (yii::$app->request->post('hasEditable')) {
-            $id = Yii::$app->request->post('editableKey');
-            $result = TempArrangement::findOne($id);
-
-            $out = Json::encode(['output' => '', 'message' => '']);
-            $post = [];
-            $posted = current($_POST['TempArrangement']);
-            $post['TempArrangement'] = $posted;
-            if ($result->load($post)) {
-                $result->save(false);
-                if (isset($posted['quantity'])) {
-                    $outMessage = $result->quantity;
-                } else {
-                    $outMessage = $result->type;
-                }
-
-                $output = $outMessage;
-
-                $out = Json::encode(['output' => $output]);
-
-                return $out;
-            }
+        if (Yii::$app->request->post('hasEditable')) {
+            return $this->inlineEdit($userId);
         }
 
         if ($model->loadAll(Yii::$app->request->post())) {
+            $category = (int) $model->category;
+            $categoryModel = $category > 0 ? Category::findOne($category) : null;
+            if ($categoryModel === null) {
+                Yii::$app->session->setFlash('error', 'اختر الصنف من القائمة.');
+                return $this->redirect(['create']);
+            }
+
+            if (!is_numeric($model->quantity) || (float) $model->quantity < 0) {
+                Yii::$app->session->setFlash('error', 'الكمية المجرودة يجب أن تكون رقماً صفراً أو أكبر.');
+                return $this->redirect(['create']);
+            }
+            $counted = round((float) $model->quantity, 3);
 
             $temp = TempArrangement::find()->where([
-                'category' => $model->category,
+                'category' => $category,
                 'stockTaking' => 1,
             ])->one();
 
             if ($model->stockTaking == 1 && $temp <> NULL) {
-                if ($temp->category == $model->category) {
-
-                    Yii::$app->session->setFlash('error', Yii::t('app', "This Item Alrady stockTaking") . ' : ' . $model->category0->name);
-                    return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
-                }
+                Yii::$app->session->setFlash('error', Yii::t('app', "This Item Alrady stockTaking") . ' : ' . $categoryModel->name);
+                return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
             }
 
             $tempD = ArrangementDetails::find()
                 ->leftJoin('arrangement', 'arrangement.id = arrangementDetails.arrangement')
                 ->where([
-                    'category' => $model->category,
+                    'category' => $category,
                     'stockTaking' => 1,
                 ])
-                ->andWhere('year(arrangement.at) = ' . date("Y") . '')
+                ->andWhere('year(arrangement.at) = ' . (int) date("Y"))
                 ->one();
 
             if ($model->stockTaking == 1 && $tempD <> NULL) {
-                if ($tempD->category == $model->category) {
-                    Yii::$app->session->setFlash('error', Yii::t('app', "This Item Alrady stockTaking") . ' : ' . $model->category0->name);
-                    return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
-                }
+                Yii::$app->session->setFlash('error', Yii::t('app', "This Item Alrady stockTaking") . ' : ' . $categoryModel->name);
+                return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
             }
 
-            $deferent = $model->quantity - $model->realQuantity;
+            // رصيد النظام من الخادم
+            $system = $this->stockQty($category, $branch);
+            $deferent = round($counted - $system, 3);
+
+            $model->category = $category;
+            $model->realQuantity = $system;
             if ($deferent >= 0) {
                 $model->type  = 1;
                 $model->quantity = $deferent;
@@ -153,7 +151,8 @@ class TempArrangementController extends Controller
 
             $model->state = 0;
             $model->box = 1;
-            $model->branch = Yii::$app->user->identity->branch;
+            $model->branch = $branch;
+            $model->created_by = $userId;
             $model->save(false);
 
             return $this->redirect(['create', 'id' => 1]);
@@ -201,14 +200,15 @@ class TempArrangementController extends Controller
 
     /**
      * Finds the TempArrangement model based on its primary key value.
-     * If the model is not found, a 404 HTTP exception will be thrown.
+     * يُقيَّد بسجلات المستخدم الحالي فقط (كان أي مستخدم يستطيع فتح أو حذف سجلات غيره بالرقم).
      * @param integer $id
      * @return TempArrangement the loaded model
      * @throws NotFoundHttpException if the model cannot be found
      */
     protected function findModel($id)
     {
-        if (($model = TempArrangement::findOne($id)) !== null) {
+        $model = TempArrangement::findOne(['id' => (int) $id, 'created_by' => Yii::$app->user->identity->id]);
+        if ($model !== null) {
             return $model;
         } else {
             throw new NotFoundHttpException(Yii::t('app', 'The requested page does not exist.'));
@@ -221,17 +221,17 @@ class TempArrangementController extends Controller
         return $this->redirect(['create']);
     }
 
+    /**
+     * بحث الأصناف لقائمة Select2.
+     * كل المدخلات مربوطة كمعاملات (كان $q يُلصق في نص SQL مباشرة، أي ثغرة SQL injection).
+     * costPrice لا يُرجَع إلا لمن يملك صلاحية seeCostPrice.
+     */
     public function actionItemlist($q = null, $id = null)
     {
-        // if(Yii::$app->user->Identity->seeOtherBranchQ == 0){
-        //     $whereBranch = 'branch='.Yii::$app->user->Identity->branch;
-        // }else{
-        //     $whereBranch = 'branch in (1,2,3,4,5,6,7,8,9)';
-        // }
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         $out = ['results' => ['id' => '', 'text' => '']];
         if (!is_null($q)) {
-            $q = str_replace(' ', '%', $q);
+            $q = str_replace(' ', '%', (string) $q);
             $query = new Query;
             $secript = [
                 'category.id',
@@ -253,20 +253,30 @@ class TempArrangementController extends Controller
                 ->leftJoin('prices', 'prices.category = category.id')
                 ->leftJoin('stocks', 'stocks.category = category.id')
                 ->leftJoin('branches', 'branches.id = stocks.branch')
-                ->where('category.name like' . "'%" . $q . "%'")
-                //->andWhere($whereBranch)
-                // ->orWhere(['like', 'category.serialNo', $q])
-                ->orWhere(['like', "REPLACE(category.serialNo, '-', '')", str_replace('-', '', $q)])
-                ->orWhere(['like', 'category.commCode', $q])
-                ->orWhere((['like', 'category.id', $q]))
-                ->orWhere((['like', 'category.place', $q]))
-                ->orWhere((['like', 'category.company', $q]))
+                ->where([
+                    'or',
+                    'category.name LIKE :nameLike',
+                    ['like', "REPLACE(category.serialNo, '-', '')", str_replace('-', '', $q)],
+                    ['like', 'category.commCode', $q],
+                    ['like', 'category.id', $q],
+                    ['like', 'category.place', $q],
+                    ['like', 'category.company', $q],
+                ])
+                ->addParams([':nameLike' => '%' . $q . '%'])
                 ->andWhere(['=', 'stocks.branch', Yii::$app->user->identity->branch])
                 ->andWhere(['=', 'category.status', 0])
                 ->andWhere(['=', 'stocks.type', 1])
                 ->limit(60);
             $command = $query->createCommand();
             $data = $command->queryAll();
+
+            if (!Yii::$app->user->can('seeCostPrice')) {
+                foreach ($data as &$row) {
+                    unset($row['costPrice']);
+                }
+                unset($row);
+            }
+
             $out['results'] = array_values($data);
         }
         return $out;
@@ -309,11 +319,65 @@ class TempArrangementController extends Controller
                 'prices.minPrice3'
             ])
             ->Where(['stocks.branch' => Yii::$app->user->identity->branch])
-            ->andwhere(['stocks.category' => $category])
+            ->andwhere(['stocks.category' => (int) $category])
             ->andwhere(['in', 'type',  [1]])
             ->asArray()->one();
-        //echo json::encode($value);
-        Yii::$app->response->format = Yii\web\Response::FORMAT_JSON;
+
+        // سعر التكلفة لا يُرجَع إلا لمن يملك صلاحية seeCostPrice
+        if (is_array($value) && !Yii::$app->user->can('seeCostPrice')) {
+            unset($value['costPrice']);
+        }
+
+        Yii::$app->response->format = Response::FORMAT_JSON;
         return $value;
+    }
+
+    // =====================================================================
+    // أدوات داخلية
+    // =====================================================================
+
+    /**
+     * التعديل المباشر لسطر في القائمة المؤقتة: الكمية ونوع الحركة فقط.
+     */
+    private function inlineEdit($userId)
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+
+        $key = (int) Yii::$app->request->post('editableKey');
+        $all = Yii::$app->request->post('TempArrangement');
+        $posted = is_array($all) ? current($all) : null;
+
+        $result = TempArrangement::findOne(['id' => $key, 'created_by' => $userId, 'state' => 0]);
+        if ($result === null || !is_array($posted)) {
+            return ['output' => '', 'message' => 'السطر غير موجود.'];
+        }
+        if (!isset($posted['quantity']) && !isset($posted['type'])) {
+            return ['output' => '', 'message' => 'يمكن تعديل الكمية أو نوع الحركة فقط.'];
+        }
+
+        if (isset($posted['quantity'])) {
+            if (!is_numeric($posted['quantity']) || (float) $posted['quantity'] < 0) {
+                return ['output' => '', 'message' => 'الكمية يجب أن تكون رقماً صفراً أو أكبر.'];
+            }
+            $result->quantity = $posted['quantity'];
+        }
+        if (isset($posted['type'])) {
+            if (!in_array((int) $posted['type'], [1, -1], true)) {
+                return ['output' => '', 'message' => 'نوع الحركة غير صحيح.'];
+            }
+            $result->type = (int) $posted['type'];
+        }
+        $result->save(false);
+
+        return ['output' => isset($posted['quantity']) ? $result->quantity : $result->type];
+    }
+
+    /** رصيد الصنف في الفرع (النوع 1) */
+    private function stockQty($category, $branch)
+    {
+        return (float) Yii::$app->db->createCommand(
+            'SELECT COALESCE(SUM(quantity), 0) FROM stocks WHERE category = :c AND branch = :b AND type = 1',
+            [':c' => $category, ':b' => $branch]
+        )->queryScalar();
     }
 }

@@ -1,49 +1,63 @@
 #invoice-template {
-    padding: 4rem; }
-#w0-togdata-page{
+  padding: 4rem;
+}
+#w0-togdata-page {
   display: none !important;
-}  
+}
 
-#attribute-switch{
+#attribute-switch {
   height: 3rem;
 }
-.w0{
+.w0 {
   width: 100px;
 }
 
-@media print
-{    
-    .btn, .btn * ,.glyphicon,.control-label,.filters,.breadcrumb,.summary,.h1
-    {
-        display: none !important;
-    }
-    a[href]:after {
+@media print {
+  .app-header,
+  .app-sidebar,
+  .sidebar-overlay,
+  .app-footer,
+  .app-content-header,
+  .btn,
+  .btn *,
+  .glyphicon,
+  .control-label,
+  .filters,
+  .breadcrumb,
+  .summary,
+  .h1 {
+    display: none !important;
+  }
+  a[href]:after {
     content: none !important;
   }
-  .h1, .h1{
+  .h1,
+  .h1 {
     font-size: 16px !important;
-   }
+  }
 
-.wrap {
+  .wrap {
     min-height: 90%;
     height: 90%;
     margin: 0 auto -60px;
     padding: 0 0 60px;
-}
+  }
 
-.wrap > .container {
+  .wrap > .container {
     padding: 70px 15px 20px;
-}
-.popover-footer{
-display: none !important;
-}
+  }
+  .popover-footer {
+    display: none !important;
+  }
 
-.login-box-msg{
+  .login-box-msg {
     color: white !important;
     font-size: 24px !important;
-}
-.tbl {
-    border: 1px solid black !important;;
+  }
+  .tbl {
+    border: 1px solid black !important;
+  }
+  #modalHeader {
+    background-color: #3c8dbc !important;
   }
 }
-

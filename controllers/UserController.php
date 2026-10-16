@@ -116,7 +116,10 @@ class UserController extends Controller
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
             try {
 
-                $modeluser->password = md5($model->newpass);
+                $modeluser->setPassword($model->newpass);
+                if ($modeluser->hasAttribute('authKey')) {
+                    $modeluser->authKey = Yii::$app->security->generateRandomString(32); // يُبطل جلسات "تذكّرني" القديمة
+                }
 
                 if ($modeluser->save()) {
 
@@ -181,50 +184,70 @@ class UserController extends Controller
             if ($exist != null && $exist->username == $model->username) {
                 Yii::$app->session->setFlash('error', Yii::t('app', "User Name Alrady Exsist"));
                 return $this->render('create', ['model' => $model]);
-            } else {
-                $model->createedDate = date('y-m-d');
-                // $orignPass = $model->password;
-                $pass = md5($model->password);
-                $model->password = $pass;
-                if (!is_dir("img/users")) {
-                    mkdir("img/users");
-                    $path = "img/users";
-                } else {
-                    $path = "img/users";
-                }
-                $model->file = UploadedFile::getInstance($model, 'file');
-                $ext = substr(strrchr($model->file, '.'), 1);
-                if ($ext != null) {
-                    $uniqid = uniqid();
-                    $model->file->saveAs($path . '/' . $uniqid . '.' . $model->file->extension);
-                    $model->path = $path . '/' . $uniqid . '.' . $model->file->extension;
-                }
-                if ($model->client != null) {
-                    $model->client = implode(",", $model->client);
-                }
-                if ($model->save()) {
-                    //=========================
-                    $user_type = $model->permission;
-                    $authItem = AuthItem::find()->where(['type' => $user_type])->One();
-                    $AuthAssignment = new AuthAssignment();
-                    $AuthAssignment->item_name = $authItem->name;
-                    $AuthAssignment->user_id = $model->id;
-                    $AuthAssignment->save(false);
-                    //=========================
-                    // Yii::$app->mailer->compose()
-                    // ->setTo($model->email)
-                    // ->setFrom('algmatyali@gmail.com')
-                    // ->setSubject('كلمة السر الخاصة بك')
-                    // ->setTextBody(' السيد الفاضل :'.$model->username.' كلمة السر الخاصة بك هي '.'  '.$orignPass)
-                    // ->send();   
-                }
-                return $this->redirect(['view', 'id' => $model->id]);
             }
-        } else {
-            return $this->render('create', [
-                'model' => $model,
-            ]);
+
+            $model->createedDate = date('y-m-d');
+            $plainPassword = $model->password;
+            $model->setPassword($model->password);
+
+            $path = "img/users";
+            if (!is_dir($path)) {
+                mkdir($path);
+            }
+
+            // التحقق من الصورة (الامتداد/نوع الملف/الحجم) قبل حفظها على القرص
+            $model->file = UploadedFile::getInstance($model, 'file');
+            if ($model->file !== null && !$model->validate(['file'])) {
+                Yii::$app->session->setFlash('error', implode(' ', $model->getErrors('file')));
+                $model->password = $plainPassword;
+                return $this->render('create', ['model' => $model]);
+            }
+
+            $clientIds = $model->client;
+            if (is_array($model->client)) {
+                $model->client = implode(",", $model->client);
+            }
+
+            $authItem = AuthItem::find()->where(['type' => $model->permission])->one();
+            if ($authItem === null) {
+                Yii::$app->session->setFlash('error', 'نوع الصلاحية المختار غير موجود');
+                $model->password = $plainPassword;
+                $model->client = $clientIds;
+                return $this->render('create', ['model' => $model]);
+            }
+
+            if ($model->file !== null) {
+                $fileName = $path . '/' . uniqid() . '.' . strtolower($model->file->extension);
+                $model->file->saveAs($fileName, false);
+                $model->path = $fileName;
+            }
+
+            $transaction = Yii::$app->db->beginTransaction();
+            try {
+                if (!$model->save()) {
+                    throw new Exception(implode(' ', $model->getErrorSummary(true)));
+                }
+                $AuthAssignment = new AuthAssignment();
+                $AuthAssignment->item_name = $authItem->name;
+                $AuthAssignment->user_id = $model->id;
+                $AuthAssignment->save(false);
+                $transaction->commit();
+            } catch (Exception $e) {
+                $transaction->rollBack();
+                Yii::$app->session->setFlash('error', $e->getMessage());
+                $model->isNewRecord = true;
+                $model->id = null;
+                $model->password = $plainPassword;
+                $model->client = $clientIds;
+                return $this->render('create', ['model' => $model]);
+            }
+
+            return $this->redirect(['view', 'id' => $model->id]);
         }
+
+        return $this->render('create', [
+            'model' => $model,
+        ]);
     }
 
     /**
@@ -235,49 +258,67 @@ class UserController extends Controller
      */
     public function actionUpdate($id)
     {
-        $model = User::find()->where(['id' => $id])->one();
+        $model = $this->findModel($id);
 
         if ($model->load(Yii::$app->request->post())) {
-            if (!is_dir("img/users")) {
-                mkdir("img/users");
-                $path = "img/users";
-            } else {
-                $path = "img/users";
+            $path = "img/users";
+            if (!is_dir($path)) {
+                mkdir($path);
             }
+
+            // التحقق من الصورة قبل حفظها على القرص
             $model->file = UploadedFile::getInstance($model, 'file');
-            if ($model->file != null) {
-                $ext = substr(strrchr($model->file, '.'), 1);
-                if ($ext != null) {
-                    $uniqid = uniqid();
-                    $model->file->saveAs($path . '/' . $uniqid . '.' . $model->file->extension);
-                    $model->path = $path . '/' . $uniqid . '.' . $model->file->extension;
-                }
+            if ($model->file !== null && !$model->validate(['file'])) {
+                Yii::$app->session->setFlash('error', implode(' ', $model->getErrors('file')));
+                return $this->render('update', ['model' => $model]);
             }
-            if ($model->client != null) {
+
+            $clientIds = $model->client;
+            if (is_array($model->client)) {
                 $model->client = implode(",", $model->client);
             }
 
-            $model->save();
-            //=========================
-            $user_type = $model->permission;
-            $authItem = AuthItem::find()->where(['type' => $user_type])->One();
-            Yii::$app->db->createCommand()->delete('auth_assignment', ['user_id' => $id])->execute();
+            $authItem = AuthItem::find()->where(['type' => $model->permission])->one();
+            if ($authItem === null) {
+                Yii::$app->session->setFlash('error', 'نوع الصلاحية المختار غير موجود');
+                $model->client = $clientIds;
+                return $this->render('update', ['model' => $model]);
+            }
 
-            $AuthAssignment = new AuthAssignment();
-            $AuthAssignment->item_name = $authItem->name;
-            $AuthAssignment->user_id = $id;
-            $AuthAssignment->save(false);
-            //=========================
+            if ($model->file !== null) {
+                $fileName = $path . '/' . uniqid() . '.' . strtolower($model->file->extension);
+                $model->file->saveAs($fileName, false);
+                $model->path = $fileName;
+            }
+
+            $transaction = Yii::$app->db->beginTransaction();
+            try {
+                if (!$model->save()) {
+                    throw new Exception(implode(' ', $model->getErrorSummary(true)));
+                }
+                Yii::$app->db->createCommand()->delete('auth_assignment', ['user_id' => $id])->execute();
+
+                $AuthAssignment = new AuthAssignment();
+                $AuthAssignment->item_name = $authItem->name;
+                $AuthAssignment->user_id = $id;
+                $AuthAssignment->save(false);
+                $transaction->commit();
+            } catch (Exception $e) {
+                $transaction->rollBack();
+                Yii::$app->session->setFlash('error', $e->getMessage());
+                $model->client = $clientIds;
+                return $this->render('update', ['model' => $model]);
+            }
 
             return $this->redirect(['view', 'id' => $model->id]);
-        } else {
-            if ($model->client != null) {
-                $model->client = explode(",", $model->client);
-            }
-            return $this->render('update', [
-                'model' => $model,
-            ]);
         }
+
+        if ($model->client != null) {
+            $model->client = explode(",", $model->client);
+        }
+        return $this->render('update', [
+            'model' => $model,
+        ]);
     }
 
     /**
@@ -288,6 +329,10 @@ class UserController extends Controller
      */
     public function actionDelete($id)
     {
+        if ((int)$id === (int)Yii::$app->user->id) {
+            Yii::$app->session->setFlash('error', 'لا يمكنك حذف حسابك الحالي');
+            return $this->redirect(['index']);
+        }
         $this->findModel($id)->delete();
 
         return $this->redirect(['index']);

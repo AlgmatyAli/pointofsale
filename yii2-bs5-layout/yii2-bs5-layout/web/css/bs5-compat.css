@@ -1,0 +1,66 @@
+/*
+ * توافق مؤقت: يجعل الصفحات القديمة (Bootstrap 3) تبدو مقبولة داخل القالب الجديد
+ * حتى يتم ترحيلها. احذف كل قاعدة بعد أن تختفي من الصفحات.
+ * الجدول الكامل للبدائل في README.md
+ */
+
+/* خط عربي محلي بدون إنترنت: عدّله إلى خطك */
+body { font-family: "Cairo", "Tajawal", "Segoe UI", Tahoma, Arial, sans-serif; }
+
+/* ---- الاتجاهات: منطقية لتتبع RTL ---- */
+.pull-right { float: inline-end !important; }
+.pull-left  { float: inline-start !important; }
+
+/* ---- الإخفاء حسب الشاشة ---- */
+@media (max-width: 575.98px) { .hidden-xs { display: none !important; } }
+@media (min-width: 576px)    { .visible-xs { display: none !important; } }
+
+/* ---- الأزرار ---- */
+.btn-default {
+    color: var(--bs-body-color);
+    background-color: var(--bs-body-bg);
+    border-color: var(--bs-border-color);
+}
+.btn-default:hover { background-color: var(--bs-secondary-bg); }
+.btn-xs { --bs-btn-padding-y: .125rem; --bs-btn-padding-x: .35rem; --bs-btn-font-size: .75rem; }
+
+/* ---- label => badge ---- */
+.label {
+    display: inline-block; padding: .35em .65em; font-size: .75em; font-weight: 700;
+    line-height: 1; color: #fff; background: var(--bs-secondary); border-radius: var(--bs-border-radius);
+}
+.label-primary { background: var(--bs-primary); }
+.label-success { background: var(--bs-success); }
+.label-info    { background: var(--bs-info); color: #000; }
+.label-warning { background: var(--bs-warning); color: #000; }
+.label-danger  { background: var(--bs-danger); }
+
+/* ---- panel / well => card ---- */
+.panel, .well {
+    margin-bottom: 1rem; background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color); border-radius: var(--bs-border-radius);
+}
+.well { padding: 1rem; }
+.panel-heading { padding: .75rem 1rem; background: var(--bs-tertiary-bg); border-bottom: 1px solid var(--bs-border-color); }
+.panel-body { padding: 1rem; }
+.panel-footer { padding: .75rem 1rem; background: var(--bs-tertiary-bg); border-top: 1px solid var(--bs-border-color); }
+.panel-title { margin: 0; font-size: 1rem; }
+
+/* ---- نماذج ---- */
+.form-group { margin-bottom: 1rem; }
+.control-label { margin-bottom: .5rem; font-weight: 500; }
+.has-error .help-block, .has-error .control-label { color: var(--bs-danger); }
+.has-error .form-control { border-color: var(--bs-danger); }
+.help-block { display: block; margin-top: .25rem; font-size: .875em; }
+.input-group-addon {
+    display: flex; align-items: center; padding: .375rem .75rem;
+    background: var(--bs-tertiary-bg); border: 1px solid var(--bs-border-color);
+}
+
+/* ---- جداول وصور ---- */
+.table-condensed > thead > tr > th, .table-condensed > tbody > tr > td { padding: .25rem .5rem; }
+.img-responsive { max-width: 100%; height: auto; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+
+/* ---- نافذة modal القديمة: زر الإغلاق (×) ---- */
+.modal-header .close { margin-inline-start: auto; background: none; border: 0; font-size: 1.5rem; line-height: 1; }

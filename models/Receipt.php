@@ -27,6 +27,9 @@ use Yii;
  */
 class Receipt extends \yii\db\ActiveRecord
 {
+    /** سيناريو الحفظ من شاشات السندات (إنشاء/تعديل). لا يؤثر على البحث والتقارير. */
+    const SCENARIO_SAVE = 'save';
+
     /**
      * {@inheritdoc}
      */
@@ -49,6 +52,26 @@ class Receipt extends \yii\db\ActiveRecord
             [['clinet'], 'exist', 'skipOnError' => true, 'targetClass' => Client::class, 'targetAttribute' => ['clinet' => 'id']],
             [['user_insert'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_insert' => 'id']],
             [['user_update'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_update' => 'id']],
+
+            // ---- قواعد الحفظ فقط (سيناريو save) ----
+            // 1 = سند قبض، 2 = سند صرف
+            [['type'], 'in', 'range' => [1, 2], 'on' => self::SCENARIO_SAVE],
+            // لا قيم سالبة أو صفرية
+            [['value'], 'number', 'min' => 0.01, 'on' => self::SCENARIO_SAVE],
+            // العميل يجب أن يناسب نوع السند (قبض: زبون/كلاهما، صرف: مورد/كلاهما)، ويُفحص عند الإنشاء أو تغيير العميل فقط
+            [['clinet'], 'exist', 'on' => self::SCENARIO_SAVE, 'skipOnError' => true,
+                'targetClass' => Client::class, 'targetAttribute' => ['clinet' => 'id'],
+                'filter' => function ($query) {
+                    $query->andWhere(['type' => ((int)$this->type === 1) ? [0, 2] : [1, 2]]);
+                },
+                'when' => function ($model) {
+                    return $model->isNewRecord || $model->isAttributeChanged('clinet', false);
+                },
+                'message' => 'العميل المختار لا يناسب نوع السند'],
+            // التفقيط نص عادي فقط
+            [['tafqet'], 'filter', 'on' => self::SCENARIO_SAVE, 'filter' => function ($v) {
+                return $v === null ? null : trim(strip_tags((string)$v));
+            }],
         ];
     }
 

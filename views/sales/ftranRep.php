@@ -1,140 +1,174 @@
 <?php
 
-use yii\helpers\Html;
 use app\models\CompanyInfo;
-/* @var $this yii\web\View */
-/* @var $model app\models\Salaryroll */
+use yii\helpers\Html;
+
+/** @var yii\web\View $this */
+/** @var array $models */
+/** @var array $lastBalance */
+/** @var array $sumSql */
+/** @var string $min_date */
+/** @var string $max_date */
+
+// تقرير بتخطيط مستقل بلا الشريط الجانبي والعلوي، ويُطبع داخل إطار معزول (printReport في layouts/report.php)
+$this->context->layout = 'report';
+$this->title = $this->title ?: 'تقرير الحركة اليومية';
+
+// بيانات الشركة والشعار
+$company = CompanyInfo::find()->select(['*'])->asArray()->one() ?: [];
+$logo = (string) ($company['path'] ?? '');
+if ($logo !== '' && !preg_match('~^(https?:)?//|^/~', $logo)) {
+    $logo = Yii::getAlias('@web/') . ltrim($logo, '/');
+}
+
+$fmt = static fn ($value): string => number_format((float) $value, 3);
+
+// ---- الرصيد السابق (نفس منطق الملف الأصلي) ----
+$sumwared = 0;
+$sumsader = 0;
+$balance = 0;
+if (!empty($lastBalance) && is_array($lastBalance)) {
+    foreach ($lastBalance as $row) {
+        $sumwared += (float) $row['wared'];
+        $sumsader += (float) $row['sader'];
+        $balance = $sumwared - $sumsader;
+    }
+}
+
+// ---- مجاميع الحركات (كانت $disscount تُستخدم بلا تهيئة، فصارت تبدأ من صفر. النتيجة نفسها) ----
+$sader = 0;
+$wared = 0;
+$disscount = 0;
+foreach ($models as $row) {
+    $sader = $sader + $row['sader'];
+    $wared = $wared + $row['wared'];
+    $disscount = $disscount + $row['disscount'];
+}
 ?>
 
-<div class="row">
+<!-- شريط الأزرار: لا يُطبع -->
+<div class="no-print d-print-none mb-3 d-flex flex-wrap justify-content-between gap-2">
+    <button type="button" class="btn btn-primary" onclick="printReport()">
+        <i class="bi bi-printer"></i> <?= Yii::t('app', 'Print') ?>
+    </button>
 
-   <div class="col-md-12">
-      <br><br>
+    <?= Html::a(
+        '<i class="bi bi-arrow-right-circle"></i> ' . Yii::t('app', 'Cancel'),
+        Yii::$app->request->referrer ?: ['index'],
+        ['class' => 'btn btn-outline-secondary']
+    ) ?>
+</div>
 
-      <p>
-         <button class='btn btn-info' onClick="window.print()"><?= Yii::t('app', 'Print') ?></button>`
-         <?= Html::a(Yii::t('app', 'Cancel'), Yii::$app->request->referrer, ['class' => 'btn btn-danger btnx']) ?>
-      </p>
+<div id="report" class="report">
 
-      <div id='div1' class="site-about">
-         <?php
-         $sum = 0;
-         $coun = 1;
-         $sumwared = 0;
-         $sumsader = 0;
-         $balance = 0;
-         if (!empty($lastBalance) && is_array($lastBalance)) {
-            foreach ($lastBalance as $model) {
-               $sumwared +=  (float) $model["wared"];
-               $sumsader +=  (float) $model["sader"];
-               $balance =  $sumwared - $sumsader;
-            }
-         }
-         ?>
+    <header class="report-header">
+        <div class="report-brand">
+            <?php if ($logo !== ''): ?>
+                <img src="<?= Html::encode($logo) ?>" class="report-logo" alt="<?= Html::encode($company['name'] ?? '') ?>">
+            <?php endif; ?>
+            <div class="report-company"><?= Html::encode($company['name'] ?? '') ?></div>
+        </div>
 
-         <?php $title = CompanyInfo::find()->select(['*'])->asArray()->one(); ?>
-
-         <img src=<?php echo $title["path"] ?> class="img-circle logo" alt="Cinque Terre">
-         <h4><?php
-               echo  $title['name'];
-               echo '<br>';
-               ?> </h4>
-         <br>
-         <center>
-            <div>
-               <h3>تقرير الحركة اليومية من تاريخ : <b><?= $min_date ?></b> حتى تاريخ <b><?= $max_date ?></b></h3>
+        <div class="report-heading">
+            <h1 class="report-title">تقرير الحركة اليومية</h1>
+            <div class="report-period">
+                من تاريخ: <b><?= Html::encode((string) $min_date) ?></b>
+                حتى تاريخ: <b><?= Html::encode((string) $max_date) ?></b>
             </div>
-         </center>
-         <br><br>
+        </div>
 
-         <table class="table table-hover">
+        <div class="report-meta">
+            تاريخ الطباعة: <?= date('Y-m-d H:i') ?><br>
+            أعدّه: <?= Html::encode((string) Yii::$app->user->identity?->username) ?>
+        </div>
+    </header>
+
+    <!-- حركات الفترة -->
+    <div style="overflow-x:auto">
+        <table class="report-table">
             <thead>
-               <tr>
-                  <th>#</th>
-                  <th>
-                     <h5> بيان الحركة</h5>
-                  </th>
-                  <th>
-                     <h5> التاريخ</h5>
-                  </th>
-                  <th>
-                     <h5 style="float: right;"> كيفية السداد</h5>
-                  </th>
-                  <th>
-                     <h5> الصادر</h5>
-                  </th>
-                  <th>
-                     <h5> الوارد</h5>
-                  </th>
-               </tr>
+                <tr>
+                    <th class="rp-idx">#</th>
+                    <th>بيان الحركة</th>
+                    <th>التاريخ</th>
+                    <th>كيفية السداد</th>
+                    <th class="rp-dr">الصادر</th>
+                    <th class="rp-cr">الوارد</th>
+                </tr>
             </thead>
 
-            <?php
-            $sader = 0;
-            $wared = 0;
-            $coun = 1;
-            foreach ($models as $model):
-               $sader = $sader + $model["sader"];
-               $wared = $wared + $model["wared"];
-               $disscount = $disscount + $model["disscount"];
-               $count = $count + 1;
-            ?>
+            <tbody>
+                <!-- الرصيد قبل بداية الفترة -->
+                <tr class="rp-open">
+                    <td colspan="5">رصيد قبل <?= Html::encode((string) $min_date) ?></td>
+                    <td class="rp-num rp-bal"><?= $fmt($balance) ?></td>
+                </tr>
 
-               <tbody>
-                  <tr>
-                     <td><?= $coun++ ?></td>
-                     <td><?= $model["description"] ?></td>
-                     <td><?= $model["date_"] ?></td>
-                     <td><?= $model["paymentType"] ?></td>
-                     <td><?= number_format($model["sader"], 3) . "\n"; ?></td>
-                     <td><?= number_format($model["wared"], 3) . "\n"; ?></td>
-                  </tr>
-               </tbody>
-            <?php endforeach; ?>
+                <?php $i = 1; foreach ($models as $row): ?>
+                    <tr>
+                        <td class="rp-idx"><?= $i++ ?></td>
+                        <td><?= Html::encode((string) $row['description']) ?></td>
+                        <td class="text-nowrap" style="white-space:nowrap"><?= Html::encode((string) $row['date_']) ?></td>
+                        <td><?= Html::encode((string) $row['paymentType']) ?></td>
+                        <td class="rp-num rp-dr<?= $row['sader'] == 0 ? ' rp-zero' : '' ?>"><?= $fmt($row['sader']) ?></td>
+                        <td class="rp-num rp-cr<?= $row['wared'] == 0 ? ' rp-zero' : '' ?>"><?= $fmt($row['wared']) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
 
-            <tr>
-               <td><b>اجمالي التخفيض:</b> <?php echo number_format($disscount, 3) . "\n"; ?></td>
-               <td><b>رصيد قبل:</b> <?= $min_date . '  (' . number_format($balance, 3) . "\n)"; ?></td>
-               <td></td>
-               <td><?php echo number_format($sader, 3) . "\n"; ?></td>
-               <td><?php echo number_format($wared, 3) . "\n"; ?></td>
-               <td>الرصيـد : <?php echo number_format($wared - $sader, 3) . "\n"; ?></td>
-               <td></td>
-            </tr>
-         </table>
-         <div class="row">
-            <div class="col-md-3"></div>
-            <div class="col-md-6">
-               <br><br>
-               <h4> ملخص حسب نوع السداد </h4>
-               <br>
-               <table class="table table-bordered table-hover">
-                  <thead>
-                     <tr>
-                        <th style="text-align:right">نوع السداد</th>
-                        <th style="text-align:right">الصادر</th>
-                        <th style="text-align:right">الوارد</th>
-                        <th style="text-align:right">الصافي</th>
-                     </tr>
-                  </thead>
-                  <tbody>
-                     <?php
-                     foreach ($sumSql as $sumRow) {
-                        $ptype = isset($sumRow['max(payment_types.name)']) ? $sumRow['max(payment_types.name)'] : (isset($sumRow['name']) ? $sumRow['name'] : '');
-                        $s = isset($sumRow['sum(sader)']) ? $sumRow['sum(sader)'] : 0;
-                        $w = isset($sumRow['sum(wared)']) ? $sumRow['sum(wared)'] : 0;
-                        echo "<tr>";
-                        echo "<td style='vertical-align:middle;text-align:right;'><b>" . htmlspecialchars($ptype) . "</b></td>";
-                        echo "<td style='vertical-align:middle;text-align:right;'>" . number_format($s, 3) . "</td>";
-                        echo "<td style='vertical-align:middle;text-align:right;'>" . number_format($w, 3) . "</td>";
-                        echo "<td style='vertical-align:middle;text-align:right;'>" . number_format($w - $s, 3) . "</td>";
-                        echo "</tr>";
-                     }
-                     ?>
-                  </tbody>
-               </table>
-            </div>
-            <div class="col-md-3"></div>
-         </div>
-      </div>
-   </div>
+            <tfoot>
+                <tr>
+                    <td colspan="4">الإجمالي</td>
+                    <td class="rp-num rp-dr"><?= $fmt($sader) ?></td>
+                    <td class="rp-num rp-cr"><?= $fmt($wared) ?></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <!-- ملخص الفترة -->
+    <section class="report-summary">
+        <div class="report-stat">
+            <div class="rp-k">اجمالي التخفيض</div>
+            <div class="rp-v"><?= $fmt($disscount) ?></div>
+        </div>
+        <div class="report-stat">
+            <div class="rp-k">رصيد قبل <?= Html::encode((string) $min_date) ?></div>
+            <div class="rp-v"><?= $fmt($balance) ?></div>
+        </div>
+        <div class="report-stat">
+            <div class="rp-k">الرصيـد</div>
+            <div class="rp-v rp-bal"><?= $fmt($wared - $sader) ?></div>
+        </div>
+    </section>
+
+    <!-- ملخص حسب نوع السداد -->
+    <h2 style="font-size:16px;font-weight:800;margin:22px 0 8px">ملخص حسب نوع السداد</h2>
+    <div style="overflow-x:auto">
+        <table class="report-table" style="max-width:640px">
+            <thead>
+                <tr>
+                    <th>نوع السداد</th>
+                    <th class="rp-dr">الصادر</th>
+                    <th class="rp-cr">الوارد</th>
+                    <th class="rp-bal">الصافي</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($sumSql as $sumRow):
+                    $ptype = $sumRow['max(payment_types.name)'] ?? ($sumRow['name'] ?? '');
+                    $s = $sumRow['sum(sader)'] ?? 0;
+                    $w = $sumRow['sum(wared)'] ?? 0;
+                ?>
+                    <tr>
+                        <td><b><?= Html::encode((string) $ptype) ?></b></td>
+                        <td class="rp-num rp-dr"><?= $fmt($s) ?></td>
+                        <td class="rp-num rp-cr"><?= $fmt($w) ?></td>
+                        <td class="rp-num rp-bal"><?= $fmt($w - $s) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+
+</div>

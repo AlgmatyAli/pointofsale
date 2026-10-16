@@ -11,8 +11,6 @@ $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="emp-salary-cdiscount">
 
-    <h1><?= Html::encode($this->title) ?></h1><hr>
-
     <?= $this->render('discount', [
         'model' => $model,
     ]) ?>

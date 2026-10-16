@@ -57,11 +57,11 @@ class Category extends \yii\db\ActiveRecord
             [['name', 'class', 'unit', 'box', 'minimum', 'ending', 'qShow', 'status', 'user_insert', 'created_at'], 'required'],
             [['box', 'minimum', 'ending', 'qShow', 'status', 'user_insert', 'user_update'], 'integer'],
             [['cost', 'price', 'quantity'], 'number'],
-            [['created_at', 'update_at', 'place', 'commCode', 'moreRequest', 'cost', 'price', 'quantity', 'weight'], 'safe'],
+            [['created_at', 'update_at', 'place', 'commCode', 'moreRequest', 'weight'], 'safe'],
             [['name', 'class', 'serialNo', 'country', 'company', 'path'], 'string', 'max' => 255],
             [['unit'], 'string', 'max' => 100],
-            [['user_insert'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['user_insert' => 'id']],
-            [['user_update'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['user_update' => 'id']],
+            [['user_insert'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_insert' => 'id']],
+            [['user_update'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_update' => 'id']],
             [['file'], 'file', 'extensions' => ['jpg', 'jpeg', 'png', 'webp'], 'maxSize' => 1024 * 1024 * 2],
         ];
     }
@@ -106,7 +106,7 @@ class Category extends \yii\db\ActiveRecord
      */
     public function getUserInsert()
     {
-        return $this->hasOne(User::className(), ['id' => 'user_insert']);
+        return $this->hasOne(User::class, ['id' => 'user_insert']);
     }
 
     /**
@@ -116,7 +116,7 @@ class Category extends \yii\db\ActiveRecord
      */
     public function getUserUpdate()
     {
-        return $this->hasOne(User::className(), ['id' => 'user_update']);
+        return $this->hasOne(User::class, ['id' => 'user_update']);
     }
 
     /**
@@ -126,7 +126,7 @@ class Category extends \yii\db\ActiveRecord
      */
     public function getPrices()
     {
-        return $this->hasMany(Prices::className(), ['category' => 'id']);
+        return $this->hasMany(Prices::class, ['category' => 'id']);
     }
 
     /**
@@ -136,7 +136,7 @@ class Category extends \yii\db\ActiveRecord
      */
     public function getPurchasesDetails()
     {
-        return $this->hasMany(PurchasesDetails::className(), ['category' => 'id']);
+        return $this->hasMany(PurchasesDetails::class, ['category' => 'id']);
     }
 
     /**
@@ -146,11 +146,11 @@ class Category extends \yii\db\ActiveRecord
      */
     public function getSalesDetails()
     {
-        return $this->hasMany(SalesDetails::className(), ['category' => 'id']);
+        return $this->hasMany(SalesDetails::class, ['category' => 'id']);
     }
 
     public function getTotal()
     {
-        return $this->hasOne(Totalinventory::className(), ['id' => 'id']);
+        return $this->hasOne(Totalinventory::class, ['id' => 'id']);
     }
 }

@@ -1,132 +1,133 @@
 <?php
 
-/* @var $this yii\web\View */
-/* @var $searchModel app\models\PricesSearch */
-/* @var $dataProvider yii\data\ActiveDataProvider */
+/** @var yii\web\View $this */
+/** @var app\models\PricesSearch $searchModel */
+/** @var yii\data\ActiveDataProvider $dataProvider */
 
-use yii\helpers\Html;
-use kartik\export\ExportMenu;
+use app\models\Category;
 use kartik\grid\GridView;
+use yii\helpers\ArrayHelper;
+use yii\helpers\Html;
 
 $this->title = Yii::t('app', 'Prices');
 $this->params['breadcrumbs'][] = $this->title;
-$search = "$('.search-button').click(function(){
-	$('.search-form').toggle(1000);
-	return false;
-});";
-$this->registerJs($search);
+
+// سعر التكلفة يظهر فقط لمن يملك صلاحية seeCostPrice (الشرط نفسه المستخدم في بقية الصفحات)
+$canSeeCost = Yii::$app->user->identity->seeCostPrice == 1;
+
+// تحرير داخل الخلية (بدل النافذة المنبثقة) بتنسيق Bootstrap 5
+$editable = [
+    'asPopover' => false,
+    'bsVersion' => '5.x',
+    'submitButton' => ['icon' => '<i class="bi bi-check-lg"></i>'],
+    'resetButton' => ['icon' => '<i class="bi bi-arrow-counterclockwise"></i>'],
+];
+
 ?>
 <div class="prices-index">
 
-    <h1><?= Html::encode($this->title) ?></h1><hr>
-    
-    <p>
-        <?php //Html::a(Yii::t('app', 'Advance Search'), '#', ['class' => 'btn btn-info search-button']) ?>
-    </p>
-    <br>
-    <div class="search-form" style="display:none">
-        <?= $this->render('_search', ['model' => $searchModel]); ?>
-    </div>
+    <h3 class="mb-3"><i class="bi bi-tags"></i> <?= Html::encode($this->title) ?></h3>
+
     <?php
-    $gridColumn = [
+    $gridColumns = [
         ['class' => 'yii\grid\SerialColumn'],
+
         ['attribute' => 'id', 'visible' => false],
+
         [
             'attribute' => 'category',
             'label' => Yii::t('app', 'Category'),
             'value' => function ($model) {
-                return $model->category0->name;
+                return $model->category0?->name;
             },
+            'width' => '30%',
             'filterType' => GridView::FILTER_SELECT2,
-            'filter' => \yii\helpers\ArrayHelper::map(\app\models\Category::find()->asArray()->all(), 'id', 'name'),
+            'filter' => ArrayHelper::map(Category::find()->asArray()->all(), 'id', 'name'),
             'filterWidgetOptions' => [
                 'pluginOptions' => ['allowClear' => true],
             ],
-            'filterInputOptions' => ['placeholder' => 'Category', 'id' => 'grid-prices-search-category']
+            'filterInputOptions' => ['placeholder' => Yii::t('app', 'Category'), 'id' => 'grid-prices-search-category'],
         ],
 
         [
             'attribute' => 'company',
             'label' => Yii::t('app', 'Company'),
+            'width' => '10%',
             'value' => function ($model) {
-                return $model->category0->company;
+                return $model->category0?->company;
             },
             'filterType' => GridView::FILTER_SELECT2,
-            'filter' => \yii\helpers\ArrayHelper::map(\app\models\Category::find()->asArray()->all(), 'company', 'company'),
+            'filter' => ArrayHelper::map(Category::find()->asArray()->all(), 'company', 'company'),
             'filterWidgetOptions' => [
                 'pluginOptions' => ['allowClear' => true],
             ],
-            'filterInputOptions' => ['placeholder' => 'Company', 'company' => 'grid-prices-search-category']
-        ],
-
-
-        'category0.serialNo',
-
-        'stocks0.quantity',
-        
-        [
-            'class' => 'kartik\grid\EditableColumn',
-            'attribute' => Yii::t('app', 'costPrice'),
-            'editableOptions' => [
-                'asPopover' => true,
-            ],
-
-            'options' => ['class' => 'form-control', 'placeholder' => '...'],
+            // في الأصل كان المفتاح 'company' بدل 'id' (خطأ إملائي)، فلم يُطبَّق المعرّف
+            'filterInputOptions' => ['placeholder' => Yii::t('app', 'Company'), 'id' => 'grid-prices-search-company'],
         ],
 
         [
-            'class' => 'kartik\grid\EditableColumn',
-            'attribute' => Yii::t('app', 'maxPrice'),
-            'editableOptions' => [
-                'asPopover' => true,
-            ],
+            'attribute' => 'category0.serialNo',
+            'label' => Yii::t('app', 'Serial No'),
+            'width' => '20%',
+            'value' => function ($model) {
+                return $model->category0->serialNo;
+            },
+            // 'contentOptions' => ['class' => 'fw-semibold'],
+        ],
 
-            'options' => ['class' => 'form-control', 'placeholder' => '...'],
+        [
+            'attribute' => 'stocks0.quantity',
+            'label' => Yii::t('app', 'quantity'),
+            'value' => function ($model) {
+                return $model->stocks0?->quantity;
+            },
+            'contentOptions' => ['class' => 'fw-semibold'],
         ],
 
         [
             'class' => 'kartik\grid\EditableColumn',
-            'attribute' => Yii::t('app', 'minPrice'),
-            'editableOptions' => [
-                'asPopover' => true,
-            ],
-
-            'options' => ['class' => 'form-control', 'placeholder' => '...'],
+            'attribute' => 'costPrice',
+            'editableOptions' => $editable,
+            'visible' => $canSeeCost,
         ],
-
         [
             'class' => 'kartik\grid\EditableColumn',
-            'attribute' => Yii::t('app', 'minPrice2'),
-            'editableOptions' => [
-                'asPopover' => true,
-            ],
-
-            'options' => ['class' => 'form-control', 'placeholder' => '...'],
+            'attribute' => 'maxPrice',
+            'editableOptions' => $editable,
         ],
-
         [
             'class' => 'kartik\grid\EditableColumn',
-            'attribute' => Yii::t('app', 'minPrice3'),
-            'editableOptions' => [
-                'asPopover' => true,
-            ],
-
-            'options' => ['class' => 'form-control', 'placeholder' => '...'],
+            'attribute' => 'minPrice',
+            'editableOptions' => $editable,
         ],
-
+        [
+            'class' => 'kartik\grid\EditableColumn',
+            'attribute' => 'minPrice2',
+            'editableOptions' => $editable,
+        ],
+        [
+            'class' => 'kartik\grid\EditableColumn',
+            'attribute' => 'minPrice3',
+            'editableOptions' => $editable,
+        ],
     ];
     ?>
+
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
         'filterModel' => $searchModel,
-        'columns' => $gridColumn,
+        'columns' => $gridColumns,
+        'bordered' => false,
+        'striped' => true,
+        'condensed' => true,
+        'hover' => true,
+        'responsive' => true,
         'pjax' => true,
         'pjaxSettings' => ['options' => ['id' => 'kv-pjax-container-prices']],
         'panel' => [
             'type' => GridView::TYPE_PRIMARY,
-            'heading' => '<span class="glyphicon glyphicon-book"></span>  ' . Html::encode($this->title),
+            'heading' => '<i class="bi bi-book"></i> ' . Html::encode($this->title),
         ],
-
-    ]); ?>
+    ]) ?>
 
 </div>

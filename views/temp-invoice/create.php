@@ -12,17 +12,11 @@ $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="temp-invoice-create">
 
-    <h3><?php echo Html::encode($this->title) ?></h3><hr>
-
     <?= $this->render('_form', [
-    // <?= $this->render('_form', [
         'model' => $model,
         'searchModel' => $searchModel,
         'dataProvider' => $dataProvider,
         'company' => $company,
-        //'data'=>$data
-        // 'category'=>$category,
-        // 'client'=>$client
     ]) ?>
 
 </div>

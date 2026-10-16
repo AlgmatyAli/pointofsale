@@ -4,9 +4,10 @@ use yii\helpers\Html;
 use yii\widgets\Pjax;
 use kartik\grid\GridView;
 
-/* @var $this yii\web\View */
-/* @var $searchModel app\models\PurchasesSearch */
-/* @var $dataProvider yii\data\ActiveDataProvider */
+
+/** @var  yii\web\View $this*/
+/** @var  app\models\PurchasesSearch $searchModel*/
+/** @var  yii\data\ActiveDataProvider $dataProvider */
 
 $this->title = Yii::t('app', 'Purchases');
 ?>
@@ -39,11 +40,22 @@ $this->title = Yii::t('app', 'Purchases');
                     return Yii::$app->controller->renderPartial('_expand', ['model' => $model]);
                 },
                 'headerOptions' => ['class' => 'kartik-sheet-style'],
-                'expandOneOnly' => true
+                'expandOneOnly' => true,
+
+                // ---- إضافة أيقونات Bootstrap Icons وتنسيقها ----
+                'expandIcon' => '<i class="bi bi-chevron-left"></i>',    // أو bi-plus-circle
+                'collapseIcon' => '<i class="bi bi-chevron-down"></i>',  // أو bi-dash-circle
+                'expandTitle' => Yii::t('app', 'Expand'),
+                'collapseTitle' => Yii::t('app', 'Collapse'),
             ],
 
-            'billId',
-
+            [
+                'label' => Yii::t('app', 'Bill ID'),
+                'format' => 'raw',
+                'value' => function ($data) {
+                    return $data->billId;
+                }
+            ],
             [
                 'label' => Yii::t('app', 'C ID'),
                 'format' => 'raw',
@@ -51,8 +63,20 @@ $this->title = Yii::t('app', 'Purchases');
                     return $data->c->name;
                 }
             ],
-            'clientBill',
-            'at',
+            [
+                'label' => Yii::t('app', 'Client Bill'),
+                'format' => 'raw',
+                'value' => function ($data) {
+                    return $data->clientBill;
+                }
+            ],
+            [
+                'label' => Yii::t('app', 'At'),
+                'format' => 'raw',
+                'value' => function ($data) {
+                    return $data->at;
+                }
+            ],
 
             [
                 'label' => Yii::t('app', 'Pay Way'),
@@ -141,11 +165,8 @@ $this->title = Yii::t('app', 'Purchases');
                 'template' => '<div class="btn-group btn-group-sm" role="group" aria-label="...">{view}</div>',
                 'buttons' => [
                     'view' => function ($url) {
-                        return Html::a('<i class="fa fa-eye"></i>', $url, ['class' => 'btn btn-default']);
+                        return Html::a('<i class="bi bi-eye"></i>', $url, ['class' => 'btn btn-default']);
                     },
-                    // 'update'=>function($url,$searchModel,$key){
-                    //     return Html::a('<i class="fa fa-edit"></i>',$url,['class'=>'btn btn-default']);
-                    // },
                 ]
             ],
         ],

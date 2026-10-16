@@ -8,28 +8,36 @@ use app\models\TempInvoiceSearch;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
-use yii\helpers\Json;
-use yii\helpers\ArrayHelper;
 use app\models\Category;
-use app\models\Inventory;
+use app\models\Prices;
 use yii\data\ActiveDataProvider;
-use app\models\Totalinventory;
+use app\models\Stocks;
 use yii\db\Query;
 use yii\filters\AccessControl;
 use app\models\CompanyInfo;
-use app\models\Stocks;
 use yii\web\Response;
 
 /**
- * TempInvoiceController implements the CRUD actions for TempInvoice model.
+ * TempInvoiceController: قائمة الفاتورة المؤقتة لكل مستخدم قبل الحفظ النهائي في SalesController.
+ * هذه القائمة لا تحرّك المخزون؛ الخصم من المخزون يتم عند الحفظ النهائي فقط.
+ *
+ * حالة السطر (state): 1 = الفاتورة الحالية، 2 = فاتورة معلّقة (hold) ولها invoice_number.
  */
 class TempInvoiceController extends Controller
 {
+    const HOLD_LOCK = 'pos_temp_invoice_hold';
+
     public function behaviors()
     {
         return [
             'verbs' => [
                 'class' => VerbFilter::class,
+                'actions' => [
+                    'delete' => ['POST'],
+                    'delete-all' => ['POST'],
+                    'hold' => ['POST'],
+                    'unhold' => ['POST'],
+                ],
             ],
             'access' => [
                 'class' => AccessControl::class,
@@ -39,20 +47,12 @@ class TempInvoiceController extends Controller
                         'actions' => [
                             'create',
                             'view',
-                            'get-inv',
                             'delete',
-                            'updatqyt',
-                            'deleteing',
-                            'save',
                             'delete-all',
-                            'create-ajax',
-                            'createfast',
                             'hold',
                             'holded',
-                            'fast',
                             'unhold',
-                            'add',
-                            'ajax-comment'
+                            'fast',
                         ],
                         'roles' => ['createSales'],
                     ],
@@ -62,48 +62,333 @@ class TempInvoiceController extends Controller
     }
 
     /**
-     * Lists all TempInvoice models.
-     * @return mixed
+     * شاشة الفاتورة المؤقتة: عرض الجدول، وإدراج صنف (POST من النموذج)، وتعديل الكمية/السعر/كمية الانتظار من الجدول.
+     *
+     * قواعد الإدراج:
+     *  - التكلفة والأسعار تُؤخذ من جدول prices وليس من المتصفح؛
+     *  - الكمية والسعر أكبر من صفر؛
+     *  - تكرار الصنف حسب repeatCategory؛
+     *  - إن لم يكن البيع بلا رصيد مفعلاً (zeroQnty = 0) تُقلَّص الكمية للمتاح مع رسالة (المتاح = رصيد الفروع التي يراها المستخدم
+     *    ناقص ما أُدرج سابقاً من نفس الصنف)؛
+     *  - سعر البيع الأقل من التكلفة يُرفع إلى التكلفة؛
+     *  - الفرع للعرض فقط (الخصم الفعلي من فرع المستخدم عند الحفظ النهائي).
      */
-    public function actionIndex()
+    public function actionCreate()
     {
+        $company = CompanyInfo::find()->one();
+        $model = new TempInvoice();
+        $identity = Yii::$app->user->identity;
+        $userId = (int) $identity->id;
+
         $searchModel = new TempInvoiceSearch();
+        $searchModel->created_by = $userId;
+        $searchModel->state = 1;
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-        if (yii::$app->request->post('hasEditable')) {
 
-            $id = Yii::$app->request->post('editableKey');
-
-            $result = TempInvoice::findOne($id);
-
-
-            $out = Json::encode(['output' => '', 'message' => '']);
-            $post = [];
-            $posted = current($_POST['TempInvoice']);
-
-            $post['TempInvoice'] = $posted;
-            if ($result->load($post)) {
-                $result->save(false);
-
-                $output = ($result->quantity);
-
-                $out = Json::encode(['output' => $output]);
-
-                return $out;
-            }
-            return;
+        // التعديل المباشر داخل الجدول
+        if (Yii::$app->request->post('hasEditable')) {
+            return $this->inlineEdit($company);
         }
 
-        return $this->render('index', [
+        // إدراج صنف
+        if (is_array(Yii::$app->request->post($model->formName()))) {
+            Yii::$app->response->format = Response::FORMAT_JSON;
+            return $this->insertItem($model, $company);
+        }
+
+        return $this->render('create', [
+            'model' => $model,
             'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
+            'company' => $company,
         ]);
     }
 
+    // =====================================================================
+    // أدوات داخلية للفاتورة المؤقتة
+    // =====================================================================
+
+    /** أنواع المخزون التي يُباع منها: العادي دائماً، والمعلّق (3) لمن يملك saleOnHoldItems */
+    private function saleStockTypes()
+    {
+        return Yii::$app->user->can('saleOnHoldItems') ? [1, 3] : [1];
+    }
+
+    private function allBranchIds()
+    {
+        static $ids = null;
+        if ($ids === null) {
+            $ids = array_map('intval', (new Query())->select('id')->from('branches')->column());
+            if (!$ids) {
+                $ids = [(int) Yii::$app->user->identity->branch];
+            }
+        }
+        return $ids;
+    }
+
+    /** رصيد الصنف الذي يراه المستخدم: كل الفروع إن كان يملك seeOtherBranchQ، وإلا فرعه فقط */
+    private function visibleStock($category)
+    {
+        $identity = Yii::$app->user->identity;
+        $branches = ($identity->seeOtherBranchQ == 0) ? [(int) $identity->branch] : $this->allBranchIds();
+        return (float) (new Query())->from('stocks')
+            ->where(['category' => (int) $category])
+            ->andWhere(['in', 'type', $this->saleStockTypes()])
+            ->andWhere(['in', 'branch', $branches])
+            ->sum('quantity');
+    }
+
+    /** مجموع ما أُدرج من الصنف في فاتورة المستخدم الحالية (مع استثناء سطر اختياري) */
+    private function enteredQty($category, $exceptId = null)
+    {
+        $q = TempInvoice::find()->where([
+            'category' => (int) $category,
+            'created_by' => Yii::$app->user->identity->id,
+            'state' => 1,
+        ]);
+        if ($exceptId !== null) {
+            $q->andWhere(['!=', 'id', (int) $exceptId]);
+        }
+        return (float) $q->sum('quantity');
+    }
+
+    private function jsonError($message)
+    {
+        return ['error' => true, 'success' => false, 'message' => $message];
+    }
+
+    /** سعر البيع الافتراضي للصنف كما تعرضه القائمة: نسبة الزيادة (rate) ثم التقريب، بنفس منطق الاستعلام والـ JavaScript */
+    private function defaultSalePrice($prices, $company)
+    {
+        $price = (float) $prices->maxPrice;
+        $criteria = ($company->criteriaـvalue != 0) ? (float) $company->criteriaـvalue : 1.0;
+        if ($company->rate != 0 && $price >= $criteria) {
+            $price = round($price * ((float) $company->rate / 100) + $price);
+        }
+        if ($company->criteriaـvalue != 0) {
+            $v = (int) round($price);
+            if ($v >= 10) {
+                $d = $v % 10;
+                if ($d !== 0 && $d < 5) {
+                    $v += 5 - $d;
+                } elseif ($d > 5) {
+                    $v += 10 - $d;
+                }
+            }
+            $price = $v;
+        }
+        return (float) $price;
+    }
+
     /**
-     * Displays a single TempInvoice model.
-     * @param integer $id
-     * @return mixed
+     * يضيف سطراً إلى الفاتورة الحالية بعد تطبيق كل القواعد (مشترك بين الإدراج العادي والسريع).
+     * @param array $in category, quantity, salePrice, branch, waitQnty
+     * @return array ['ok' => bool, 'message' => string, 'notes' => string[]]
      */
+    private function addRow(array $in, $company)
+    {
+        $identity = Yii::$app->user->identity;
+        $userId = (int) $identity->id;
+        $fail = function ($m) {
+            return ['ok' => false, 'message' => $m, 'notes' => []];
+        };
+
+        $categoryId = (int) $in['category'];
+        if ($categoryId <= 0 || Category::findOne($categoryId) === null) {
+            return $fail('اختر صنفاً من القائمة أولاً.');
+        }
+
+        // الأسعار والتكلفة من قاعدة البيانات، لا مما يرسله المتصفح
+        $prices = Prices::find()->where(['category' => $categoryId])->one();
+        if ($prices === null) {
+            return $fail('لا يوجد سعر لهذا الصنف.');
+        }
+
+        $quantity = (float) $in['quantity'];
+        $salePrice = (float) $in['salePrice'];
+        if ($quantity <= 0) {
+            return $fail(Yii::t('app', "Sorry You Enter Zero Value As Quantity"));
+        }
+        if ($salePrice <= 0) {
+            return $fail(Yii::t('app', "Sorry You Enter Zero Value As Sale Price"));
+        }
+
+        // تكرار الصنف
+        if ($company->repeatCategory == 0) {
+            $exists = TempInvoice::find()
+                ->where(['category' => $categoryId, 'created_by' => $userId, 'state' => 1])
+                ->exists();
+            if ($exists) {
+                return $fail(Yii::t('app', "Sorry The Item You Insert already exists"));
+            }
+        }
+
+        $notes = [];
+
+        // الرصيد: يُمنع تجاوزه إلا إن كان البيع بلا رصيد مفعلاً
+        if ($company->zeroQnty == 0) {
+            $balance = $this->visibleStock($categoryId) - $this->enteredQty($categoryId);
+            if ($balance <= 0) {
+                return $fail(Yii::t('app', "عفوا لقد تجاوزت الكمية الموجودة لايمكنك الاستمرار"));
+            }
+            if ($quantity > $balance) {
+                $quantity = $balance;
+                $notes[] = 'تم تقليص الكمية إلى المتاح (' . $balance . ').';
+            }
+        }
+
+        // سعر البيع لا ينزل عن التكلفة
+        if ($salePrice < (float) $prices->costPrice) {
+            $salePrice = (float) $prices->costPrice;
+            $notes[] = 'سعر البيع أقل من التكلفة فتم وضع سعر التكلفة.';
+        }
+
+        // الفرع للعرض فقط: فرع المستخدم ما لم يملك رؤية الفروع الأخرى ويختار فرعاً موجوداً
+        $branch = (int) $identity->branch;
+        if ($identity->seeOtherBranchQ != 0) {
+            $chosen = (int) $in['branch'];
+            if ($chosen > 0 && in_array($chosen, $this->allBranchIds(), true)) {
+                $branch = $chosen;
+            }
+        }
+
+        $waitQnty = 0;
+        if ($identity->client == null && $company->waitQnty == 1 && (float) $in['waitQnty'] > 0) {
+            $waitQnty = (float) $in['waitQnty'];
+        }
+
+        // لا نكتب إلا ما اعتمدناه أعلاه
+        $row = new TempInvoice();
+        $row->category = $categoryId;
+        $row->quantity = $quantity;
+        $row->salePrice = $salePrice;
+        $row->costPrice = $prices->costPrice;
+        $row->waitQnty = $waitQnty;
+        $row->branch = $branch;
+        $row->box = 1;
+        $row->state = 1;
+        $row->created_by = $userId;
+        $row->created_at = date('Y-m-d H:i:s');
+
+        if (!$row->saveAll()) {
+            $errors = $row->getFirstErrors();
+            return $fail($errors ? reset($errors) : 'تعذر حفظ السطر.');
+        }
+
+        return ['ok' => true, 'message' => '', 'notes' => $notes];
+    }
+
+    /** @return array استجابة JSON لعملية الإدراج من النموذج */
+    private function insertItem(TempInvoice $model, $company)
+    {
+        $userId = (int) Yii::$app->user->identity->id;
+        $post = Yii::$app->request->post($model->formName());
+
+        $r = $this->addRow([
+            'category' => $post['category'] ?? 0,
+            'quantity' => (isset($post['quantity']) && is_numeric($post['quantity'])) ? $post['quantity'] : 0,
+            'salePrice' => (isset($post['salePrice']) && is_numeric($post['salePrice'])) ? $post['salePrice'] : 0,
+            'branch' => $post['branch'] ?? 0,
+            'waitQnty' => (isset($post['waitQnty']) && is_numeric($post['waitQnty'])) ? $post['waitQnty'] : 0,
+        ], $company);
+
+        if (!$r['ok']) {
+            return $this->jsonError($r['message']);
+        }
+
+        $counter = (int) TempInvoice::find()
+            ->where(['created_by' => $userId, 'state' => 1])
+            ->count();
+        Yii::$app->session->set('submitCounter', $counter);
+
+        $result = ['success' => true, 'counter' => $counter];
+        if ($r['notes']) {
+            $result['message'] = implode(' ', $r['notes']);
+        }
+        return $result;
+    }
+
+    /**
+     * التعديل المباشر لسطر في الجدول: الكمية أو سعر البيع أو كمية الانتظار.
+     * السطر يجب أن يكون للمستخدم نفسه وفي فاتورته الحالية. الأخطاء تعود بحقل message ليعرضها Kartik.
+     */
+    private function inlineEdit($company)
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        $identity = Yii::$app->user->identity;
+
+        $key = (int) Yii::$app->request->post('editableKey');
+        $all = Yii::$app->request->post('TempInvoice');
+        $posted = is_array($all) ? current($all) : null;
+
+        $row = TempInvoice::findOne(['id' => $key, 'created_by' => $identity->id, 'state' => 1]);
+        if ($row === null || !is_array($posted)) {
+            return ['output' => '', 'message' => 'السطر غير موجود.'];
+        }
+
+        // ----- الكمية -----
+        if (array_key_exists('quantity', $posted)) {
+            if (!is_numeric($posted['quantity']) || (float) $posted['quantity'] <= 0) {
+                return ['output' => '', 'message' => Yii::t('app', "Sorry You Enter Zero Value As Quantity")];
+            }
+            $quantity = (float) $posted['quantity'];
+
+            if ($company->zeroQnty == 0) {
+                $balance = $this->visibleStock($row->category) - $this->enteredQty($row->category, $row->id);
+                if ($balance <= 0) {
+                    return ['output' => '', 'message' => Yii::t('app', "عفوا لقد تجاوزت الكمية الموجودة لايمكنك الاستمرار")];
+                }
+                if ($quantity > $balance) {
+                    $quantity = $balance;   // تُقلَّص للمتاح، ويظهر الرقم الفعلي في الخلية
+                }
+            }
+            $row->quantity = $quantity;
+            $row->save(false);
+            return ['output' => $row->quantity, 'message' => ''];
+        }
+
+        // ----- سعر البيع -----
+        if (array_key_exists('salePrice', $posted)) {
+            if ($identity->editSalePrice != 1) {
+                return ['output' => '', 'message' => 'لايوجد لديك صلاحية لتعديل سعر البيع'];
+            }
+            if (!is_numeric($posted['salePrice']) || (float) $posted['salePrice'] <= 0) {
+                return ['output' => '', 'message' => Yii::t('app', "Sorry You Enter Zero Value As Sale Price")];
+            }
+            $price = (float) $posted['salePrice'];
+
+            $prices = Prices::find()->where(['category' => $row->category])->one();
+            if ($prices !== null) {
+                // كما في الكود القديم: الأدنى هو التكلفة لمن يملك selling_by_costprice، وإلا السعر الأدنى
+                $floor = Yii::$app->user->can('selling_by_costprice') ? (float) $prices->costPrice : (float) $prices->minPrice;
+                if ($price < $floor) {
+                    $price = $floor;
+                }
+            }
+            $row->salePrice = $price;
+            if ($identity->client <> null) {
+                $row->waitQnty = 0;
+            }
+            $row->save(false);
+            return ['output' => $row->salePrice, 'message' => ''];
+        }
+
+        // ----- كمية الانتظار -----
+        if (array_key_exists('waitQnty', $posted)) {
+            if ($identity->client <> null || $company->waitQnty != 1) {
+                return ['output' => '', 'message' => 'هذا الحقل غير متاح.'];
+            }
+            if (!is_numeric($posted['waitQnty']) || (float) $posted['waitQnty'] < 0) {
+                return ['output' => '', 'message' => 'القيمة يجب أن تكون رقماً صحيحاً.'];
+            }
+            $row->waitQnty = (float) $posted['waitQnty'];
+            $row->save(false);
+            return ['output' => $row->waitQnty, 'message' => ''];
+        }
+
+        return ['output' => '', 'message' => 'هذا الحقل غير قابل للتعديل.'];
+    }
+
     public function actionView($id)
     {
         return $this->render('view', [
@@ -111,452 +396,7 @@ class TempInvoiceController extends Controller
         ]);
     }
 
-    /**
-     * Creates a new TempInvoice model.
-     * If creation is successful, the browser will be redirected to the 'view' page.
-     * @return mixed
-     */
-    public function actionCreate()
-    {
-        $company = CompanyInfo::find()->one();
-        $model = new TempInvoice();
-
-        if (Yii::$app->user->can('saleOnHoldItems')) {
-            $type = [1, 2, 3];
-        } else {
-            $type = [1, 2, 3];
-        }
-
-        $searchModel = new TempInvoiceSearch();
-        $searchModel->created_by = Yii::$app->user->identity->id;
-        $searchModel->state = 1;
-        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-
-        if (yii::$app->request->post('hasEditable')) {
-            $id = Yii::$app->request->post('editableKey');
-            $result = TempInvoice::findOne($id);
-
-            Json::encode(['output' => '', 'message' => '']);
-            $post = [];
-            $posted = current($_POST['TempInvoice']);
-
-            $post['TempInvoice'] = $posted;
-
-            if ($result->load($post)) {
-                if (Yii::$app->user->identity->seeOtherBranchQ == '0') {
-                    $branch = Yii::$app->user->identity->branch;
-                } else {
-                    $branch = [1, 2, 3];
-                }
-
-                $data = Stocks::find()
-                    ->select([
-                        'max(stocks.category) as category',
-                        'sum(stocks.quantity) as quantity',
-                        'max(prices.costPrice) as costPrice',
-                        'max(prices.minPrice) as minPrice',
-                        'max(prices.maxPrice) as maxPrice'
-                    ])
-                    ->leftJoin('prices', 'stocks.category = prices.category')
-                    ->Where(['stocks.branch' => $branch])
-                    ->andwhere(['stocks.category' => $result->category])
-                    ->andwhere(['in', 'stocks.type', $type])
-                    ->one();
-
-                $sumQnty = TempInvoice::find()
-                    ->where(['category' => $result->category, 'created_by' => Yii::$app->user->identity->id,])
-                    ->andWhere(['!=', 'id', $result->id])
-                    ->andWhere(['=', 'state', 1])
-                    ->sum('quantity');
-
-                if (isset($posted['quantity'])) {
-                   
-                    if ($company->zeroQnty == 0) {
-                        $balance = $data->quantity - $sumQnty;
-                        if ($posted['quantity'] >= $balance) {
-                            $remaining = $balance;
-                        } else {
-                            $remaining = $posted['quantity'];
-                        }
-                        $result->quantity = $remaining;
-                        $outMessage = $result->quantity;
-                        $result->save(false);
-                        return Json::encode(['output' => $outMessage]);
-                    } else {
-                        $balance = $posted['quantity'];
-                        $outMessage = $balance ;
-                        $result->save(false);
-                        return Json::encode(['output' => $outMessage]);
-                    }
-                }
-                if (isset($posted['salePrice'])) {
-                if (Yii::$app->user->can('selling_by_costprice')) {
-                    if ($data->costPrice > $result->salePrice) {
-                        $result->salePrice = $data->costPrice;
-                    }
-                } elseif ($data->minPrice > $result->salePrice) {
-                    $result->salePrice = $data->minPrice;
-                }
-                if (Yii::$app->user->identity->client <> null) {
-                    $result->waitQnty  = 0;
-                }
-                $outMessage = $result->salePrice;
-                $result->save(false);
-                $output = $outMessage;
-                $out = Json::encode(['output' => $output]);
-                return $out;
-            }
-        }
-        }
-        /**
-         * في الاعلي اذا كان سعر الكمية المطلوبه أكبر من الكمية الموجوده يتم تغيير الكيه حسب الموجود فقط
-         *
-         * في حالة محاولة تعديل سعر البيع، يتم النظر اذا كان السعر اصغر من اقل سعر بيع تقوم المنضومه بتغيير السعر
-         * الي اقل سعر بيع ولا يمكن البيع باقل منه
-         */
-        //else {
-        // Code to handle non-Ajax request
-        //}
-        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
-
-            if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
-                $branch = Yii::$app->user->identity->branch;
-            } else {
-                $branch = [1, 2, 3];
-            }
-
-            if ($company->zeroQnty == 0) {
-                $zeroQnty = 'stocks.quantity <> 0';
-            } else {
-                $zeroQnty = 'stocks.quantity < 0 OR stocks.quantity > 0 Or stocks.quantity = 0';
-            }
-
-            $item = Stocks::find()
-                ->select([
-                    'max(stocks.category) as id',
-                    'sum(stocks.quantity) as quantity',
-                    'max(prices.costPrice) as costPrice',
-                    'max(prices.minPrice) as minPrice',
-                    'max(prices.maxPrice) as maxPrice'
-                ])
-                ->leftJoin('prices', 'stocks.category = prices.category')
-                ->where(['stocks.category' => $model->category])
-                ->andWhere($zeroQnty) //['<>', 'stocks.quantity', 0])
-                ->andwhere(['in', 'stocks.type', $type])
-                ->andWhere(['in', 'stocks.branch', $branch])
-                ->one();
-
-            if ($company->zeroQnty == 0) {
-                $sumQnty = TempInvoice::find()
-                    ->where(['category' => $model->category, 'created_by' => Yii::$app->user->identity->id,])
-                    ->andWhere(['=', 'state', 1])
-                    ->sum('quantity');
-
-
-                $balance = $item->quantity - $sumQnty;
-
-                if ($model->quantity > $balance) {
-                    $remaining = $balance;
-                } else {
-                    $remaining = $model->quantity;
-                }
-                $model->quantity = $remaining;
-
-                if ($sumQnty >= $item->quantity) {
-                    Yii::$app->response->format = Response::FORMAT_JSON;
-                    return ['error' => true, 'message' => Yii::t('app', "عفوا لقد تجاوزت الكمية الموجودة لايمكنك الاستمرار")];
-                }
-            }
-            if ($company->repeatCategory == 0) {
-
-                $exist = TempInvoice::find()
-                    ->where(['category' => $model->category, 'created_by' => Yii::$app->user->identity->id,])
-                    ->andWhere(['=', 'state', 1])
-                    ->one();
-                if ($exist) {
-
-                    Yii::$app->response->format = Response::FORMAT_JSON;
-                    return ['error' => true, 'message' =>  Yii::t('app', "Sorry The Item You Insert already exists")];
-                }
-            }
-
-            if ($model->quantity <= 0) {
-                Yii::$app->response->format = Response::FORMAT_JSON;
-                return ['error' => true, 'message' => Yii::t('app', "Sorry You Enter Zero Value As Quantity")];
-            }
-
-            if ($model->salePrice <= 0) {
-                Yii::$app->response->format = Response::FORMAT_JSON;
-                return ['error' => true, 'message' => Yii::t('app', "Sorry You Enter Zero Value As Sale Price")];
-            }
-
-            if ($model->salePrice <= 0) {
-                Yii::$app->response->format = Response::FORMAT_JSON;
-                return ['error' => true, 'message' => Yii::t('app', "Sorry The SalePrice You Enter Less Than The MinPrice")];
-            }
-            if ($model->salePrice < $item->costPrice) {
-                echo '<script type="text/javascript">
-            alert("عفوا سعر البيع الذي ادخلته اقل من سعر التكلفة");
-           </script>';
-                exit;
-            } else {
-                $model->category = $item->id;
-                $model->costPrice = $item->costPrice;
-                $model->box = 1;
-                $model->state = 1;
-                $model->created_by = Yii::$app->user->identity->id;
-                $model->created_at = date('Y-m-d H:i:s');
-                if($model->branch == null){
-                    $model->branch = Yii::$app->user->identity->branch;
-                }
-                $model->saveAll();
-            }
-            // increment the counter
-            $counter = TempInvoice::find()
-                ->where(['=', 'created_by', Yii::$app->user->identity->id])
-                ->andWhere(['=', 'state', 1])
-                ->count();
-            Yii::$app->session->set('submitCounter', $counter);
-            // return the response
-            Yii::$app->response->format = Response::FORMAT_JSON;
-            return ['success' => true, 'counter' => $counter];
-        } else {
-            return $this->render('create', [
-                'model' => $model,
-                'searchModel' => $searchModel,
-                'dataProvider' => $dataProvider,
-                'company' => $company,
-            ]);
-        }
-    }
-
-    public function actionCreatefast()
-    {
-        $company = CompanyInfo::find()->one();
-        $model = new TempInvoice();
-        if (Yii::$app->user->can('saleOnHoldItems')) {
-            $type = [1, 2, 3];
-        } else {
-            $type = [1, 2];
-        }
-
-        $searchModel = new TempInvoiceSearch();
-        $searchModel->created_by = Yii::$app->user->identity->id;
-        $searchModel->state = 1;
-        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-
-        /**
-         * في الاعلي اذا كان سعر الكمية المطلوبه أكبر من الكمية الموجوده يتم تغيير الكيه حسب الموجود فقط 
-         * 
-         * في حالة محاولة تعديل سعر البيع، يتم النظر اذا كان السعر اصغر من اقل سعر بيع تقوم المنضومه بتغيير السعر 
-         * الي اقل سعر بيع ولا يمكن البيع باقل منه
-         */
-
-        if ($model->loadAll(Yii::$app->request->post())) {
-            $item = Totalinventory::find()
-                ->where(['id' => $model->category])->one();
-
-            if ($company->repeatCategory == 0) {
-                $exist = TempInvoice::find()->where([
-                    'category' => $model->category,
-                    'created_by' => Yii::$app->user->identity->id,
-                ])->one();
-
-                if ($exist) {
-                    Yii::$app->session->setFlash('error', Yii::t('app', "Sorry The Item You Insert already exists"));
-                    return $this->redirect(['create', 'id' => 1]);
-                }
-            }
-
-            if ($model->quantity <= 0) {
-                Yii::$app->session->setFlash('error', Yii::t('app', "Sorry You Enter Zero Value As Quantity"));
-                return $this->redirect(['create', 'id' => 1]);
-            }
-
-            if ($model->quantity > $item->quantity) {
-                $model->quantity = $item->quantity;
-            }
-
-            if ($model->salePrice <= 0) {
-                Yii::$app->session->setFlash('error', Yii::t('app', "Sorry The SalePrice You Enter Less Than The MinPrice"));
-            }
-
-            if ($model->salePrice < $item->costPrice) {
-                Yii::$app->session->setFlash('error', Yii::t('app', "Sorry The SalePrice You Enter Less Than The MinPrice"));
-                return $this->redirect(['create', 'id' => 1]);
-            } else {
-                $model->category = $item->id;
-                $model->costPrice = $item->costPrice;
-                $model->box = $item->box;
-                $model->state = 1;
-                $model->saveAll();
-            }
-
-
-            return $this->redirect(['createfast', 'id' => 1]);
-        } else {
-            return $this->render('createfaster', [
-                'model' => $model,
-                'searchModel' => $searchModel,
-                'dataProvider' => $dataProvider,
-                'company' => $company,
-            ]);
-        }
-    }
-
-    public function actionCreateAjax()
-    {
-        $model = new TempInvoice();
-
-        if (Yii::$app->user->can('saleOnHoldItems')) {
-            $type = [1, 3];
-        } else {
-            $type = [1];
-        }
-        $data = Totalinventory::find()
-            ->Where(['branch' => Yii::$app->user->identity->branch])
-            ->andwhere(['in', 'type', $type])
-            ->all();
-
-        $searchModel = new TempInvoiceSearch();
-        $searchModel->created_by = Yii::$app->user->identity->id;
-        $searchModel->state = 1;
-        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-
-        if (yii::$app->request->post('hasEditable')) {
-            $id = Yii::$app->request->post('editableKey');
-            $result = TempInvoice::findOne($id);
-            $out = Json::encode(['output' => '', 'message' => '']);
-            $post = [];
-            $posted = current($_POST['TempInvoice']);
-
-            $post['TempInvoice'] = $posted;
-            if ($result->load($post)) {
-
-                $data = Totalinventory::find()
-                    ->Where(['branch' => Yii::$app->user->identity->branch])
-                    ->andwhere(['id' => $result->category])
-                    ->andwhere(['in', 'type', $type])
-                    ->one();
-
-                if (isset($posted['quantity'])) {
-                    if ($data->quantity < $result->quantity) {
-                        $result->quantity = $data->quantity;
-                    }
-                    $outMessage = $result->quantity;
-                    $result->save(false);
-                } elseif (isset($posted['serial_number'])) {
-                    $outMessage = $result->serial_number;
-                } else {
-                    if ($data->minPrice > $result->salePrice) {
-
-                        $result->salePrice = $data->minPrice;
-                    }
-                    $outMessage = $result->salePrice;
-                    $result->save(false);
-                }
-                $output = $outMessage;
-                $out = Json::encode(['output' => $output]);
-                return $out;
-            }
-        }
-        /**
-         * في الاعلي اذا كان سعر الكمية المطلوبه أكبر من الكمية الموجوده يتم تغيير الكيه حسب الموجود فقط 
-         * 
-         * في حالة محاولة تعديل سعر البيع، يتم النظر اذا كان السعر اصغر من اقل سعر بيع تقوم المنضومه بتغيير السعر 
-         * الي اقل سعر بيع ولا يمكن البيع باقل منه
-         */
-
-
-
-        if ($model->loadAll(Yii::$app->request->post())) {
-
-            $category = new Category();
-            $category = Inventory::find()
-                ->joinWith('prices')
-                ->where(['prices.category' => $model->category])->one();
-
-            $temp = TempInvoice::find()->where([
-                'category' => $model->category,
-                'created_by' => Yii::$app->user->identity->id,
-                'salePrice' => $category->prices->maxPrice,
-                'serial_number' => $model->serial_number,
-            ])->one();
-
-            if (!isset($temp)) {
-                $model->quantity = 1;
-                $model->salePrice = $category->prices->maxPrice;
-                $model->costPrice = $category->prices->costPrice;
-                $model->box = $category->box;
-                $model->state = 1;
-
-                $model->save(false);
-            } else {
-                $temp->quantity = $temp->quantity + 1;
-                $model->salePrice = $category->prices->maxPrice;
-                $model->costPrice = $category->prices->costPrice;
-                $model->box = $category->box;
-                $model->state = 1;
-
-                $temp->save();
-            }
-
-            return $this->redirect(['createAjax', 'id' => 1]);
-        } else {
-            return $this->render('createAjax', [
-                'model' => $model,
-                'searchModel' => $searchModel,
-                'dataProvider' => $dataProvider,
-                'data' => $data
-            ]);
-        }
-    }
-
-    /**
-     * Updates an existing TempInvoice model.
-     * If update is successful, the browser will be redirected to the 'view' page.
-     * @param integer $id
-     * @return mixed
-     */
-    public function actionUpdate($id)
-    {
-        if (Yii::$app->request->post('_asnew') == '1') {
-            $model = new TempInvoice();
-        } else {
-            $model = $this->findModel($id);
-        }
-
-        if ($model->loadAll(Yii::$app->request->post()) && $model->saveAll()) {
-            return $this->redirect(['view', 'id' => $model->id]);
-        } else {
-            return $this->render('update', [
-                'model' => $model,
-            ]);
-        }
-    }
-
-    /**
-     * Deletes an existing TempInvoice model.
-     * If deletion is successful, the browser will be redirected to the 'index' page.
-     * @param integer $id
-     * @return mixed
-     */
-
-    public function actionUpdatqyt($id, $qyt)
-    {
-        $item = TempInvoice::find()->where(['id' => $id])->one();
-        $item->quantity = $qyt;
-        $item->save(false);
-        return true;
-    }
-
-    public function actionDeleteing($id)
-    {
-        $this->findModel($id)->delete();
-
-        return true;
-    }
-
+    /** حذف سطر من الفاتورة الحالية (POST، سطر المستخدم فقط) */
     public function actionDelete($id)
     {
         $this->findModel($id)->delete();
@@ -564,100 +404,59 @@ class TempInvoiceController extends Controller
         return $this->redirect(['create']);
     }
 
-
     public function actionDeleteAll()
     {
         TempInvoice::deleteAll(['state' => 1, 'created_by' => Yii::$app->user->identity->id]);
         return $this->redirect(['create']);
     }
 
-    /**
-     * 
-     * Export TempInvoice information into PDF format.
-     * @param integer $id
-     * @return mixed
-     */
-    public function actionPdf($id)
-    {
-        $model = $this->findModel($id);
-
-        $content = $this->renderAjax('_pdf', [
-            'model' => $model,
-        ]);
-
-        $pdf = new \kartik\mpdf\Pdf([
-            'mode' => \kartik\mpdf\Pdf::MODE_CORE,
-            'format' => \kartik\mpdf\Pdf::FORMAT_A4,
-            'orientation' => \kartik\mpdf\Pdf::ORIENT_PORTRAIT,
-            'destination' => \kartik\mpdf\Pdf::DEST_BROWSER,
-            'content' => $content,
-            'cssFile' => '@vendor/kartik-v/yii2-mpdf/assets/kv-mpdf-bootstrap.min.css',
-            'cssInline' => '.kv-heading-1{font-size:18px}',
-            'options' => ['title' => \Yii::$app->name],
-            'methods' => [
-                'SetHeader' => [Yii::$app->name],
-                'SetFooter' => ['{PAGENO}'],
-            ]
-        ]);
-
-        return $pdf->render();
-    }
-
-    /**
-     * Creates a new TempInvoice model by another data,
-     * so user don't need to input all field from scratch.
-     * If creation is successful, the browser will be redirected to the 'view' page.
-     *
-     * @param mixed $id
-     * @return mixed
-     */
-    public function actionSaveAsNew($id)
-    {
-        $model = new TempInvoice();
-
-        if (Yii::$app->request->post('_asnew') != '1') {
-            $model = $this->findModel($id);
-        }
-
-        if ($model->loadAll(Yii::$app->request->post()) && $model->saveAll()) {
-            return $this->redirect(['view', 'id' => $model->id]);
-        } else {
-            return $this->render('saveAsNew', [
-                'model' => $model,
-            ]);
-        }
-    }
-
-    /**
-     * Finds the TempInvoice model based on its primary key value.
-     * If the model is not found, a 404 HTTP exception will be thrown.
-     * @param integer $id
-     * @return TempInvoice the loaded model
-     * @throws NotFoundHttpException if the model cannot be found
-     */
+    /** سطور الفاتورة الحالية للمستخدم فقط (كان أي مستخدم يفتح أو يحذف سطور غيره بالرقم) */
     protected function findModel($id)
     {
-        if (($model = TempInvoice::findOne($id)) !== null) {
+        $model = TempInvoice::findOne([
+            'id' => (int) $id,
+            'created_by' => Yii::$app->user->identity->id,
+            'state' => 1,
+        ]);
+        if ($model !== null) {
             return $model;
-        } else {
-            throw new NotFoundHttpException(Yii::t('app', 'The requested page does not exist.'));
         }
+        throw new NotFoundHttpException(Yii::t('app', 'The requested page does not exist.'));
     }
 
+    /**
+     * تعليق الفاتورة الحالية: تتحول سطورها إلى state = 2 برقم تعليق جديد.
+     * الرقم الجديد أكبر رقم مستعمل في الجدول كله + 1 (تحت قفل) فلا يتكرر مع مستخدم آخر ولا مع فاتورة أُعيد فتحها.
+     */
     public function actionHold()
     {
-        $temp  = TempInvoice::find()->where(['=', 'state', 2])->max('invoice_number') + 1;
+        $userId = (int) Yii::$app->user->identity->id;
+        $db = Yii::$app->db;
 
-        $condition = [
-            'and',
-            ['=', 'state', 1],
-            ['=', 'created_by', Yii::$app->user->identity->id]
-        ];
+        if (!TempInvoice::find()->where(['state' => 1, 'created_by' => $userId])->exists()) {
+            Yii::$app->session->setFlash('error', 'لا توجد أصناف في الفاتورة الحالية لتعليقها.');
+            return $this->redirect(['create']);
+        }
 
-        TempInvoice::updateAll(['state' => 2, 'invoice_number' => $temp], $condition);
+        $got = (int) $db->createCommand('SELECT GET_LOCK(:n, 5)', [':n' => self::HOLD_LOCK])->queryScalar() === 1;
+        if (!$got) {
+            Yii::$app->session->setFlash('error', 'النظام مشغول. أعد المحاولة.');
+            return $this->redirect(['create']);
+        }
+        try {
+            $number = (int) TempInvoice::find()->max('invoice_number') + 1;
+            TempInvoice::updateAll(
+                ['state' => 2, 'invoice_number' => $number],
+                ['state' => 1, 'created_by' => $userId]
+            );
+        } finally {
+            $db->createCommand('SELECT RELEASE_LOCK(:n)', [':n' => self::HOLD_LOCK])->queryScalar();
+        }
+
         return $this->redirect(['create']);
     }
 
+    /** قائمة الفواتير المعلّقة للمستخدم (نافذة منبثقة) */
     public function actionHolded()
     {
         $dataProvider = new ActiveDataProvider([
@@ -665,7 +464,8 @@ class TempInvoiceController extends Controller
                 ->select('sum(salePrice*quantity) as salePrice ,invoice_number ')
                 ->where(['state' => 2])
                 ->andWhere(['created_by' => Yii::$app->user->identity->id])
-                ->groupBy('invoice_number'),
+                ->groupBy('invoice_number')
+                ->orderBy(['invoice_number' => SORT_DESC]),
             'pagination' => [
                 'pageSize' => 50
             ],
@@ -676,121 +476,98 @@ class TempInvoiceController extends Controller
         ]);
     }
 
+    /** إعادة فاتورة معلّقة (للمستخدم نفسه) إلى الفاتورة الحالية، بشرط أن تكون الحالية فارغة */
     public function actionUnhold($id)
     {
-        $data =  TempInvoice::find()
-            ->where(['state' => 1])
-            ->andWhere(['created_by' => Yii::$app->user->identity->id])->one();
-        if (isset($data)) {
+        $userId = (int) Yii::$app->user->identity->id;
 
+        if (TempInvoice::find()->where(['state' => 1, 'created_by' => $userId])->exists()) {
             Yii::$app->session->setFlash('error', Yii::t('app', "There is another invoice Finish or hold it before !"));
             return $this->redirect(['create']);
         }
-        TempInvoice::updateAll(['state' => 1], ['=', 'invoice_number', $id]);
+
+        $count = TempInvoice::updateAll(
+            ['state' => 1],
+            ['state' => 2, 'created_by' => $userId, 'invoice_number' => (int) $id]
+        );
+        if ($count === 0) {
+            Yii::$app->session->setFlash('error', 'الفاتورة المعلّقة غير موجودة.');
+        }
         return $this->redirect(['create']);
     }
 
-    public function actionAdd($categoryid, $type)
-    {
-        $model = new TempInvoice();
-        $category = new Category();
-        $category = Inventory::find()
-            ->joinWith('prices')
-            ->where(['prices.category' => $categoryid])->one();
-
-        $temp = TempInvoice::find()->where([
-            'category' => $categoryid,
-            'created_by' => Yii::$app->user->identity->id,
-            'salePrice' => $category->prices->maxPrice,
-            'serial_number' => $model->serial_number,
-            'type' => $type,
-            'state' => 1,
-        ])->one();
-
-        if (!isset($temp)) {
-            $model->quantity = 1;
-            $model->salePrice = $category->prices->maxPrice;
-            $model->costPrice = $category->prices->costPrice;
-            $model->box = $category->box;
-            $model->state = 1;
-            $model->type = $type;
-            $model->category = $categoryid;
-
-            $model->save(false);
-        } else {
-            $temp->quantity = $temp->quantity + 1;
-            $model->salePrice = $category->prices->maxPrice;
-            $model->costPrice = $category->prices->costPrice;
-            $model->box = $category->box;
-            $model->state = 1;
-            $model->category = $categoryid;
-
-            $temp->save();
-        }
-        $this->redirect(['create']);
-    }
-
-    public function actionInventory($q = null, $id = null)
-    {
-        Yii::$app->response->format = Yii\web\Response::FORMAT_JSON;
-        $out = ['results' => ['id' => '1', 'text' => 'test']];
-        if (!is_null($q)) {
-            $query = new Query;
-            $query->select('id, name AS text')
-                ->from('Totalinventory')
-                ->where(['like', 'name', $q])
-                ->limit(20);
-            $command = $query->createCommand();
-            $data = $command->queryAll();
-            $out['results'] = array_values($data);
-        } elseif ($id > 0) {
-            $out['results'] = ['id' => $id, 'text' => Totalinventory::find($id)->name];
-        }
-        return $out;
-    }
-
-    public function actionDoc($q = null)
-    {
-        // JSON format result.
-        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        $out['results'] = '';
-        if ($q) {
-            $query = Totalinventory::find()->select(['id', 'name'])
-                ->where(['like', 'name', $q])
-                ->orWhere(['like', 'id', $q])
-                ->all();
-            // Group titles by author.
-            $authorArray = ArrayHelper::map($query, 'id', 'name');
-            // Previous array lacks keywords needed to use optgroups
-            // in AJAX-based Select2: 'results', 'id', 'text', 'children'.
-            // Let's insert them.
-            $results = [];
-            foreach ($authorArray as $author => $docArray) {
-                $docs  = [];
-                foreach ($docArray as $id => $name) {
-                    $docs[] = ['id' => $id, 'text' => $name];
-                }
-                $results[] = ['text' => $author, 'children' => $docs];
-            }
-            $out['results'] = $results;
-        }
-        return $out;
-    }
-
+    /**
+     * الإضافة السريعة: جدول بأرصدة الأصناف يكتب المستخدم بجانب كل صنف الكمية المطلوبة.
+     * كل صنف يمر بنفس قواعد الإدراج العادي، وبسعر البيع الافتراضي المحسوب على الخادم.
+     */
     public function actionFast()
     {
         $model = new TempInvoice();
-        $dataProvider = new ActiveDataProvider([
-            'query' => Stocks::find()
-                ->select(
-                    ' category.id, max(category.name) as name, sum(stocks.quantity) as quantity, max(category.unit) as unit, max(category.company) as company,
+        $identity = Yii::$app->user->identity;
+        $company = CompanyInfo::find()->one();
+
+        if (is_array(Yii::$app->request->post($model->formName()))) {
+            $post = Yii::$app->request->post($model->formName());
+            $values = (isset($post['textInputValues']) && is_array($post['textInputValues'])) ? $post['textInputValues'] : [];
+            $selection = Yii::$app->request->post('selection');
+            $selected = is_array($selection) ? array_map('intval', $selection) : [];
+
+            $added = 0;
+            $problems = [];
+            foreach ($values as $categoryId => $qty) {
+                $categoryId = (int) $categoryId;
+                if (!in_array($categoryId, $selected, true) || !is_numeric($qty) || (float) $qty <= 0) {
+                    continue;
+                }
+                $prices = Prices::find()->where(['category' => $categoryId])->one();
+                if ($prices === null) {
+                    $problems[] = 'الصنف ' . $categoryId . ': لا يوجد سعر.';
+                    continue;
+                }
+                $r = $this->addRow([
+                    'category' => $categoryId,
+                    'quantity' => (float) $qty,
+                    'salePrice' => $this->defaultSalePrice($prices, $company),
+                    'branch' => (int) $identity->branch,
+                    'waitQnty' => 0,
+                ], $company);
+                if ($r['ok']) {
+                    $added++;
+                    foreach ($r['notes'] as $n) {
+                        $problems[] = 'الصنف ' . $categoryId . ': ' . $n;
+                    }
+                } else {
+                    $problems[] = 'الصنف ' . $categoryId . ': ' . $r['message'];
+                }
+            }
+
+            if ($added > 0) {
+                Yii::$app->session->setFlash('success', 'تمت إضافة ' . $added . ' صنف.');
+            }
+            if ($problems) {
+                Yii::$app->session->setFlash('error', implode(' | ', $problems));
+            }
+            return $this->redirect(['create']);
+        }
+
+        // الرصيد المعروض: الأنواع المسموح البيع منها، وفرع المستخدم فقط إن لم يملك seeOtherBranchQ
+        $query = Stocks::find()
+            ->select(
+                ' category.id, max(category.name) as name, sum(stocks.quantity) as quantity, max(category.unit) as unit, max(category.company) as company,
                         max(category.box) as box, max(category.class) as class, max(category.serialNo) as serialNo, branch, max(category.commCode) as commCode
                         ,max(maxPrice) as maxPrice, max(costPrice) as costPrice, max(minPrice) as minPrice'
-                )
-                ->leftJoin('category', 'category.id = stocks.category')
-                ->leftJoin('prices', 'category.id = prices.category')
-                ->groupBy('stocks.category, stocks.branch')
-                ->having('sum(stocks.quantity) <> 0'),
+            )
+            ->leftJoin('category', 'category.id = stocks.category')
+            ->leftJoin('prices', 'category.id = prices.category')
+            ->where(['in', 'stocks.type', $this->saleStockTypes()])
+            ->groupBy('stocks.category, stocks.branch')
+            ->having('sum(stocks.quantity) <> 0');
+        if ($identity->seeOtherBranchQ == 0) {
+            $query->andWhere(['stocks.branch' => (int) $identity->branch]);
+        }
+
+        $dataProvider = new ActiveDataProvider([
+            'query' => $query,
             'sort' => [
                 'defaultOrder' => [
                     'id' => SORT_DESC
@@ -799,57 +576,9 @@ class TempInvoiceController extends Controller
             'pagination' => ['pageSize' => 70],
         ]);
 
-
-        if ($model->loadAll(Yii::$app->request->post())) {
-            $textInputValues = Yii::$app->request->post('TempInvoice')['textInputValues'];
-            if (!empty($textInputValues)) {
-                foreach ($textInputValues as $id => $textInputValue) {
-                    if (Yii::$app->request->post('selection') && in_array($id, Yii::$app->request->post('selection'))) {
-                        //$prices = Prices::find()->where(['category' => $id])->one();
-                        //$category = Category::find()->where(['id' => $id])->one();
-                        $item = Totalinventory::find()->where(['id' => $id])->one();
-
-                        if ($textInputValue < $item->quantity && $textInputValue <> 0) {
-                            $newModel = new TempInvoice();
-                            $newModel->category = $id;
-                            $newModel->quantity = $textInputValue;
-                            $newModel->salePrice = $item->maxPrice;
-                            $newModel->costPrice = $item->costPrice;
-                            $newModel->box = 1;
-                            $newModel->state = 1;
-                            $newModel->save();
-                        }
-                    }
-                }
-            }
-
-            return $this->redirect(['create']);
-        }
-
         return $this->renderAjax('createFast', [
             'model' => $model,
             'dataProvider' => $dataProvider,
         ]);
-    }
-
-    public function actionSave($id, $salePrice, $costPrice)
-    {
-
-        if (Yii::$app->request->isAjax) {
-            $data = Yii::$app->request->post();
-            $model =  new TempInvoice();
-
-            $model->salePrice = (float) $salePrice;
-            $model->category = (float) $id;
-            $model->quantity = 1;
-            $model->box = 1;
-            $model->state = 1;
-            $model->costPrice = $costPrice;
-            $model->save(false);
-            $modelid  = $model->id;
-
-            return $modelid;
-        } else
-            return false;
     }
 }

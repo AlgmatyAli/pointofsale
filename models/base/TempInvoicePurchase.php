@@ -5,7 +5,6 @@ namespace app\models\base;
 use Yii;
 use yii\behaviors\TimestampBehavior;
 use yii\behaviors\BlameableBehavior;
-use mootensai\behaviors\UUIDBehavior;
 
 /**
  * This is the base model class for table "temp_invoice_purchase".
@@ -84,7 +83,6 @@ class TempInvoicePurchase extends \yii\db\ActiveRecord
             'category' => Yii::t('app', 'Category'),
             'quantity' => Yii::t('app', 'Quantity'),
             'costPrice' => Yii::t('app', 'Cost Price'),
-            'state' => Yii::t('app', 'Total Price'),
             'salePrice' => Yii::t('app', 'Sale Price'),
             'salePrice_' => Yii::t('app', 'Sale Price_'),
             'box' => Yii::t('app', 'Box'),
@@ -106,7 +104,7 @@ class TempInvoicePurchase extends \yii\db\ActiveRecord
      */
     public function getCreatedBy()
     {
-        return $this->hasOne(\app\models\User::className(), ['id' => 'created_by']);
+        return $this->hasOne(\app\models\User::class, ['id' => 'created_by']);
     }
         
     /**
@@ -114,7 +112,7 @@ class TempInvoicePurchase extends \yii\db\ActiveRecord
      */
     public function getUpdatedBy()
     {
-        return $this->hasOne(\app\models\User::className(), ['id' => 'updated_by']);
+        return $this->hasOne(\app\models\User::class, ['id' => 'updated_by']);
     }
         
     /**
@@ -122,7 +120,7 @@ class TempInvoicePurchase extends \yii\db\ActiveRecord
      */
     public function getCategory0()
     {
-        return $this->hasOne(\app\models\Category::className(), ['id' => 'category']);
+        return $this->hasOne(\app\models\Category::class, ['id' => 'category']);
     }
     
     /**
@@ -133,18 +131,18 @@ class TempInvoicePurchase extends \yii\db\ActiveRecord
     {
         return [
             'timestamp' => [
-                'class' => TimestampBehavior::className(),
+                'class' => TimestampBehavior::class,
                 'createdAtAttribute' => 'created_at',
                 'updatedAtAttribute' => 'updated_at',
                 'value' => new \yii\db\Expression('NOW()'),
             ],
             'blameable' => [
-                'class' => BlameableBehavior::className(),
+                'class' => BlameableBehavior::class,
                 'createdByAttribute' => 'created_by',
                 'updatedByAttribute' => 'updated_by',
             ],
             // 'uuid' => [
-            //     'class' => UUIDBehavior::className(),
+            //     'class' => UUIDBehavior::class,
             //     'column' => 'id',
             // ],
         ];

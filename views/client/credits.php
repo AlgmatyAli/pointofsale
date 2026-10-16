@@ -10,19 +10,9 @@ $this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Sales'), 'url' => ['
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="credt-create">
-<div class="row">
-    <div class="col-lg-4"></div>
-    <div class="col-lg-4">
-    <h1><?= Html::encode($this->title) ?></h1><hr>
-    <hr>
 
     <?= $this->render('_allCredit', [
         'model' => $model,
     ]) ?>
 
-</div>
-    <div class="col-lg-4">
-
-    </div>
-    </div>
 </div>

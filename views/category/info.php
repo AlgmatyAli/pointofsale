@@ -1,14 +1,13 @@
 <?php
 
 use yii\helpers\Html;
-use yii\widgets\DetailView;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\User */
 ?>
 <div class="category-info">
     <div class="row">
-        <div class="col-md-1"></div>
+        <div class="col-md-2"></div>
         <div class="col-md-10">
             <br>
             <h2>
@@ -43,12 +42,11 @@ use yii\widgets\DetailView;
             </tr>
         </table>
     </div>
-    <div class="col-md-1"></div>
 </div>
 <br>
 <div class="row">
     <div class="col-md-1"></div>
-    <div class="col-md-6">
+    <div class="col-md-5">
         <h5> <?= Yii::t('app', 'آخر 3 فواتير مبيعات') ?></h5>
         <hr>
         <table class="kv-grid-table table table-bordered table-striped kv-table-wrap">
@@ -92,30 +90,30 @@ use yii\widgets\DetailView;
         </table>
         <!-- --- --- --- -->
         <h15> <?= Yii::t('app', 'معلومات الشحنة') ?></h5>
-        <hr>        
-        <table class="kv-grid-table table table-bordered table-striped kv-table-wrap">
-            <tr style="font-size: 10px; font-weight: bold;">
-                <th><?= Yii::t('app', 'رقم الفاتورة') ?></th>
-                <th><?= Yii::t('app', 'اسم العميل') ?></th>
-                <th><?= Yii::t('app', 'نوع الشحن') ?></th>
-                <th><?= Yii::t('app', 'تاريخ الوصول') ?></th>
-                <th><?= Yii::t('app', 'الزمن المتبقي للوصول') ?></th>
-            </tr>
-            <tr>
-                <?php
-                if ($dateOfArrival != null) {
-                    echo " <td> . Html::encode($dateOfArrival->billId) ?></td>";
-                    echo " <td> . Html::encode($dateOfArrival->c->name) ?></td>";
-                    echo " <td> . Html::encode($dateOfArrival->shippingType0->name) ?></td>";
-                    echo " <td> . Html::encode($dateOfArrival->dateOfArrival) ?></td>";
-                    echo " <td> . $datetime1 = date_create($dateOfArrival->dateOfArrival)";
-                    "$datetime2 = date_create(date('Y-m-d'))";
-                    echo  " $datetime1->diff($datetime2)->days";
-                }
-                ?>
-                </td>
-            </tr>
-        </table>
+            <hr>
+            <table class="kv-grid-table table table-bordered table-striped kv-table-wrap">
+                <tr style="font-size: 10px; font-weight: bold;">
+                    <th><?= Yii::t('app', 'رقم الفاتورة') ?></th>
+                    <th><?= Yii::t('app', 'اسم العميل') ?></th>
+                    <th><?= Yii::t('app', 'نوع الشحن') ?></th>
+                    <th><?= Yii::t('app', 'تاريخ الوصول') ?></th>
+                    <th><?= Yii::t('app', 'الزمن المتبقي للوصول') ?></th>
+                </tr>
+                <tr>
+                    <?php
+                    if ($dateOfArrival != null) {
+                        echo " <td> . Html::encode($dateOfArrival->billId) ?></td>";
+                        echo " <td> . Html::encode($dateOfArrival->c->name) ?></td>";
+                        echo " <td> . Html::encode($dateOfArrival->shippingType0->name) ?></td>";
+                        echo " <td> . Html::encode($dateOfArrival->dateOfArrival) ?></td>";
+                        echo " <td> . $datetime1 = date_create($dateOfArrival->dateOfArrival)";
+                        "$datetime2 = date_create(date('Y-m-d'))";
+                        echo  " $datetime1->diff($datetime2)->days";
+                    }
+                    ?>
+                    </td>
+                </tr>
+            </table>
     </div>
 
 </div>

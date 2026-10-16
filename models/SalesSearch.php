@@ -70,7 +70,8 @@ class SalesSearch extends Sales
     public function search($params)
     {
 
-        $query = Sales::find();
+        // العلاقات التي يعرضها التقرير تُحمَّل دفعة واحدة بدل استعلام لكل سطر
+        $query = Sales::find()->with(['c', 'paymentType0', 'userInsert']);
         // add conditions that should always apply here
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
@@ -84,6 +85,11 @@ class SalesSearch extends Sales
 
         $this->load($params);
 
+        // من لا يملك can_see_other_branch_sales لا يرى إلا فرعه، مهما غيّر في الرابط أو أفرغ الحقل
+        if (!Yii::$app->user->can('can_see_other_branch_sales')) {
+            $this->branch = Yii::$app->user->identity->branch;
+        }
+
         if (!$this->validate()) {
             // uncomment the following line if you do not want to return any records when validation fails
             // $query->where('sales.branch='.Yii::$app->user->identity->branch);
@@ -94,50 +100,57 @@ class SalesSearch extends Sales
         // grid filtering conditions
         $query->andFilterWhere([
             'sales.id' => $this->id,
-            'billId' => $this->billId,
-            'payWay' => $this->payWay,
-            'branch' => $this->branch,
-            'total' => $this->total,
-            'paid' => $this->paid,
-            'type' => $this->type,
-            'created_at' => $this->created_at,
-            'user_update' => $this->user_update,
-            'update_at' => $this->update_at,
-            'deleviried' => $this->deleviried,
-            'wholesale' => $this->wholesale,
-            'currancy' => $this->currancy,
-            'payment_type' => $this->payment_type,
+            'sales.billId' => $this->billId,
+            'sales.payWay' => $this->payWay,
+            'sales.branch' => $this->branch,
+            'sales.total' => $this->total,
+            'sales.paid' => $this->paid,
+            'sales.type' => $this->type,
+            'sales.created_at' => $this->created_at,
+            'sales.user_update' => $this->user_update,
+            'sales.update_at' => $this->update_at,
+            'sales.deleviried' => $this->deleviried,
+            'sales.wholesale' => $this->wholesale,
+            'sales.currancy' => $this->currancy,
+            'sales.payment_type' => $this->payment_type,
         ]);
 
-        $query->andFilterWhere(['like', 'notes', $this->notes])
-            ->andFilterWhere(['like', 'path', $this->path])
-            ->andFilterWhere(['=', 'billId', $this->billId])
-            ->andFilterWhere(['=', 'client.phone', $this->phone]);
+        $query->andFilterWhere(['like', 'sales.notes', $this->notes])
+            ->andFilterWhere(['like', 'sales.path', $this->path])
+            ->andFilterWhere(['=', 'sales.billId', $this->billId]);
+
+        // الفلترة برقم الهاتف عبر استعلام فرعي على العملاء (كانت تسبب خطأ SQL لأن الجدول غير مربوط)
+        if (!empty($this->phone)) {
+            $query->andWhere(['in', 'sales.clinet', (new \yii\db\Query())->select('id')->from('client')->where(['phone' => $this->phone])]);
+        }
 
         if (Yii::$app->user->identity->client != null) {
-            if (Yii::$app->user->can('userCanSeeOtherUsersSales')) {
-                $query->andFilterWhere(['in', 'clinet', explode(',', Yii::$app->user->identity->client)]);
-            } else {
-                $query->andFilterWhere(['in', 'clinet', explode(',', Yii::$app->user->identity->client)]);
-            }
+            // مستخدم العميل لا يرى إلا عملاءه. andWhere (وليس andFilterWhere) لأن الأخير يُسقط الشرط
+            // إن كانت القائمة فارغة فيرى المستخدم كل الفواتير.
+            $ownClients = array_values(array_filter(
+                array_map('trim', explode(',', (string) Yii::$app->user->identity->client)),
+                'strlen'
+            ));
+            $query->andWhere($ownClients ? ['in', 'sales.clinet', $ownClients] : '0=1');
         } else {
-            $query->andFilterWhere(['=', 'clinet', $this->clinet]);
+            $query->andFilterWhere(['=', 'sales.clinet', $this->clinet]);
         }
 
         if (Yii::$app->user->can('userCanSeeOtherUsersSales')) {
-            $query->andFilterWhere(['=', 'user_insert', $this->user_insert]);
+            $query->andFilterWhere(['=', 'sales.user_insert', $this->user_insert]);
         } else {
-            $query->andFilterWhere(['=', 'user_insert', Yii::$app->user->identity->id]);
+            $query->andFilterWhere(['=', 'sales.user_insert', Yii::$app->user->identity->id]);
         }
 
+        // نطاق التاريخ بصيغة "من - إلى". تاريخ مفرد يُعامل كيوم واحد بدل أن يسبب خطأ
         if (!empty($this->at) && strpos($this->at, '-') !== false) {
-            list($min_date, $max_date) = explode(' - ', $this->at);
-            $query->andFilterWhere(['between', 'at', $min_date, $max_date]);
+            $parts = array_map('trim', explode(' - ', $this->at));
+            $query->andFilterWhere(['between', 'sales.at', $parts[0], $parts[1] ?? $parts[0]]);
         }
 
         if (!empty($this->deleviryAt) && strpos($this->deleviryAt, '-') !== false) {
-            list($min_date, $max_date) = explode(' - ', $this->deleviryAt);
-            $query->andFilterWhere(['between', 'deleviryAt', $min_date, $max_date]);
+            $parts = array_map('trim', explode(' - ', $this->deleviryAt));
+            $query->andFilterWhere(['between', 'sales.deleviryAt', $parts[0], $parts[1] ?? $parts[0]]);
         }
 
         return $dataProvider;

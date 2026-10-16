@@ -18,6 +18,7 @@ use app\models\Totalinventory;
 use app\models\Dept;
 use app\models\Client;
 use app\models\Category;
+use app\models\Prices;
 use app\models\SalesDetailsSearchWQ;
 use app\models\SalesDetailsSearchWQClient;
 use app\models\Stocks;
@@ -25,6 +26,10 @@ use app\models\TempBackSales;
 use Mpdf\Mpdf; #Php 7.0
 use yii\data\ActiveDataProvider;
 use kartik\mpdf\Pdf;
+use yii\filters\AccessControl;
+use yii\helpers\FileHelper;
+use yii\helpers\Html;
+use yii\web\Response;
 
 
 /**
@@ -32,6 +37,8 @@ use kartik\mpdf\Pdf;
  */
 class SalesController extends Controller
 {
+    use \app\components\SalesStockTrait;
+
     public function behaviors()
     {
         return [
@@ -39,10 +46,17 @@ class SalesController extends Controller
                 'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
+                    'remove' => ['POST'],
+                    'transfer-to-temp-invoice' => ['POST'],
+                    'pdf' => ['POST'],
+                    'delev' => ['POST'],
+                    'stop-credit' => ['POST'],
+                    'add-item' => ['POST'],
+                    'back-items' => ['POST'],
                 ],
             ],
             'access' => [
-                'class' => Yii\filters\AccessControl::class,
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
@@ -52,7 +66,7 @@ class SalesController extends Controller
 
                     [
                         'allow' => true,
-                        'actions' => ['update', 'view', 'print', 'print-with-place', 'noprice', 'remove', 'pdf', 'itemlist', 'deserving', 'stop-credit', 'done', 'transfer-to-temp-invoice', 'itemlistid', 'print-no-price', 'save-pdf', 'delev', 'print-for-driver'],
+                        'actions' => ['update', 'add-item', 'view', 'print', 'print-with-place', 'noprice', 'remove', 'pdf', 'itemlist', 'deserving', 'stop-credit', 'done', 'transfer-to-temp-invoice', 'itemlistid', 'print-no-price', 'save-pdf', 'delev', 'print-for-driver'],
                         'roles' => ['updateSales'],
                     ],
 
@@ -108,6 +122,62 @@ class SalesController extends Controller
         ];
     }
 
+    /** اسم قفل MySQL المشترك لكل ما يغيّر المخزون أو يولّد أرقام فواتير (نفس القفل في النقل والجرد) */
+    const STOCK_LOCK = 'pos_stock_change';
+
+    /** حقول لا يجوز أن تأتي من النموذج المرسل: يحسبها الخادم دائماً */
+    const PROTECTED_FIELDS = ['id', 'total', 'branch', 'billId', 'created_at', 'user_insert', 'update_at', 'user_update'];
+
+    // =====================================================================
+    // أدوات داخلية: القفل والمعاملة والمخزون
+    // =====================================================================
+
+    /** يملأ النموذج من البيانات المرسلة مع استبعاد الحقول التي يحسبها الخادم */
+    private function loadSalesForm(Sales $model, array $extraProtected = [])
+    {
+        $post = Yii::$app->request->post($model->formName());
+        if (!is_array($post)) {
+            return false;
+        }
+        foreach (array_merge(self::PROTECTED_FIELDS, $extraProtected) as $key) {
+            unset($post[$key]);
+        }
+        $model->setAttributes($post, false);
+        if (empty($model->at)) {
+            $model->at = date('Y-m-d');
+        }
+        return true;
+    }
+
+    /** يحسب مجموع الفاتورة من أسطرها ويحفظه، ويعيده (null إن لم يبق أسطر) */
+    private function recalcTotal($salesId)
+    {
+        $sum = SalesDetails::find()->where(['salesId' => $salesId])->sum('salePrice * quantity');
+        Sales::updateAll(['total' => (float) $sum], ['id' => $salesId]);
+        return $sum;
+    }
+
+    /** فرع الفاتورة (للفواتير القديمة بلا فرع نستعمل فرع المستخدم) */
+    private function saleBranch(Sales $sale)
+    {
+        return (int) ($sale->branch ?: Yii::$app->user->identity->branch);
+    }
+
+    /** الفاتورة يجب أن تكون من فرع المستخدم لتعديلها */
+    private function ownBranchOrFail(Sales $sale)
+    {
+        if ($sale->branch != Yii::$app->user->identity->branch) {
+            throw new \DomainException(Yii::t('app', "This invoice is not issued by the branch you work in, you cannot update it"));
+        }
+    }
+
+    /** قيمة قابلة للقراءة في أخطاء التحقق */
+    private function firstError(Sales $model)
+    {
+        $errors = $model->getFirstErrors();
+        return $errors ? reset($errors) : 'تعذر حفظ الفاتورة.';
+    }
+
     public function actionIndex()
     {
         $searchModel = new SalesSearch();
@@ -144,32 +214,14 @@ class SalesController extends Controller
     {
         $company = CompanyInfo::find()->one();
         $model = $this->findModel($id);
-        if ($model->branch != Yii::$app->user->identity->branch) {
+        $identity = Yii::$app->user->identity;
+        if ($model->branch != $identity->branch) {
             Yii::$app->session->setFlash('error', Yii::t('app', "This invoice is not issued by the branch you work in, you cannot update it"));
             return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
         }
-        // if ((!Yii::$app->user->can('update_earlier_date'))) {
-        //     // if ($model->at != Date('Y-m-d')){
-        //     //     Yii::$app->session->setFlash('error', Yii::t('app',"You can NOT update an invoice with an earlier date !"));
-        //     //     return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
-
-        //     // }
-        // }
-
-        if (Yii::$app->user->can('saleOnHoldItems')) {
-            $type = [1, 2, 3];
-        } else {
-            $type = [1, 2];
-        }
-
-        if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
-            $branch = Yii::$app->user->identity->branch;
-        } else {
-            $branch = [1, 2, 3];
-        }
 
         $dataProvider = new ActiveDataProvider([
-            'query' => SalesDetails::find()->where(['=', 'salesId', $id]),
+            'query' => SalesDetails::find()->where(['=', 'salesId', $model->id]),
             'sort' => [
                 'defaultOrder' => [
                     'id' => SORT_DESC,
@@ -177,215 +229,256 @@ class SalesController extends Controller
             ],
             'pagination' => false,
         ]);
-        if (yii::$app->request->post('hasEditable')) {
-            $id = Yii::$app->request->post('editableKey');
-            $result = SalesDetails::findOne($id);
-            $out = Json::encode(['output' => '', 'message' => '']);
-            $post = [];
-            $posted = current($_POST['SalesDetails']);
 
-            $post['SalesDetails'] = $posted;
-            if ($result->load($post)) {
-                $sale = Sales::find()->where(['id' => $result->salesId])->one();
-
-                if (isset($posted['quantity'])) {
-                    $outMessage = $result->quantity;
-                    $quantity = $posted['quantity'];
-                    /** set value is zero  */
-                    $delete = new SalesDetails();
-                    $delete = SalesDetails::find()->where(['id' => $result->id])->one();
-                    $delete->quantity = 0;
-                    $delete->save();
-                    /**get total inventory */
-
-                    if ($company->zeroQnty == 0) {
-                        $zeroQnty = 'stocks.quantity <> 0';
-                    } else {
-                        $zeroQnty = 'stocks.quantity < 0 OR stocks.quantity > 0 Or stocks.quantity = 0';
-                    }
-                    $stockQ = Stocks::find()
-                        ->select(['max(stocks.category) as id', 'sum(stocks.quantity) as quantity'])
-                        ->leftJoin('prices', 'stocks.category = prices.category')
-                        ->where(['stocks.category' => $result->category])
-                        ->andWhere($zeroQnty)
-                        ->andwhere(['in', 'stocks.type', $type])
-                        ->andWhere(['in', 'stocks.branch', $branch])
-                        ->one();
-
-                    // $stockQ = Stocks::find()
-                    //     ->Where(['branch' => Yii::$app->user->identity->branch])
-                    //     ->andwhere(['category' => $result->category])
-                    //     ->andwhere(['in', 'type', $type])
-                    //     ->one();
-                    /** get if valeu larger than to requsetd val  */
-
-                    if ($model->type != 2) {
-                        if ($stockQ != NULL) {
-                            if ($quantity > abs($stockQ->quantity)) {
-                                if ($company->zeroQnty == 0) {
-                                    $result->quantity = abs($stockQ->quantity);
-                                } else {
-                                    $result->quantity = abs($quantity);
-                                }
-                                $result->save(false);
-                            } else {
-                                $result->quantity = abs($quantity);
-                                $result->save(false);
-                            }
-                        } else {
-                            $result->quantity = 0;
-                            $result->save(false);
-                            $outMessage = 'تم التخزين بقيمة صفر';
-                        }
-
-                        // if ($company->zeroQnty == 0) {
-                        //     if ($quantity >= abs($stockQ->quantity)) {
-                        //         $result->quantity = abs($stockQ->quantity);
-                        //     } else {
-                        //         $result->quantity = $quantity;
-                        //     }
-                        // } else {
-                        //     $result->quantity = $quantity;
-                        // }
-                    }
-                    //$result->save(false);
-                    $sale->total = SalesDetails::find()->where(['salesId' => $result->salesId])
-                        ->sum('salePrice * quantity');
-                    $sale->save(false);
-                } elseif (isset($posted['salePrice'])) {
-                    if (Yii::$app->user->can('userCanUpdateSalePriceAfterSave')) {
-                        $quantity = $posted['salePrice'];
-                        $sale = Sales::find()->where(['id' => $result->salesId])->one();
-
-                        $result->save(false);
-                        $sale->total = SalesDetails::find()->where(['salesId' => $result->salesId])
-                            ->sum('salePrice * quantity');
-                        $sale->save(false);
-                        $outMessage = $result->salePrice;
-                    } else {
-                        $outMessage = 'لايوجد لديك صلاحية لتعديل سعر البيع';
-                    }
-                } elseif (isset($posted['packing'])) {
-                    $packing = $posted['packing'];
-                    $sale = Sales::find()->where(['id' => $result->salesId])->one();
-                    $result->save(false);
-                    $outMessage = $result->packing;
-                }
-                $output = $outMessage;
-                $out = Json::encode(['output' => $output]);
-                return $out;
-            }
+        // التعديل المباشر داخل الجدول (الكمية / السعر / التغليف)
+        if (Yii::$app->request->post('hasEditable')) {
+            return $this->inlineEditDetail($model, $company);
         }
 
-        if ($model->load(Yii::$app->request->post())) {
-            $post_paid = Client::find()->select('post_paid')->where(['=', 'id', $model->clinet])->one();
+        if (Yii::$app->request->post($model->formName()) !== null) {
+            $oldType = (int) $model->type;
+            $oldDisscount = $model->disscount;
+            $oldPaid = $model->paid;
+            // ما كانت تسهم به هذه الفاتورة في رصيد العميل (الآجلة النهائية فقط)، لنطرحه عند فحص السقف
+            $oldCreditNet = ($oldType === 1 && (int) $model->payWay === 1)
+                ? ((float) $model->total - (float) $oldDisscount - (float) $oldPaid)
+                : 0.0;
 
-            if ($post_paid['post_paid'] != 1) {
-                if ($model->payWay != 0) {
-                    Yii::$app->session->setFlash('error', Yii::t('app', "عفوا هذا الزبون لايمكن البيع له بالآجل"));
-                    return $this->redirect(['sales/update', 'id' => $id]);
-                }
+            $this->loadSalesForm($model, ['carpenter', 'upholstered', 'paintId', 'deleviryId', 'path']);
+            $model->type = (int) $model->type;
+
+            if (!in_array($model->type, [1, 2, 3, 4], true)) {
+                Yii::$app->session->setFlash('error', 'نوع الفاتورة غير صحيح.');
+                return $this->redirect(['sales/update', 'id' => $model->id]);
             }
-            $model->total = SalesDetails::find()->where(['salesId' => $id])->sum('salePrice * quantity');
 
-            $debtBalance = Client::find()->select('debt')->where(['=', 'id', $model->clinet])->one();
+            $client = Client::find()->where(['id' => $model->clinet])->one();
+            if ($client === null) {
+                Yii::$app->session->setFlash('error', 'العميل غير موجود.');
+                return $this->redirect(['sales/update', 'id' => $model->id]);
+            }
+            if ($client->post_paid != 1 && $model->payWay != 0) {
+                Yii::$app->session->setFlash('error', Yii::t('app', "عفوا هذا الزبون لايمكن البيع له بالآجل"));
+                return $this->redirect(['sales/update', 'id' => $model->id]);
+            }
+
+            // الخصم لمن يملك الصلاحية فقط، والمدفوع لا يعدّله مستخدم العميل
+            if ($identity->makeDiscount != 1) {
+                $model->disscount = $oldDisscount;
+            }
+            if ($identity->client <> null) {
+                $model->paid = $oldPaid;
+            }
+            $model->disscount = ($model->disscount == null) ? 0 : max(0, (float) $model->disscount);
+            $model->paid = ($model->paid == null) ? 0 : max(0, (float) $model->paid);
+
+            $model->total = SalesDetails::find()->where(['salesId' => $model->id])->sum('salePrice * quantity');
+            if ((float) $model->disscount > (float) $model->total) {
+                Yii::$app->session->setFlash('error', 'الخصم لا يمكن أن يزيد عن إجمالي الفاتورة.');
+                return $this->redirect(['sales/update', 'id' => $model->id]);
+            }
+            if ($model->payWay == 1 && $model->type == 1
+                && (float) $model->paid > (float) $model->total - (float) $model->disscount) {
+                Yii::$app->session->setFlash('error', 'المدفوع لا يمكن أن يزيد عن صافي الفاتورة.');
+                return $this->redirect(['sales/update', 'id' => $model->id]);
+            }
+
+            // سقف الدين: يُتجاوز بصلاحية خاصة مع تنبيه بعد الحفظ
+            $overDebt = false;
+            $debtRow = Client::find()->select('debt')->where(['=', 'id', $model->clinet])->one();
             $balance = Dept::find()->where(['id' => $model->clinet])->sum('credt');
-            $model->branch = Yii::$app->user->identity->branch;
-
-            if ($model->disscount == null) {
-                $model->disscount = 0;
-            }
-
-            $total = $balance + $model->total;
-            if ($debtBalance["debt"] <> 0) {
-                if (Yii::$app->user->can('userCansellOverDebt')) {
-                    $model->update_at = date('Y-m-d H:i:s');
-                    $model->user_update = Yii::$app->user->identity->id;
-                    if ($model->save(false)) {
-                        return $this->redirect(['print', 'id' => $id]);
-                    }
-                } else {
-                    if ((float) $total >= (float) $debtBalance["debt"] && $model->payWay == 1) {
+            if ($debtRow !== null && $debtRow['debt'] <> 0 && $model->type == 1) {
+                // رصيد العميل بعد طرح مبلغ هذه الفاتورة القديم + (الإجمالي − الخصم − المدفوع) الجديد
+                $total = ((float) $balance - $oldCreditNet)
+                    + ((float) $model->total - (float) $model->disscount - (float) $model->paid);
+                if ((float) $total >= (float) $debtRow['debt'] && $model->payWay == 1) {
+                    if (Yii::$app->user->can('userCansellOverDebt')) {
+                        $overDebt = true;
+                    } else {
                         Yii::$app->session->setFlash('error', Yii::t('app', "Sorry The Client Cross The Line About Debt"));
-                        return $this->redirect(['sales/update', 'id' => $id]);
+                        return $this->redirect(['sales/update', 'id' => $model->id]);
                     }
                 }
-            } else {
-                $model->update_at = date('Y-m-d H:i:s');
-                $model->user_update = Yii::$app->user->identity->id;
-                if ($model->save(false)) {
-                    return $this->redirect(['print', 'id' => $id]);
-                }
             }
+
+            try {
+                $this->withStockLock(function () use ($model, $oldType, $identity, $company) {
+                    $model->branch = $identity->branch;
+                    $model->update_at = date('Y-m-d H:i:s');
+                    $model->user_update = $identity->id;
+
+                    // تغيير النوع يغيّر أثر الفاتورة على المخزون (ويحتاج رقماً في تسلسل النوع الجديد)
+                    if ($oldType !== (int) $model->type) {
+                        $model->billId = (int) Sales::find()->where(['type' => $model->type])->max('billId') + 1;
+                    }
+                    $model->save(false);
+
+                    if ($oldType !== (int) $model->type) {
+                        $branch = $this->saleBranch($model);
+                        $checked = in_array((int) $model->type, [1, 3], true);   // النوع الجديد يخصم من المخزون
+                        $kept = 0;
+                        $skipped = [];
+                        $reduced = [];
+                        foreach (SalesDetails::find()->where(['salesId' => $model->id])->all() as $d) {
+                            // أولاً يُعاد أثر النوع القديم ليُحتسب رصيد السطر نفسه ضمن المتاح
+                            $this->applyDetail($oldType, $d->category, $branch, $d->quantity, true);
+                            $qty = (float) $d->quantity;
+                            if ($checked) {
+                                $qty = $this->allowedQty($d->category, $qty, [(int) $model->type], $company);
+                                if ($qty <= 0) {
+                                    $skipped[] = $d->category;
+                                    $d->delete();
+                                    continue;
+                                }
+                                if ($qty < (float) $d->quantity) {
+                                    $reduced[] = $d->category;
+                                    $d->quantity = $qty;
+                                    $d->save(false);
+                                }
+                            }
+                            $this->applyDetail($model->type, $d->category, $branch, $qty, false);
+                            $kept++;
+                        }
+                        if ($kept === 0) {
+                            // يتراجع كل شيء (النوع والمخزون)
+                            throw new \DomainException('لا يوجد رصيد متاح لأي صنف في الفاتورة، لم يتم تغيير النوع.');
+                        }
+                        $this->recalcTotal($model->id);
+                        if ($skipped || $reduced) {
+                            $parts = [];
+                            if ($skipped) {
+                                $parts[] = 'أصناف حُذفت لعدم توفر رصيد: ' . implode('، ', $skipped);
+                            }
+                            if ($reduced) {
+                                $parts[] = 'أصناف قُلّصت كمياتها للمتاح: ' . implode('، ', $reduced);
+                            }
+                            Yii::$app->session->addFlash('error', implode(' | ', $parts) . ' (أرقام الأصناف)');
+                        }
+                    }
+                });
+            } catch (\DomainException $e) {
+                Yii::$app->session->setFlash('error', $e->getMessage());
+                return $this->redirect(['sales/update', 'id' => $model->id]);
+            }
+
+            if ($overDebt) {
+                Yii::$app->session->addFlash('error', Yii::t('app', "عفوا هذا العميل تجاوز سقف الديون ! الرجاء المراجعة"));
+            }
+            return $this->redirect(['print', 'id' => $model->id]);
         }
 
         return $this->render('update', [
             'model' => $model,
             'dataProvider' => $dataProvider,
             'company' => $company,
-
         ]);
+    }
+
+    /**
+     * التعديل المباشر لسطر داخل فاتورة محفوظة. السطر يجب أن يتبع هذه الفاتورة،
+     * وتغيّر الكمية يُحسب أثره على المخزون بالفرق (جديد - قديم) من PHP.
+     */
+    private function inlineEditDetail(Sales $sale, $company)
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+
+        $key = (int) Yii::$app->request->post('editableKey');
+        $all = Yii::$app->request->post('SalesDetails');
+        $posted = is_array($all) ? current($all) : null;
+
+        $detail = SalesDetails::findOne(['id' => $key, 'salesId' => $sale->id]);
+        if ($detail === null || !is_array($posted)) {
+            return ['output' => '', 'message' => 'السطر غير موجود في هذه الفاتورة.'];
+        }
+
+        // ----- الكمية -----
+        if (array_key_exists('quantity', $posted)) {
+            if (!is_numeric($posted['quantity']) || (float) $posted['quantity'] <= 0) {
+                return ['output' => '', 'message' => 'الكمية يجب أن تكون رقماً أكبر من صفر. لحذف السطر استخدم زر الحذف.'];
+            }
+            $new = abs((float) $posted['quantity']);
+            try {
+                $final = $this->withStockLock(function () use ($sale, $detail, $company, $new) {
+                    $old = (float) $detail->quantity;
+                    $limit = $new;
+                    if (in_array((int) $sale->type, [1, 3], true) && $company->zeroQnty == 0) {
+                        // الكمية القديمة محسومة أصلاً من المخزون فتُحتسب ضمن المتاح (نوع المخزون = نوع الفاتورة)
+                        $avail = $this->availableQty($detail->category, [(int) $sale->type], $company) + $old;
+                        $limit = min($new, max(0, $avail));
+                        if ($limit <= 0) {
+                            throw new \DomainException('لا يوجد رصيد متاح لهذا الصنف، بقيت الكمية كما هي.');
+                        }
+                    }
+                    $detail->quantity = $limit;
+                    $detail->save(false);
+                    $this->applyDetail($sale->type, $detail->category, $this->saleBranch($sale), $limit - $old, false);
+                    $this->recalcTotal($sale->id);
+                    return $limit;
+                });
+            } catch (\DomainException $e) {
+                return ['output' => '', 'message' => $e->getMessage()];
+            }
+            return ['output' => $final, 'message' => ''];
+        }
+
+        // ----- السعر -----
+        if (array_key_exists('salePrice', $posted)) {
+            if (!Yii::$app->user->can('userCanUpdateSalePriceAfterSave')) {
+                return ['output' => '', 'message' => 'لايوجد لديك صلاحية لتعديل سعر البيع'];
+            }
+            if (!is_numeric($posted['salePrice']) || (float) $posted['salePrice'] <= 0) {
+                return ['output' => '', 'message' => 'سعر البيع يجب أن يكون رقماً أكبر من صفر.'];
+            }
+            $detail->salePrice = (float) $posted['salePrice'];
+            $detail->save(false);
+            $this->recalcTotal($sale->id);
+            return ['output' => $detail->salePrice, 'message' => ''];
+        }
+
+        // ----- التغليف -----
+        if (array_key_exists('packing', $posted)) {
+            $detail->packing = mb_substr(trim((string) $posted['packing']), 0, 100);
+            $detail->save(false);
+            return ['output' => $detail->packing, 'message' => ''];
+        }
+
+        return ['output' => '', 'message' => 'هذا الحقل غير قابل للتعديل.'];
     }
 
     public function actionDelete($id)
     {
-        $sales = Sales::find()->select(['type'])->where(['id' => $id])->one();
-        $salesDetails = SalesDetails::find()->where(['salesId' => $id])->all();
-
-        // Yii::$app->db->createCommand("
-        //         INSERT INTO sales_deleted (
-        //                                    id, billId, at, clinet, payWay, branch, total, paid, notes, path, type, 
-        //                                     deleviryAt, carpenter, upholstered, paintId, deleviryId, user_insert, created_at, user_update,
-        //                                     update_at) 
-        //             SELECT id, billId, at, clinet, payWay, branch, total, paid, notes, path, type, 
-        //             deleviryAt, carpenter, upholstered, paintId, deleviryId, user_insert, created_at, user_update,
-        //             update_at
-        //         FROM sales 
-        //         where id=" . $id . "
-        //         ")
-        //     ->execute();
-
-        foreach ($salesDetails as $data) {
-            if ($sales->type == 1) {
-                Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + $data->quantity 
-                 WHERE category=:category
-                 and branch = :branch
-                 and type = :type")
-                    ->bindValue(':category', $data->category)
-                    ->bindValue(':branch', Yii::$app->user->identity->branch)
-                    ->bindValue(':type', 1)
-                    ->execute();
-            } elseif ($sales->type == 3) {
-                Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + $data->quantity
-                WHERE category=:category
-                and branch = :branch
-                and type = :type")
-                    ->bindValue(':category', $data->category)
-                    ->bindValue(':branch', Yii::$app->user->identity->branch)
-                    ->bindValue(':type', 3)
-                    ->execute();
-            } elseif ($sales->type == 2) {
-                Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + $data->quantity
-                WHERE category=:category
-                and branch = :branch
-                and type = :type")
-                    ->bindValue(':category', $data->category)
-                    ->bindValue(':branch', Yii::$app->user->identity->branch)
-                    ->bindValue(':type', 1)
-                    ->execute();
-            }
+        $sale = $this->findModel($id);
+        try {
+            $this->withStockLock(function () use ($sale) {
+                $branch = $this->saleBranch($sale);
+                foreach (SalesDetails::find()->where(['salesId' => $sale->id])->all() as $d) {
+                    $this->applyDetail($sale->type, $d->category, $branch, $d->quantity, true);
+                }
+                SalesDetails::deleteAll(['salesId' => $sale->id]);
+                Sales::deleteAll(['id' => $sale->id]);
+            });
+            Yii::$app->session->setFlash('success', 'تم حذف الفاتورة وإعادة الأصناف للمخزون.');
+        } catch (\DomainException $e) {
+            Yii::$app->session->setFlash('error', $e->getMessage());
+            return $this->redirect(['view', 'id' => $sale->id]);
         }
-        Yii::$app
-            ->db
-            ->createCommand()
-            ->delete('sales', ['id' => $id])
-            ->execute();
         return $this->redirect(['index']);
     }
 
     protected function findModel($id)
     {
-        if (($model = Sales::findOne($id)) !== null) {
+        $model = Sales::findOne((int) $id);
+
+        // مستخدم العميل لا يرى إلا فواتير عملائه
+        if ($model !== null) {
+            $client = Yii::$app->user->identity->client;
+            if ($client !== null && $client !== ''
+                && !in_array((string) $model->clinet, array_map('trim', explode(',', (string) $client)), true)) {
+                $model = null;
+            }
+        }
+
+        if ($model !== null) {
             return $model;
         }
 
@@ -413,66 +506,61 @@ class SalesController extends Controller
             }
 
             if ($model->min_date == null) {
-                echo
-                '<script type="text/javascript"> alert(\'الرجاء تحديد تاريخ الحركة من\');
-                        window.location.href="?r=sales%2Fftran";
-                        </script>';
+                Yii::$app->session->setFlash('error', 'الرجاء تحديد تاريخ الحركة من');
+                return $this->redirect(['ftran']);
             }
             if ($model->max_date == null) {
-                echo
-                '<script type="text/javascript"> alert(\'الرجاء تحديد تاريخ الحركة إلى\');
-                        window.location.href="?r=sales%2Fftran";
-                        </script>';
+                Yii::$app->session->setFlash('error', 'الرجاء تحديد تاريخ الحركة إلى');
+                return $this->redirect(['ftran']);
             }
 
-
+            $db = Yii::$app->db;
+            $branch = (int) Yii::$app->user->identity->branch;
+            $dates = [':min' => $model->min_date, ':max' => $model->max_date];
 
             if ($model->user_insert != null) {
-                $sqlSum = " SELECT 
-            sum(ftran.sader) as sader, sum(ftran.wared) as wared FROM ftran
-            where ftran.date_ < '" . $model->min_date . "' and ftran.outBox =0 and ftran.branch =" . Yii::$app->user->identity->branch . " 
-             and currancy = '" . $model->currancy . "' and ftran.user_insert ='" . $model->user_insert . "'";
-                $connection = Yii::$app->db;
-                $data = $connection->createCommand($sqlSum);
-                $lastBalance = $data->queryAll();
+                $lastBalance = $db->createCommand(
+                    "SELECT sum(ftran.sader) as sader, sum(ftran.wared) as wared FROM ftran
+                     WHERE ftran.date_ < :min AND ftran.outBox = 0 AND ftran.branch = :b
+                     AND currancy = :cur AND ftran.user_insert = :u",
+                    [':min' => $model->min_date, ':b' => $branch, ':cur' => $model->currancy, ':u' => $model->user_insert]
+                )->queryAll();
 
-                $sql = " SELECT ftran.*, payment_types.name as paymentType FROM ftran
-            left join payment_types on payment_types.id = ftran.payment_type
-            where  ftran.branch =" . Yii::$app->user->identity->branch . " 
-            and ftran.date_  between '" . $model->min_date . "' and '" . $model->max_date . "' and ftran.outBox =0 and currancy = '" . $model->currancy . "' and ftran.user_insert = '" . $model->user_insert . "'";
+                $info = $db->createCommand(
+                    "SELECT ftran.*, payment_types.name as paymentType FROM ftran
+                     LEFT JOIN payment_types ON payment_types.id = ftran.payment_type
+                     WHERE ftran.branch = :b AND ftran.date_ BETWEEN :min AND :max
+                     AND ftran.outBox = 0 AND currancy = :cur AND ftran.user_insert = :u",
+                    $dates + [':b' => $branch, ':cur' => $model->currancy, ':u' => $model->user_insert]
+                )->queryAll();
             } else {
+                $lastBalance = $db->createCommand(
+                    "SELECT sum(ftran.sader) as sader, sum(ftran.wared) as wared FROM ftran
+                     WHERE ftran.date_ < :min AND ftran.outBox = 0 AND currancy = :cur AND ftran.branch = :b",
+                    [':min' => $model->min_date, ':cur' => $model->currancy, ':b' => $branch]
+                )->queryAll();
 
-                $sqlSum = " SELECT 
-            sum(ftran.sader) as sader, sum(ftran.wared) as wared FROM ftran
-            where ftran.date_ < '" . $model->min_date . "' and ftran.outBox =0 and currancy = '" . $model->currancy . "' and ftran.branch =" . Yii::$app->user->identity->branch . " ";
-                $connection = Yii::$app->db;
-                $data = $connection->createCommand($sqlSum);
-                $lastBalance = $data->queryAll();
-
-                $sql = " SELECT ftran.*, payment_types.name as paymentType FROM ftran
-            left join payment_types on payment_types.id = ftran.payment_type
-            where  ftran.branch =" . Yii::$app->user->identity->branch . " 
-            and ftran.date_  between '" . $model->min_date . "' and '" . $model->max_date . "' and ftran.outBox = 0 order by ftran.date_  ";
+                $info = $db->createCommand(
+                    "SELECT ftran.*, payment_types.name as paymentType FROM ftran
+                     LEFT JOIN payment_types ON payment_types.id = ftran.payment_type
+                     WHERE ftran.branch = :b AND ftran.date_ BETWEEN :min AND :max AND ftran.outBox = 0
+                     ORDER BY ftran.date_",
+                    $dates + [':b' => $branch]
+                )->queryAll();
             }
 
-            $connection = Yii::$app->db;
-            $data = $connection->createCommand($sql);
-            $info = $data->queryAll();
-            if ($info == null) {
-                die("Sorry no thing to preview");
+            if (!$info) {
+                Yii::$app->session->setFlash('error', 'عفوا لا يوجد بيانات للعرض');
+                return $this->redirect(['ftran']);
             }
 
-            $sumSql = " SELECT max(payment_types.name), sum(sader), sum(wared) FROM `ftran`
-            left join payment_types on payment_types.id = ftran.payment_type
-            where  ftran.branch =" . Yii::$app->user->identity->branch . "
-            and ftran.date_  between '" . $model->min_date . "' and '" . $model->max_date . "'
-            group by ftran.payment_type";
-            $connection = Yii::$app->db;
-            $sumSql1 = $connection->createCommand($sumSql);
-            $info1 = $sumSql1->queryAll();
-            if ($info == null) {
-                die("Sorry no thing to preview");
-            }
+            $info1 = $db->createCommand(
+                "SELECT max(payment_types.name), sum(sader), sum(wared) FROM `ftran`
+                 LEFT JOIN payment_types ON payment_types.id = ftran.payment_type
+                 WHERE ftran.branch = :b AND ftran.date_ BETWEEN :min AND :max
+                 GROUP BY ftran.payment_type",
+                $dates + [':b' => $branch]
+            )->queryAll();
 
             return $this->render('ftranRep', [
                 'models' => $info,
@@ -494,416 +582,15 @@ class SalesController extends Controller
         ]);
     }
 
-    public function actionCreate()
+    /** فاتورة بلا أسعار: لا تُجلب الأسعار أصلاً، والمخزون يُربط بـ LEFT JOIN فلا يسقط سطر لعدم وجود رصيد */
+    public function actionNoprice($id)
     {
-        $model = new Sales();
-        $company = CompanyInfo::find()->one();
-
-        if ($company->payWayCash == 1) {
-            $model->payWay = 0;
-        } else {
-            $model->payWay = 1;
-        }
-        if ($model->load(Yii::$app->request->post())) {
-            $post_paid = Client::find()->select('post_paid')->where(['=', 'id', $model->clinet])->one();
-            if ($post_paid['post_paid'] != 1) {
-                if ($model->payWay != 0) {
-                    Yii::$app->session->setFlash('error', Yii::t('app', "عفوا هذا الزبون لايمكن البيع له بالآجل"));
-                    return $this->redirect(['temp-invoice/create', 'id' => 1]);
-                }
-            }
-
-            $debtBalance = Client::find()->select('debt')->where(['=', 'id', $model->clinet])->one();
-            $balance = Dept::find()->where(['id' => $model->clinet])->sum('credt');
-
-            $model->total = TempInvoice::find()->where(['created_by' => Yii::$app->user->identity->id, 'state' => 1])
-                ->sum('salePrice * quantity');
-
-            $model->branch = Yii::$app->user->identity->branch;
-            $model->billId = Sales::find()->where(['=', 'type', $model->type])->max('billId') + 1;
-            $model->created_at = date('Y-m-d H:i:s');
-            $model->user_insert = Yii::$app->user->id;
-
-            if ($model->disscount == null) {
-                $model->disscount = 0;
-            }
-
-            if ($model->paid == null) {
-                $model->paid = 0;
-            }
-
-            if (Yii::$app->user->identity->client <> null) {
-                $model->deleviried =  0;
-                $model->wholesale = 0;
-                $model->paid = 0;
-            }
-
-            $total = $balance + $model->total;
-            if ($debtBalance["debt"] <> 0 && $model->type != 4) {
-                if ((float) $total >= (float) $debtBalance["debt"] && $model->payWay == 1) {
-                    if (Yii::$app->user->can('userCansellOverDebt')) {
-                        $model->save(false);
-                        $id = $model->id;
-
-                        $temp_invoice = new TempInvoice();
-                        $temp_invoice = TempInvoice::find()->where([
-                            'created_by' => Yii::$app->user->identity->id,
-                            'state' => 1
-                        ])->all();
-                        foreach ($temp_invoice as $data) {
-                            $modelDetails = new salesDetails();
-                            $modelDetails->salesId = $id;
-                            $modelDetails->category =  $data->category;
-                            $modelDetails->waitQnty = $data->waitQnty;
-                            $modelDetails->costPrice = $data->costPrice;
-                            $modelDetails->salePrice = $data->salePrice;
-                            $modelDetails->box = $data->box;
-                            $modelDetails->expire = $data->expire;
-                            $modelDetails->type = $data->type;
-                            $modelDetails->original_price = $data->salePrice;
-                            $modelDetails->serial_number = $data->serial_number;
-                            $modelDetails->branch = $data->branch;
-                            if ($model->type != 4) {
-                                if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
-                                    $branch = Yii::$app->user->identity->branch;
-                                } else {
-                                    $branch = [1, 2, 3];
-                                }
-
-                                if ($company->zeroQnty == 0) {
-                                    $zeroQnty = 'stocks.quantity <> 0';
-                                } else {
-                                    $zeroQnty = 'stocks.quantity < 0 OR stocks.quantity > 0 Or stocks.quantity = 0';
-                                }
-                                $item = Stocks::find()
-                                    ->select(['max(stocks.category) as id', 'sum(stocks.quantity) as quantity'])
-                                    ->leftJoin('prices', 'stocks.category = prices.category')
-                                    ->where(['stocks.category' => $data->category])
-                                    ->andWhere($zeroQnty) //['<>', 'stocks.quantity', 0])
-                                    ->andwhere(['in', 'stocks.type', $model->type])
-                                    ->andWhere(['in', 'stocks.branch', $branch])
-                                    ->one();
-                                //die('1' . ', ZeroQnty =' . $zeroQnty . ', Items =' . $item->quantity . ', DataQuantity = ' . $data->quantity);
-                                if ($item <> null) {
-                                    if ($data->quantity > abs($item->quantity)) {
-                                        if ($company->zeroQnty == 0) {
-                                            $modelDetails->quantity = abs($item->quantity);
-                                        } else {
-                                            $modelDetails->quantity = abs($data->quantity);
-                                        }
-                                        $modelDetails->save(false);
-                                    } elseif ($data->quantity <= abs($item->quantity)) {
-                                        $modelDetails->quantity = $data->quantity;
-                                        $modelDetails->save(false);
-                                    } else {
-                                        $modelDetails->quantity = $data->quantity;
-                                        $modelDetails->save(false);
-                                    }
-                                } else {
-                                    $modelDetails->quantity = 0;
-                                    $modelDetails->save(false);
-                                }
-
-                                if ($model->type == 1) {
-                                    Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  - $modelDetails->quantity
-                                 WHERE category=:category
-                                 and branch = :branch
-                                 and type = :type")
-                                        ->bindValue(':category', $data->category)
-                                        ->bindValue(':branch', Yii::$app->user->identity->branch)
-                                        ->bindValue(':type', 1)
-                                        ->execute();
-                                } elseif ($model->type == 3) {
-                                    Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  - $modelDetails->quantity
-                                WHERE category=:category
-                                and branch = :branch
-                                and type = :$model->type")
-                                        ->bindValue(':category', $data->category)
-                                        ->bindValue(':branch', Yii::$app->user->identity->branch)
-                                        ->bindValue(':type', 3)
-                                        ->execute();
-                                }
-                            } else {
-                                $modelDetails->quantity = $data->quantity;
-                                $modelDetails->save(false);
-                            }
-                            $zeroQuantity = SalesDetails::find()->where(['salesId' => $id, 'quantity' => 0])->count();
-                            if ($zeroQuantity > 0) {
-                                Yii::$app->session->setFlash('error', Yii::t('app', "عفوا الفاتورة تحتوي اصناف قيمتها 0"));
-                            }
-                            $SalesDetailsTotal = SalesDetails::find()->where(['salesId' => $id])->sum('salePrice * quantity');
-                            if ($SalesDetailsTotal == 0) {
-                                Yii::$app->session->setFlash('error', Yii::t('app', "عفوا الفاتورة لاتحتوي على اصناف الرجاء الغاءها"));
-                            }
-                            //امكانية البيع مع اظهار رسالة تنبيه
-                            Yii::$app->session->setFlash('error', Yii::t('app', "عفوا هذا العميل تجاوز سقف الديون ! الرجاء المراجعة"));
-                            $salesTotal = SalesDetails::find()->where(['=', 'salesId', $id])->sum('salePrice * quantity');
-                            if ($salesTotal == 0) {
-                                $salesTotal = 0;
-                            }
-                            Yii::$app->db->createCommand("UPDATE  sales  SET  total =  $salesTotal WHERE id=:id")
-                                ->bindValue(':id', $id)->execute();
-                            $temp_invoice = TempInvoice::deleteAll(['created_by' => Yii::$app->user->identity->id, 'state' => 1]);
-                        }
-                        return $this->redirect(['print', 'id' => $id]);
-                    } else {
-                        Yii::$app->session->setFlash('error', Yii::t('app', "Sorry The Client Cross The Line About Debt"));
-                        return $this->redirect(['temp-invoice/create', 'id' => 1]);
-                    }
-                } else {
-                    $model->save(false);
-                    $id = $model->id;
-
-                    $temp_invoice = TempInvoice::find()->where([
-                        'created_by' => Yii::$app->user->identity->id,
-                        'state' => 1
-                    ])->all();
-
-                    foreach ($temp_invoice as $data) {
-                        $modelDetails = new salesDetails();
-                        $modelDetails->salesId = $id;
-                        $modelDetails->category =  $data->category;
-                        $modelDetails->waitQnty = $data->waitQnty;
-                        $modelDetails->costPrice = $data->costPrice;
-                        $modelDetails->salePrice = $data->salePrice;
-                        $modelDetails->box = $data->box;
-                        $modelDetails->expire = $data->expire;
-                        $modelDetails->type = $data->type;
-                        $modelDetails->original_price = $data->salePrice;
-                        $modelDetails->serial_number = $data->serial_number;
-                        $modelDetails->branch = $data->branch;
-                        if ($model->type != 4) {
-                            if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
-                                $branch = Yii::$app->user->identity->branch;
-                            } else {
-                                $branch = [1, 2, 3];
-                            }
-                            if ($company->zeroQnty == 0) {
-                                $zeroQnty = 'stocks.quantity <> 0';
-                            } else {
-                                $zeroQnty = 'stocks.quantity < 0 OR stocks.quantity > 0 Or stocks.quantity = 0';
-                            }
-
-                            $item = Stocks::find()
-                                ->select(['max(stocks.category) as id', 'sum(stocks.quantity) as quantity'])
-                                ->leftJoin('prices', 'stocks.category = prices.category')
-                                ->where(['stocks.category' => $data->category])
-                                ->andWhere($zeroQnty) //['<>', 'stocks.quantity', 0])
-                                ->andwhere(['in', 'stocks.type', $model->type])
-                                ->andWhere(['in', 'stocks.branch', $branch])
-                                ->one();
-                            //die('2' . ', ZeroQnty =' . $zeroQnty . ', Items =' . $item->quantity . ', DataQuantity = ' . $data->quantity);
-                            if ($item <> null) {
-                                if ($data->quantity > abs($item->quantity)) {
-                                    if ($company->zeroQnty == 0) {
-                                        $modelDetails->quantity = abs($item->quantity);
-                                    } else {
-                                        $modelDetails->quantity = abs($data->quantity);
-                                    }
-                                    $modelDetails->save(false);
-                                } elseif ($data->quantity <= abs($item->quantity)) {
-                                    $modelDetails->quantity = $data->quantity;
-                                    $modelDetails->save(false);
-                                } else {
-                                    $modelDetails->quantity = $data->quantity;
-                                    $modelDetails->save(false);
-                                }
-                            } else {
-                                $modelDetails->quantity = 0;
-                                $modelDetails->save(false);
-                            }
-                            if ($model->type == 1) {
-                                Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  - $modelDetails->quantity
-                             WHERE category=:category
-                             and branch = :branch
-                             and type = :type")
-                                    ->bindValue(':category', $data->category)
-                                    ->bindValue(':branch', Yii::$app->user->identity->branch)
-                                    ->bindValue(':type', 1)
-                                    ->execute();
-                            } elseif ($model->type == 3) {
-                                Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  - $modelDetails->quantity
-                            WHERE category=:category
-                            and branch = :branch
-                            and type = :type")
-                                    ->bindValue(':category', $data->category)
-                                    ->bindValue(':branch', Yii::$app->user->identity->branch)
-                                    ->bindValue(':type', 3)
-                                    ->execute();
-                            }
-                        } else {
-                            $modelDetails->quantity = $data->quantity;
-                            $modelDetails->save(false);
-                        }
-                        $zeroQuantity = SalesDetails::find()->where(['salesId' => $id, 'quantity' => 0])->count();
-                        if ($zeroQuantity > 0) {
-                            Yii::$app->session->setFlash('error', Yii::t('app', "عفوا الفاتورة تحتوي اصناف قيمتها 0"));
-                        }
-                        $SalesDetailsTotal = SalesDetails::find()->where(['salesId' => $id])->sum('salePrice * quantity');
-                        if ($SalesDetailsTotal == 0) {
-                            Yii::$app->session->setFlash('error', Yii::t('app', "عفوا الفاتورة لاتحتوي على اصناف الرجاء الغاءها"));
-                        }
-                        $salesTotal = SalesDetails::find()->where(['=', 'salesId', $id])->sum('salePrice * quantity');
-                        if ($salesTotal == 0) {
-                            $salesTotal = 0;
-                        }
-                        Yii::$app->db->createCommand("UPDATE  sales  SET  total =  $salesTotal WHERE id=:id")
-                            ->bindValue(':id', $id)->execute();
-                        $temp_invoice = TempInvoice::deleteAll(['created_by' => Yii::$app->user->identity->id, 'state' => 1]);
-                    }
-                    return $this->redirect(['print', 'id' => $id]);
-                }
-            } else {
-                $model->save(false);
-                $id = $model->id;
-
-                $temp_invoice = TempInvoice::find()->where([
-                    'created_by' => Yii::$app->user->identity->id,
-                    'state' => 1
-                ])->all();
-                foreach ($temp_invoice as $data) {
-                    $modelDetails = new salesDetails();
-                    $modelDetails->salesId = $id;
-                    $modelDetails->category =  $data->category;
-                    $modelDetails->waitQnty = $data->waitQnty;
-                    $modelDetails->costPrice = $data->costPrice;
-                    $modelDetails->salePrice = $data->salePrice;
-                    $modelDetails->box = $data->box;
-                    $modelDetails->expire = $data->expire;
-                    $modelDetails->type = $data->type;
-                    $modelDetails->original_price = $data->salePrice;
-                    $modelDetails->serial_number = $data->serial_number;
-                    $modelDetails->branch = $data->branch;
-                    if ($model->type != 4) {
-                        if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
-                            $branch = Yii::$app->user->identity->branch;
-                        } else {
-                            $branch = [1, 2, 3];
-                        }
-                        if ($company->zeroQnty == 0) {
-                            $zeroQnty = 'stocks.quantity <> 0';
-                        } else {
-                            $zeroQnty = 'stocks.quantity < 0 OR stocks.quantity > 0 Or stocks.quantity = 0';
-                        }
-                        $item = Stocks::find()
-                            ->select(['max(stocks.category) as id', 'sum(stocks.quantity) as quantity'])
-                            ->leftJoin('prices', 'stocks.category = prices.category')
-                            ->where(['stocks.category' => $data->category])
-                            ->andWhere($zeroQnty) //['<>', 'stocks.quantity', 0])
-                            ->andwhere(['in', 'stocks.type', $model->type])
-                            ->andWhere(['in', 'stocks.branch', $branch])
-                            ->one();
-                        //die('3' . ', ZeroQnty =' . $zeroQnty . ', Items =' . $item->quantity . ', DataQuantity = ' . $data->quantity);
-                        if ($item <> null) {
-                            if ($data->quantity > abs($item->quantity)) {
-                                if ($company->zeroQnty == 0) {
-                                    $modelDetails->quantity = abs($item->quantity);
-                                } else {
-                                    $modelDetails->quantity = abs($data->quantity);
-                                }
-                                $modelDetails->save(false);
-                            } elseif ($data->quantity <= abs($item->quantity)) {
-                                $modelDetails->quantity = $data->quantity;
-                                $modelDetails->save(false);
-                            } else {
-                                $modelDetails->quantity = $data->quantity;
-                                $modelDetails->save(false);
-                            }
-                        } else {
-                            $modelDetails->quantity = 0;
-                            $modelDetails->save(false);
-                        }
-                    }
-                    if ($model->type == 1) {
-                        Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  - $modelDetails->quantity
-                         WHERE category=:category
-                         and branch = :branch
-                         and type = :type")
-                            ->bindValue(':category', $data->category)
-                            ->bindValue(':branch', Yii::$app->user->identity->branch)
-                            ->bindValue(':type', 1)
-                            ->execute();
-                    } elseif ($model->type == 3) {
-                        Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  - $modelDetails->quantity
-                        WHERE category=:category
-                        and branch = :branch
-                        and type = :type")
-                            ->bindValue(':category', $data->category)
-                            ->bindValue(':branch', Yii::$app->user->identity->branch)
-                            ->bindValue(':type', 3)
-                            ->execute();
-                    }
-                }
-                $zeroQuantity = SalesDetails::find()->where(['salesId' => $id, 'quantity' => 0])->count();
-                if ($zeroQuantity > 0) {
-                    Yii::$app->session->setFlash('error', Yii::t('app', "عفوا الفاتورة تحتوي اصناف قيمتها 0"));
-                }
-                $SalesDetailsTotal = SalesDetails::find()->where(['salesId' => $id])->sum('salePrice * quantity');
-
-                if ($SalesDetailsTotal == 0) {
-                    Yii::$app->session->setFlash('error', Yii::t('app', "عفوا الفاتورة لاتحتوي على اصناف الرجاء الغاءها"));
-                }
-                $salesTotal = SalesDetails::find()->where(['=', 'salesId', $id])->sum('salePrice * quantity');
-                if ($salesTotal == 0) {
-                    $salesTotal = 0;
-                }
-                Yii::$app->db->createCommand("UPDATE sales SET total = $salesTotal WHERE id=:id")
-                    ->bindValue(':id', $id)->execute();
-
-                $temp_invoice = TempInvoice::deleteAll(['created_by' => Yii::$app->user->identity->id, 'state' => 1]);
-                return $this->redirect(['print', 'id' => $id]);
-            }
-        } elseif (Yii::$app->request->isAjax) {
-            $model->at = date('Y-m-d');
-            $model->clinet = 1;
-            $model->total = TempInvoice::find()->where(['created_by' => Yii::$app->user->identity->id, 'state' => 1])
-                ->sum('salePrice * quantity');
-            $model->paid = 0;
-            $model->disscount = 0;
-
-            return $this->renderAjax('_form', [
-                'model' => $model,
-            ]);
-        } else {
-            return $this->render('create', [
-                'model' => $model,
-            ]);
-        }
-    }
-
-    public function actionPrint($id)
-    {
-        $totalInvoice = SalesDetails::find()->where(['salesId' => $id])
-            //->andWhere(['=', 'branch', Yii::$app->user->identity->branch])
-            ->sum('salePrice * quantity');
+        $this->layout = 'invoice';
 
         $company = CompanyInfo::find()->one();
         $model = $this->findModel($id);
-        $providerSalesDetails = new ActiveDataProvider([
-            'query' => SalesDetails::find()
-                ->where(['=', 'salesId', $id]),
-            //->andWhere(['=', 'branch', Yii::$app->user->identity->branch]),
-            'sort' => [
-                'defaultOrder' => [
-                    'id' => SORT_DESC,
-                ]
-            ],
-            'pagination' => false,
-        ]);
+        $branch = (int) Yii::$app->user->identity->branch;
 
-        $balance = Dept::find()->where(['id' => $model->clinet])->sum('credt');
-        return $this->render('print', [
-            'model' => $this->findModel($id),
-            'providerSalesDetails' => $providerSalesDetails,
-            'company' => $company,
-            'balance' => $balance,
-            'totalInvoice' => $totalInvoice,
-        ]);
-    }
-
-    public function actionNoprice($id)
-    {
-        $company = CompanyInfo::find()->one();
         $providerSalesDetails = new ActiveDataProvider([
             'query' => SalesDetails::find()
                 ->select([
@@ -911,19 +598,19 @@ class SalesController extends Controller
                     'salesDetails.salesId',
                     'salesDetails.category',
                     'salesDetails.quantity',
-                    'salesDetails.costPrice',
-                    'salesDetails.salePrice',
                     'branches.name as branchName',
                     'Totalinventory.quantity as Qtotalinventory',
                     'category_reservation.quantity as reservation',
-                    '(SELECT quantity from Totalinventory where branch <> ' . Yii::$app->user->identity->branch . ' and type <> 3 and id = salesDetails.category) as otherQtotalinventory '
+                    '(SELECT SUM(quantity) from Totalinventory where branch <> ' . $branch . ' and type <> 3 and id = salesDetails.category) as otherQtotalinventory',
                 ])
-                ->leftJoin('Totalinventory', 'salesDetails.category = Totalinventory.id')
+                ->leftJoin(
+                    'Totalinventory',
+                    'salesDetails.category = Totalinventory.id AND Totalinventory.branch = :tb AND Totalinventory.type <> 3',
+                    [':tb' => $branch]
+                )
                 ->leftJoin('category_reservation', 'salesDetails.category = category_reservation.category')
                 ->leftJoin('branches', 'branches.id = salesDetails.branch')
-                ->where(['=', 'salesDetails.salesId', $id])
-                ->andWhere(['=', 'Totalinventory.branch', Yii::$app->user->identity->branch])
-                ->andWhere(['<>', 'Totalinventory.type', 3]),
+                ->where(['=', 'salesDetails.salesId', $model->id]),
             'sort' => [
                 'defaultOrder' => [
                     'id' => SORT_DESC,
@@ -931,29 +618,9 @@ class SalesController extends Controller
             ],
             'pagination' => false,
         ]);
-        // =======================
+
         return $this->render('printBill', [
-            'model' => $this->findModel($id),
-            'providerSalesDetails' => $providerSalesDetails,
-            'company' => $company,
-        ]);
-    }
-
-    public function actionPrintNoPrice($id)
-    {
-        $company = CompanyInfo::find()->one();
-        $providerSalesDetails = new ActiveDataProvider([
-            'query' => SalesDetails::find()->where(['=', 'salesId', $id]),
-            'sort' => [
-                'defaultOrder' => [
-                    'id' => SORT_DESC,
-                ],
-            ],
-            'pagination' => false,
-        ]);
-
-        return $this->render('noPrice', [
-            'model' => $this->findModel($id),
+            'model' => $model,
             'providerSalesDetails' => $providerSalesDetails,
             'company' => $company,
         ]);
@@ -961,14 +628,14 @@ class SalesController extends Controller
 
     public function actionPrintWithPlace($id)
     {
+        $this->layout = 'invoice';
+
+        $model = $this->findModel($id);
         $totalInvoice = SalesDetails::find()
-            ->where(['salesId' => $id])
-            ->leftjoin('branches', 'branches.id = salesDetails.branch')
-            //->andWhere(['!=', 'branch', Yii::$app->user->identity->branch])
+            ->where(['salesId' => $model->id])
             ->sum('salePrice * quantity');
 
         $company = CompanyInfo::find()->one();
-        $model = $this->findModel($id);
         $providerSalesDetails = new ActiveDataProvider([
             'query' => SalesDetails::find()
                 ->select([
@@ -976,13 +643,11 @@ class SalesController extends Controller
                     'salesDetails.salesId',
                     'salesDetails.category',
                     'salesDetails.quantity',
-                    'salesDetails.costPrice',
                     'salesDetails.salePrice',
                     'branches.name as branchName',
                 ])
                 ->leftJoin('branches', 'branches.id = salesDetails.branch')
-                ->where(['=', 'salesId', $id]),
-            //->andWhere(['!=', 'branch', Yii::$app->user->identity->branch]),
+                ->where(['=', 'salesDetails.salesId', $model->id]),
             'sort' => [
                 'defaultOrder' => [
                     'id' => SORT_DESC,
@@ -993,38 +658,10 @@ class SalesController extends Controller
 
         $balance = Dept::find()->where(['id' => $model->clinet])->sum('credt');
         return $this->render('print_with_place', [
-            'model' => $this->findModel($id),
+            'model' => $model,
             'providerSalesDetails' => $providerSalesDetails,
             'company' => $company,
             'balance' => $balance,
-            'totalInvoice' => $totalInvoice,
-        ]);
-    }
-
-    public function actionPrintForDriver($id)
-    {
-        $totalInvoice = SalesDetails::find()->where(['salesId' => $id])
-            //->andWhere(['=', 'branch', Yii::$app->user->identity->branch])
-            ->sum('salePrice * quantity');
-
-        $company = CompanyInfo::find()->one();
-        $model = $this->findModel($id);
-        $providerSalesDetails = new ActiveDataProvider([
-            'query' => SalesDetails::find()
-                ->where(['=', 'salesId', $id]),
-            //->andWhere(['=', 'branch', Yii::$app->user->identity->branch]),
-            'sort' => [
-                'defaultOrder' => [
-                    'id' => SORT_DESC,
-                ]
-            ],
-            'pagination' => false,
-        ]);
-        // $this->layout = false;
-        return $this->render('print_for_driver', [
-            'model' => $this->findModel($id),
-            'providerSalesDetails' => $providerSalesDetails,
-            'company' => $company,
             'totalInvoice' => $totalInvoice,
         ]);
     }
@@ -1035,44 +672,28 @@ class SalesController extends Controller
 
         if ($model->load(Yii::$app->request->post())) {
 
-            if ($model->min_date == null) {
-                echo
-                '<script type="text/javascript"> alert(\'الرجاء تحديد تاريخ الحركة من\');
-                        window.location.href="?r=sales%2Fftran";
-                        </script>';
-            }
-            if ($model->max_date == null) {
-                echo
-                '<script type="text/javascript"> alert(\'الرجاء تحديد تاريخ الحركة إلى\');
-                        window.location.href="?r=sales%2Fftran";
-                        </script>';
-            }
-            if (Yii::$app->user->can('profit')) {
-
-                $sql = " SELECT salesDetails.category, category.name, salesDetails.costPrice, salesDetails.salePrice,  
-            (salesDetails.salePrice - salesDetails.costPrice) profit, salesDetails.quantity
-            FROM  sales, salesDetails, category 
-            WHERE sales.id = salesDetails.salesId and salesDetails.category=category.id
-            and sales.type = 1
-            and sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "'
-            order by salesDetails.category ";
-            } else {
-                $sql = " SELECT salesDetails.category, category.name, salesDetails.costPrice, salesDetails.salePrice,  
-                (salesDetails.salePrice - salesDetails.costPrice) profit, salesDetails.quantity
-                FROM  sales, salesDetails, category 
-                WHERE sales.id = salesDetails.salesId and salesDetails.category=category.id
-                and sales.type = 1
-                and sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "'
-                and sales.branch =" . Yii::$app->user->identity->branch . " 
-                
-                order by salesDetails.category ";
+            if ($model->min_date == null || $model->max_date == null) {
+                Yii::$app->session->setFlash('error', 'الرجاء تحديد تاريخ الحركة من وإلى');
+                return $this->redirect(['profit']);
             }
 
-            $connection = Yii::$app->db;
-            $data = $connection->createCommand($sql);
-            $info = $data->queryAll();
-            if ($info == null) {
-                die("Sorry no thing to preview");
+            $sql = "SELECT salesDetails.category, category.name, salesDetails.costPrice, salesDetails.salePrice,
+                    (salesDetails.salePrice - salesDetails.costPrice) profit, salesDetails.quantity
+                    FROM sales, salesDetails, category
+                    WHERE sales.id = salesDetails.salesId and salesDetails.category = category.id
+                    and sales.type = 1
+                    and sales.at between :min and :max";
+            $params = [':min' => $model->min_date, ':max' => $model->max_date];
+            if (!Yii::$app->user->can('profit')) {
+                $sql .= " and sales.branch = :b";
+                $params[':b'] = (int) Yii::$app->user->identity->branch;
+            }
+            $sql .= " order by salesDetails.category";
+
+            $info = Yii::$app->db->createCommand($sql, $params)->queryAll();
+            if (!$info) {
+                Yii::$app->session->setFlash('error', 'عفوا لا يوجد بيانات للعرض');
+                return $this->redirect(['profit']);
             }
 
             return $this->render('profitRep', [
@@ -1101,87 +722,54 @@ class SalesController extends Controller
 
         if ($model->load(Yii::$app->request->post())) {
 
-            if ($model->min_date == null) {
-                echo
-                '<script type="text/javascript"> alert(\'الرجاء تحديد تاريخ الحركة من\');
-                        window.location.href="?r=sales%2Fftran";
-                        </script>';
+            if ($model->min_date == null || $model->max_date == null) {
+                Yii::$app->session->setFlash('error', 'الرجاء تحديد تاريخ الحركة من وإلى');
+                return $this->redirect(['net-profit']);
             }
-            if ($model->max_date == null) {
-                echo
-                '<script type="text/javascript"> alert(\'الرجاء تحديد تاريخ الحركة إلى\');
-                        window.location.href="?r=sales%2Fftran";
-                        </script>';
-            }
-            if (Yii::$app->user->can('profit')) {
 
-                $sql = "SELECT     'ارباح المبيعات' AS DESCRIBTION, sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity) AS total
-            , sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity) AS NET
-            FROM  sales, salesDetails, category 
-            WHERE sales.id = salesDetails.salesId and salesDetails.category=category.id
-            and sales.type = 1
-            and sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "'
-     
-            UNION
-            SELECT     'مسترجع المبيعات', sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity),
-            sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity) *-1
-            FROM  sales, salesDetails, category 
-            WHERE sales.id = salesDetails.salesId and salesDetails.category=category.id
-            and sales.type = 2
-            and sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "'
-    
-            UNION
-            SELECT     'خصومات المبيعات', sum(sales.disscount), sum(sales.disscount) *-1
-            FROM  sales
-            WHERE sales.type = 1
-            and sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "'
-         
-            UNION
-            SELECT     'اجمالي المصروفات', COALESCE(sum(expenses.value),'0'), COALESCE(sum(expenses.value),'0') *-1
-            FROM  expenses
-            where expenses.at  between '" . $model->min_date . "' and '" . $model->max_date . "'
- 
-            UNION
-            SELECT     'اجمالي المرتبات', COALESCE(sum(emp_salary.value),'0'), COALESCE(sum(emp_salary.value),'0') *-1
-            FROM  emp_salary
-            where emp_salary.at  between '" . $model->min_date . "' and '" . $model->max_date . "'";
-            } else {
-                $sql = "SELECT     'ارباح المبيعات' AS DESCRIBTION, sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity) AS total
-            , sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity) AS NET
-            FROM  sales, salesDetails, category 
-            WHERE sales.id = salesDetails.salesId and salesDetails.category=category.id
-            and sales.type = 1
-            and sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "'
-            and sales.branch = '" . Yii::$app->user->identity->branch . "' 
-            UNION
-            SELECT     'مسترجع المبيعات', sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity),
-            sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity) *-1
-            FROM  sales, salesDetails, category 
-            WHERE sales.id = salesDetails.salesId and salesDetails.category=category.id
-            and sales.type = 2
-            and sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "'
-            and sales.branch = '" . Yii::$app->user->identity->branch . "'
-            UNION
-            SELECT     'خصومات المبيعات', sum(sales.disscount), sum(sales.disscount) *-1
-            FROM  sales
-            WHERE sales.type = 1
-            and sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "'
-            and sales.branch = '" . Yii::$app->user->identity->branch . "'
-            UNION
-            SELECT     'اجمالي المصروفات', COALESCE(sum(expenses.value),'0'), COALESCE(sum(expenses.value),'0') *-1
-            FROM  expenses
-            where expenses.at  between '" . $model->min_date . "' and '" . $model->max_date . "'
-            and expenses.branch = '" . Yii::$app->user->identity->branch . "'
-            UNION
-            SELECT     'اجمالي المرتبات', COALESCE(sum(emp_salary.value),'0'), COALESCE(sum(emp_salary.value),'0') *-1
-            FROM  emp_salary
-            where emp_salary.at  between '" . $model->min_date . "' and '" . $model->max_date . "'";
+            $isManager = Yii::$app->user->can('profit');
+            $br = $isManager ? '' : ' and %s.branch = {BR}';
+
+            // لكل جزء في UNION أسماء معاملات خاصة به
+            $parts = [
+                "SELECT 'ارباح المبيعات' AS DESCRIBTION, sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity) AS total,
+                 sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity) AS NET
+                 FROM sales, salesDetails, category
+                 WHERE sales.id = salesDetails.salesId and salesDetails.category = category.id and sales.type = 1
+                 and sales.at between {MIN} and {MAX}" . sprintf($br, 'sales'),
+
+                "SELECT 'مسترجع المبيعات', sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity),
+                 sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity) * -1
+                 FROM sales, salesDetails, category
+                 WHERE sales.id = salesDetails.salesId and salesDetails.category = category.id and sales.type = 2
+                 and sales.at between {MIN} and {MAX}" . sprintf($br, 'sales'),
+
+                "SELECT 'خصومات المبيعات', sum(sales.disscount), sum(sales.disscount) * -1
+                 FROM sales WHERE sales.type = 1 and sales.at between {MIN} and {MAX}" . sprintf($br, 'sales'),
+
+                "SELECT 'اجمالي المصروفات', COALESCE(sum(expenses.value),'0'), COALESCE(sum(expenses.value),'0') * -1
+                 FROM expenses WHERE expenses.at between {MIN} and {MAX}" . sprintf($br, 'expenses'),
+
+                "SELECT 'اجمالي المرتبات', COALESCE(sum(emp_salary.value),'0'), COALESCE(sum(emp_salary.value),'0') * -1
+                 FROM emp_salary WHERE emp_salary.at between {MIN} and {MAX}",
+            ];
+
+            $sqlParts = [];
+            $params = [];
+            foreach ($parts as $i => $part) {
+                $sqlPart = str_replace(['{MIN}', '{MAX}', '{BR}'], [":min$i", ":max$i", ":br$i"], $part);
+                $sqlParts[] = $sqlPart;
+                $params[":min$i"] = $model->min_date;
+                $params[":max$i"] = $model->max_date;
+                if (strpos($sqlPart, ":br$i") !== false) {
+                    $params[":br$i"] = (int) Yii::$app->user->identity->branch;
+                }
             }
-            $connection = Yii::$app->db;
-            $data = $connection->createCommand($sql);
-            $info = $data->queryAll();
-            if ($info == null) {
-                die("Sorry no thing to preview");
+
+            $info = Yii::$app->db->createCommand(implode(' UNION ', $sqlParts), $params)->queryAll();
+            if (!$info) {
+                Yii::$app->session->setFlash('error', 'عفوا لا يوجد بيانات للعرض');
+                return $this->redirect(['net-profit']);
             }
 
             return $this->render('netProfitRep', [
@@ -1203,302 +791,68 @@ class SalesController extends Controller
         ]);
     }
 
-    public function actionRemove($id)
+    public function actionSummationSales()
     {
-        $details =  salesDetails::find()->where(['id' => $id])->one();
-        $salesId = $details["salesId"];
-        $sale = Sales::find()->where(['id' => $salesId])->one();
+        $model = new Sales();
 
-        SalesDetails::deleteAll(['id' => $id]);
-        $sale->total =  SalesDetails::find()->where(['salesId' => $salesId])->sum('salePrice * quantity');
-        if ($sale->total != null) {
-            $sale->save(false);
-            return $this->redirect(['update', 'id' => $salesId]);
-        } else {
-            Sales::deleteAll(['id' => $salesId]);
-            return $this->redirect(['sales/index']);
-        }
-    }
+        if ($model->load(Yii::$app->request->post())) {
 
-    public function actionItemlist($q = null, $id = null)
-    {
-        $company = CompanyInfo::find()->one();
-        if ($company->criteriaـvalue != 0) {
-            $criteriaـvalue = $company->criteriaـvalue;
-        } else {
-            $criteriaـvalue = 1;
-        }
-
-        if ($company->zeroQnty == 0) {
-            $zeroQnty = 'stocks.quantity <> 0';
-        } else {
-            $zeroQnty = 'stocks.quantity < 0 OR stocks.quantity > 0 Or stocks.quantity = 0';
-        }
-
-        if ($company->rate != 0) {
-            $rate = ($company->rate / 100);
-            $maxPrice = 'CASE
-            WHEN maxPrice >= ' . $criteriaـvalue . ' THEN round(maxPrice * "' . $rate . '" + maxPrice)
-            ELSE maxPrice
-            END  as maxPrice';
-
-            $minPrice = 'CASE
-            WHEN maxPrice >= ' . $criteriaـvalue . ' THEN round(minPrice * "' . $rate . '" + minPrice)
-            ELSE minPrice
-            END  as minPrice';
-        } else {
-            $maxPrice = 'maxPrice';
-            $minPrice = 'minPrice';
-        }
-
-        if (Yii::$app->user->Identity->seeOtherBranchQ == 0) {
-            $whereBranch = 'branch=' . Yii::$app->user->Identity->branch;
-        } else {
-            $whereBranch = 'branch in (1,2,3,4,5,6,7,8,9)';
-        }
-        Yii::$app->response->format = Yii\web\Response::FORMAT_JSON;
-        $out = ['results' => ['id' => '', 'text' => '']];
-        if (!is_null($q)) {
-            $q = str_replace(' ', '%', $q);
-            $query = new Query;
-            if (Yii::$app->user->identity->client != null) {
-                $secript = [
-                    'category.id',
-                    'category.name AS text',
-                    'company AS company',
-                    'stocks.quantity as quantity',
-                    $maxPrice,
-                    'serialNo AS serialNo',
-                    'place',
-                    'commCode',
-                    'CASE
-                        WHEN `type` =1
-                        THEN "متوفر"
-                        WHEN `type` =2
-                        THEN "متوفر"
-                        ELSE "قريبا" END as type',
-                    'branches.name AS BRNAME',
-                    'branches.id AS branchId'
-                ];
-            } else {
-                if (Yii::$app->user->identity->seeCostPrice == 1) {
-                    $secript = [
-                        'category.id',
-                        'category.name AS text',
-                        'company AS company',
-                        'stocks.quantity as quantity',
-                        $maxPrice,
-                        'costPrice as costPrice',
-                        'serialNo AS serialNo',
-                        $minPrice,
-                        'place',
-                        'commCode',
-                        'CASE
-                            WHEN `type` =1
-                            THEN "متوفر"
-                            WHEN `type` =2
-                            THEN "متوفر"
-                            ELSE "قريبا" END as type',
-                        'branches.name AS BRNAME',
-                        'branches.id AS branchId'
-                    ];
-                } else {
-                    $secript = [
-                        'category.id',
-                        'category.name AS text',
-                        'company AS company',
-                        'stocks.quantity as quantity',
-                        $maxPrice,
-                        'serialNo AS serialNo',
-                        $minPrice,
-                        'place',
-                        'commCode',
-                        'CASE
-                             WHEN `type` =1
-                             THEN "متوفر"
-                             WHEN `type` =2
-                             THEN "متوفر"
-                             ELSE "قريبا" END as type',
-                        'branches.name AS BRNAME',
-                        'branches.id AS branchId'
-                    ];
-                }
+            if ($model->user_insert == null) {
+                Yii::$app->session->setFlash('error', 'الرجاء تحديد اسم الموظف');
+                return $this->redirect(['summation-sales']);
             }
-            $query->select($secript)
-                ->from('stocks')
-                ->leftJoin('category', 'stocks.category = category.id')
-                ->leftJoin('prices', 'prices.category = category.id')
-                ->leftJoin('branches', 'branches.id = stocks.branch')
-                ->where('category.name like' . "'%" . $q . "%'")
-                ->orWhere(['like', "REPLACE(serialNo, '-', '')", str_replace('-', '', $q)])
-                ->orWhere(['like', 'commCode', $q])
-                ->orWhere((['like', 'category.id', $q]))
-                ->orWhere((['like', 'place', $q]))
-                ->orWhere((['like', 'company', $q]))
-                ->andWhere($whereBranch)
-                ->andWhere($zeroQnty)
-                ->limit(60)
-                ->orderBy('category.id', 'asc');
-            $command = $query->createCommand();
-            $data = $command->queryAll();
-            $out['results'] = array_values($data);
-        } elseif ($id > 0) {
-            $out['results'] = [
-                'id' => $id,
-                'text' => TotalInventory::find($id)->name,
-                'company' => TotalInventory::find($id)->company,
-                'quantity' => TotalInventory::find($id)->quantity,
-                'maxPrice' => TotalInventory::find($id)->maxPrice,
-                'minPrice' => TotalInventory::find($id)->minPrice,
-                'serialNo' => TotalInventory::find($id)->serialNo,
-                'type' => TotalInventory::find($id)->type,
-                'commCode' => TotalInventory::find($id)->commCode
+            if ($model->min_date == null || $model->max_date == null) {
+                Yii::$app->session->setFlash('error', 'الرجاء تحديد تاريخ الحركة من وإلى');
+                return $this->redirect(['summation-sales']);
+            }
+
+            $sql = "SELECT 'ارباح المبيعات' AS DESCRIBTION, ifNull(sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity),0) AS total,
+                    ifNull(sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity),0) AS NET
+                    FROM sales, salesDetails
+                    WHERE sales.id = salesDetails.salesId and sales.type = 1
+                    and sales.currancy = :cur1 and sales.user_insert = :u1 and sales.at between :min1 and :max1
+                    UNION
+                    SELECT 'مسترجع المبيعات', ifNull(sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity),0),
+                    ifNull(sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity) * -1,0)
+                    FROM sales, salesDetails
+                    WHERE sales.id = salesDetails.salesId and sales.type = 2
+                    and sales.currancy = :cur2 and sales.user_insert = :u2 and sales.at between :min2 and :max2";
+            $params = [
+                ':cur1' => $model->currancy, ':u1' => (int) $model->user_insert, ':min1' => $model->min_date, ':max1' => $model->max_date,
+                ':cur2' => $model->currancy, ':u2' => (int) $model->user_insert, ':min2' => $model->min_date, ':max2' => $model->max_date,
             ];
-        }
-        return $out;
-    }
 
-    public function actionBackCreate($client = null)
-    {
-        $model = new Sales();
-        $model->payWay = 1;
-        if ($model->load(Yii::$app->request->post())) {
-
-            $model->total = TempBackSales::find()->where(['created_by' => Yii::$app->user->identity->id, 'state' => 1])
-                ->sum('salePrice * quantity');
-            $model->type = 2;
-            $model->branch = Yii::$app->user->identity->branch;
-            $model->billId = Sales::find()->where(['=', 'type', $model->type])->max('billId') + 1;
-            $model->created_at = date('Y-m-d H:i:s');
-            $model->user_insert = Yii::$app->user->id;
-            $model->disscount = 0;
-            $model->paid = 0;
-            $created_by = Yii::$app->user->identity->id;
-            $model->save();
-            $id = $model->id;
-
-            $temp_invoice = new TempBackSales();
-            $temp_invoice = TempBackSales::find()->where([
-                'created_by' => Yii::$app->user->identity->id,
-                'state' => 1
-            ])->all();
-            foreach ($temp_invoice as $data) {
-                $modelDetails = new salesDetails();
-
-                $modelDetails->salesId = $id;
-                $modelDetails->category =  $data->category;
-                $modelDetails->quantity = $data->quantity;
-                $modelDetails->costPrice = $data->costPrice;
-                $modelDetails->salePrice = $data->salePrice;
-                $modelDetails->box = $data->box;
-                $modelDetails->expire = $data->expire;
-                $modelDetails->original_price = $data->salePrice;
-                $modelDetails->serial_number = $data->serial_number;
-                $modelDetails->save(false);
-                if ($model->type == 2) {
-                    Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + $data->quantity 
-                    WHERE category=:category
-                    and branch = :branch
-                    and type = :type")
-                        ->bindValue(':category', $data->category)
-                        ->bindValue(':branch', Yii::$app->user->identity->branch)
-                        ->bindValue(':type', 1)
-                        ->execute();
-                }
-            }
-            $temp_invoice = TempBackSales::deleteAll([
-                'created_by' => Yii::$app->user->identity->id,
-                'state' => 1
-            ]);
-
-            return $this->redirect(['print', 'id' => $id]);
-        } elseif (Yii::$app->request->isAjax) {
-            $model->at = date('Y-m-d');
-            if ($client == null) {
-                $model->clinet = 1;
-            } else {
-                $model->clinet = $client;
-            }
-            $model->total = TempBackSales::find()->where(['created_by' => Yii::$app->user->identity->id, 'state' => 1])
-                ->sum('salePrice * quantity');
-            $model->paid = 0;
-            $model->disscount = 0;
-
-            return $this->renderAjax('back', [
-                'model' => $model,
-            ]);
-        } else {
-
-            return $this->render('create', [
-                'model' => $model,
-            ]);
-        }
-    }
-
-    public function actionSaveAsNew($oldId)
-    {
-        $model = new Sales();
-        $model->payWay = 1;
-        if ($model->load(Yii::$app->request->post())) {
-
-            $model->total = SalesDetails::find()->where(['salesId' => $oldId])->sum('salePrice * quantity');
-            $model->branch = Yii::$app->user->identity->branch;
-            $model->billId = Sales::find()->where(['=', 'type', $model->type])->max('billId') + 1;
-            $model->created_at = date('Y-m-d H:i:s');
-            $model->user_insert = Yii::$app->user->id;
-            $created_by = Yii::$app->user->identity->id;
-            $model->save();
-
-            $id = $model->id;
-
-            $salesDetails = new SalesDetails();
-            $salesDetails = SalesDetails::find()->where(['salesId' => $oldId])->all();
-            foreach ($salesDetails as $data) {
-                $modelDetails = new salesDetails();
-
-                $modelDetails->salesId = $id;
-                $modelDetails->category =  $data->category;
-                $modelDetails->quantity = $data->quantity;
-                $modelDetails->costPrice = $data->costPrice;
-                $modelDetails->salePrice = $data->salePrice;
-                $modelDetails->box = $data->box;
-                $modelDetails->expire = $data->expire;
-                $modelDetails->type = $data->type;
-                $modelDetails->original_price = $data->salePrice;
-                $modelDetails->serial_number = $data->serial_number;
-                $modelDetails->save(false);
-                //Yii::$app->db->createCommand("UPDATE `stocks` SET `quantity`= `quantity` - '$data->quantity' WHERE `category`='$data->category'")->execute();
-
+            $info = Yii::$app->db->createCommand($sql, $params)->queryAll();
+            if (!$info) {
+                Yii::$app->session->setFlash('error', 'عفوا لا يوجد بيانات للعرض');
+                return $this->redirect(['summation-sales']);
             }
 
-            return $this->redirect(['print', 'id' => $id]);
-        } elseif (Yii::$app->request->isAjax) {
-            $model->at = date('Y-m-d');
-            $model->clinet = 1;
-            $model->total = SalesDetails::find()->where(['salesId' => $oldId])
-                ->sum('salePrice * quantity');
-            $model->paid = 0;
-            $model->disscount = 0;
-
-            return $this->renderAjax('_form', [
+            return $this->render('summation', [
+                'models' => $info,
                 'model' => $model,
-            ]);
-        } else {
-
-            return $this->render('create', [
-                'model' => $model,
+                'min_date' => $model->min_date,
+                'max_date' =>  $model->max_date,
+                'coun' => 1,
+                'count' => 0,
+                'total' => 0,
+                'disscount' => 0,
             ]);
         }
+
+        return $this->render('_summation', [
+            'model' => $model,
+        ]);
     }
 
     public function actionPdf($id)
     {
+        $model = $this->findModel($id);
 
-        $totalInvoice = SalesDetails::find()->where(['salesId' => $id])
+        $totalInvoice = SalesDetails::find()->where(['salesId' => $model->id])
             ->sum('salePrice * quantity');
 
         $company = CompanyInfo::find()->one();
-        $model = $this->findModel($id);
         $providerSalesDetails = new Yii\data\ArrayDataProvider([
             'allModels' => $model->salesDetails,
             'pagination' => false,
@@ -1506,30 +860,43 @@ class SalesController extends Controller
 
         $balance = Dept::find()->where(['id' => $model->clinet])->sum('credt');
 
-        if ($model->c->email  == '') {
+        $email = $model->c ? trim((string) $model->c->email) : '';
+        if ($email === '') {
             Yii::$app->session->setFlash('error', Yii::t('app', "Sorry This Client Has Not Email"));
             return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
         }
 
-        $mpdf = new mPDF();
-        $mpdf->WriteHTML($this->render('print', [
-            'model' => $this->findModel($id),
-            'providerSalesDetails' => $providerSalesDetails,
-            'company' => $company,
-            'balance' => $balance,
-            'totalInvoice' => $totalInvoice,
-        ]));
+        // الملف المؤقت خارج المجلد العام (runtime) ويُحذف بعد الإرسال
+        $dir = Yii::getAlias('@runtime/invoices');
+        FileHelper::createDirectory($dir);
+        $file = $dir . DIRECTORY_SEPARATOR . 'invoice-' . $model->id . '-' . Yii::$app->security->generateRandomString(8) . '.pdf';
 
-        $path = $mpdf->Output('img/upload/' . $model->id . '.pdf', 'F');
-        $send = Yii::$app->mailer->compose()
-            ->setFrom('algmatyali@gmail.com')
-            ->setTo($model->c->email)
-            ->setSubject('فاتورة مبيعات ')
-            ->setTextBody('Plain text content. YII2 Application')
-            ->setHtmlBody('<b>السلام عليكم ورحمة الله وبركاته.</b><br>
-        السيـد: ' . ' ' . $model->c->name . '<br>' . ' أرفق لك مع رسالتي هذه نسخة من فاتورة رقم ' . ' ' . $model->billId)
-            ->attach(Yii::getAlias('@webroot/img/upload/') . $model->id . '.pdf')
-            ->send();
+        try {
+            $mpdf = new Mpdf();
+            $mpdf->WriteHTML($this->render('print', [
+                'model' => $model,
+                'providerSalesDetails' => $providerSalesDetails,
+                'company' => $company,
+                'balance' => $balance,
+                'totalInvoice' => $totalInvoice,
+            ]));
+            $mpdf->Output($file, 'F');
+
+            $send = Yii::$app->mailer->compose()
+                ->setFrom('algmatyali@gmail.com')
+                ->setTo($email)
+                ->setSubject('فاتورة مبيعات ')
+                ->setTextBody('Plain text content. YII2 Application')
+                ->setHtmlBody('<b>السلام عليكم ورحمة الله وبركاته.</b><br>
+        السيـد: ' . ' ' . Html::encode($model->c->name) . '<br>' . ' أرفق لك مع رسالتي هذه نسخة من فاتورة رقم ' . ' ' . Html::encode($model->billId))
+                ->attach($file)
+                ->send();
+        } finally {
+            if (is_file($file)) {
+                @unlink($file);
+            }
+        }
+
         if ($send) {
             Yii::$app->getSession()->setFlash('success', Yii::t('app', 'Successfully Sent The Invoice To Customer'));
         }
@@ -1538,337 +905,93 @@ class SalesController extends Controller
 
     public function actionDeserving()
     {
-        if (Yii::$app->user->identity->client == NULL) {
+        $client = Yii::$app->user->identity->client;
+
+        if ($client == NULL) {
             $sql = " SELECT max(sales.billId) as billId, max(sales.at) as at, max(sales.total) total
             , max(sales.disscount) as disscount, max(sales.paid) as paid, max(sales.deserving) as deserving
             , max(client.name) as clientName, sum(dept.credt) as credt, max(sales.id) as id
-            , max(sales.clinet) as client, max(client.post_paid) as post_paid FROM `sales` 
-            LEFT JOIN `client` ON client.id = sales.clinet 
-            LEFT JOIN `dept` ON client.id = dept.id 
-            WHERE sales.deserving - CURRENT_DATE() <= 4 
+            , max(sales.clinet) as client, max(client.post_paid) as post_paid FROM `sales`
+            LEFT JOIN `client` ON client.id = sales.clinet
+            LEFT JOIN `dept` ON client.id = dept.id
+            WHERE sales.deserving - CURRENT_DATE() <= 4
             GROUP BY `sales`.`id`, `sales`.`deserving`";
         } else {
+            // أرقام العملاء المسموحة تُحوَّل لأعداد صحيحة قبل دخولها في النص
+            $ids = array_filter(array_map('intval', explode(',', (string) $client)));
+            $in = $ids ? implode(',', $ids) : '0';
             $sql = " SELECT max(sales.billId) as billId, max(sales.at) as at, max(sales.total) total
             , max(sales.disscount) as disscount, max(sales.paid) as paid, max(sales.deserving) as deserving
             , max(client.name) as clientName, sum(dept.credt) as credt, max(sales.id) as id
-            , max(sales.clinet) as client FROM `sales` 
-            LEFT JOIN `client` ON client.id = sales.clinet 
-            LEFT JOIN `dept` ON client.id = dept.id 
-            WHERE sales.deserving - CURRENT_DATE() <= 4 and sales.clinet in(" . Yii::$app->user->identity->client . ")
+            , max(sales.clinet) as client FROM `sales`
+            LEFT JOIN `client` ON client.id = sales.clinet
+            LEFT JOIN `dept` ON client.id = dept.id
+            WHERE sales.deserving - CURRENT_DATE() <= 4 and sales.clinet in(" . $in . ")
             GROUP BY `sales`.`id`, `sales`.`deserving`";
         }
 
+        $info = Yii::$app->db->createCommand($sql)->queryAll();
 
-        $connection = Yii::$app->db;
-        $data = $connection->createCommand($sql);
-        $info = $data->queryAll();
+        $this->layout = 'invoice';
         return $this->render('deserving', [
             'models' => $info,
             'count' => 0,
         ]);
     }
 
-    public function actionDone($id)
-    {
-        Sales::updateAll(['deserving' => null,], ['=', 'id', $id]);
-
-        return $this->redirect(['deserving']);
-    }
-
-    public function actionTransferToTempInvoice($id)
-    {
-        $Details = SalesDetails::find()->where(['id' => $id])->one();
-        $salesId = $Details->salesId;
-        $temp_invoice = new TempInvoice();
-        $salesDetails = SalesDetails::find()->where(['id' => $id])->all();
-        $sale = Sales::find()->where(['id' => $Details->salesId])->one();
-
-        foreach ($salesDetails as $data) {
-            $modelTempInvoice = new TempInvoice();
-            $modelTempInvoice->category =  $data->category;
-            $modelTempInvoice->quantity = $data->quantity;
-            $modelTempInvoice->costPrice = $data->costPrice;
-            $modelTempInvoice->salePrice = $data->salePrice;
-            $modelTempInvoice->box = $data->box;
-            $modelTempInvoice->expire = $data->expire;
-            $modelTempInvoice->type = $data->type;
-            $modelTempInvoice->state = 1;
-            $modelTempInvoice->save(false);
-            SalesDetails::deleteAll(['id' => $id]);
-            if ($sale->type == 1) {
-                Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + $data->quantity 
-                WHERE category=:category
-                and branch = :branch
-                and type = :type")
-                    ->bindValue(':category', $data->category)
-                    ->bindValue(':branch', Yii::$app->user->identity->branch)
-                    ->bindValue(':type', 1)
-                    ->execute();
-            } elseif ($sale->type == 3) {
-                Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + $data->quantity 
-                WHERE category=:category
-                and branch = :branch
-                and type = :type")
-                    ->bindValue(':category', $data->category)
-                    ->bindValue(':branch', Yii::$app->user->identity->branch)
-                    ->bindValue(':type', 3)
-                    ->execute();
-            }
-            $sale = Sales::find()->where(['id' => $Details->salesId])->one();
-            $sale->total =  SalesDetails::find()->where(['salesId' => $Details->salesId])->sum('salePrice * quantity');
-
-            if ($sale->total == null) {
-                Sales::deleteAll(['id' => $salesId]);
-                return $this->redirect(['temp-invoice/create']);
-            } else {
-                $sale->save(false);
-                return $this->redirect(['update', 'id' => $salesId]);
-            }
-        }
-
-        return $this->redirect(['update', 'id' => $salesId]);
-    }
-
-    public function actionItemlistid($q = null, $id = null)
-    {
-        $company = CompanyInfo::find()->one();
-        if ($company->criteriaـvalue != 0) {
-            $criteriaـvalue = $company->criteriaـvalue;
-        } else {
-            $criteriaـvalue = 1;
-        }
-
-        if (Yii::$app->user->Identity->seeOtherBranchQ == 0) {
-            $whereBranch = 'branch=' . Yii::$app->user->Identity->branch;
-        } else {
-            $whereBranch = 'branch in (1,2,3,4,5,6,7,8,9)';
-        }
-
-        if ($company->rate != 0) {
-            $rate = ($company->rate / 100);
-            $maxPrice = 'CASE
-            WHEN maxPrice >= ' . $criteriaـvalue . ' THEN round(maxPrice * "' . $rate . '" + maxPrice)
-            ELSE maxPrice
-            END  as maxPrice';
-
-            $minPrice = 'CASE
-            WHEN maxPrice >= ' . $criteriaـvalue . ' THEN round(minPrice * "' . $rate . '" + minPrice)
-            ELSE minPrice
-            END  as minPrice';
-        } else {
-            $maxPrice = 'maxPrice';
-            $minPrice = 'minPrice';
-        }
-
-        Yii::$app->response->format = Yii\web\Response::FORMAT_JSON;
-        $out = ['results' => ['id' => '', 'text' => '']];
-        if (!is_null($q)) {
-            $q = str_replace(' ', '%', $q);
-            $query = new Query;
-            if (Yii::$app->user->identity->client != null) {
-                $secript = [
-                    'category.id',
-                    'category.name AS text',
-                    'company AS company',
-                    'stocks.quantity as quantity',
-                    $maxPrice,
-                    'serialNo AS serialNo',
-                    'place',
-                    'commCode',
-                    'CASE
-                       WHEN `type` =1
-                       THEN "متوفر"
-                       WHEN `type` =2
-                       THEN "متوفر"
-                       ELSE "قريبا" END as type',
-                    'branches.name as BRNAME',
-                ];
-            } else {
-                if (Yii::$app->user->identity->seeCostPrice == 1) {
-                    $secript = [
-                        'category.id',
-                        'category.name AS text',
-                        'company AS company',
-                        'stocks.quantity as quantity',
-                        $maxPrice,
-                        'costPrice as costPrice',
-                        'serialNo AS serialNo',
-                        $minPrice,
-                        'place',
-                        'commCode',
-                        'CASE
-                            WHEN `type` =1
-                            THEN "متوفر"
-                            WHEN `type` =2
-                            THEN "متوفر"
-                            ELSE "قريبا" END as type',
-                        'branches.name as BRNAME'
-                    ];
-                } else {
-                    $secript = [
-                        'category.id',
-                        'category.name AS text',
-                        'company AS company',
-                        'stocks.quantity as quantity',
-                        $maxPrice,
-                        'serialNo AS serialNo',
-                        $minPrice,
-                        'place',
-                        'commCode',
-                        'CASE
-                            WHEN `type` =1
-                            THEN "متوفر"
-                            WHEN `type` =2
-                            THEN "متوفر"
-                            ELSE "قريبا" END as type',
-                        'branches.name as BRNAME'
-                    ];
-                }
-            }
-            $query->select($secript)
-                ->from('stocks')
-                ->leftJoin('category', 'stocks.category = category.id')
-                ->leftJoin('prices', 'prices.category = category.id')
-                ->leftJoin('branches', 'branches.id = stocks.branch')
-                ->Where((['=', 'category.id', $q]))
-                ->andWhere($whereBranch)
-                ->andWhere(['=',  'category.status', 0])
-                ->andWhere(['!=', 'stocks.quantity', 0])
-                ->limit(60)
-                ->orderBy('category.id', 'ASC');
-            $command = $query->createCommand();
-            $data = $command->queryAll();
-            $out['results'] = array_values($data);
-        } elseif ($id > 0) {
-            $out['results'] = [
-                'id' => $id,
-                'text' => TotalInventory::find($id)->name,
-                'company' => TotalInventory::find($id)->company,
-                'quantity' => TotalInventory::find($id)->quantity,
-                'maxPrice' => TotalInventory::find($id)->maxPrice,
-                'minPrice' => TotalInventory::find($id)->minPrice,
-                'serialNo' => TotalInventory::find($id)->serialNo,
-                'type' => TotalInventory::find($id)->type,
-                'commCode' => TotalInventory::find($id)->commCode
-            ];
-        }
-        return $out;
-    }
-
-    public function actionFast($id)
-    {
-        $model = new Sales();
-        $dataProvider = new ActiveDataProvider([
-            'query' => SalesDetails::find()
-                ->Where([
-                    'salesId' => $id,
-                ]),
-            'sort' => [
-                'defaultOrder' => [
-                    'id' => SORT_DESC
-                ]
-            ],
-            'pagination' => [
-                'pageSize' => 100
-            ],
-        ]);
-
-        if ($model->load(Yii::$app->request->post())) {
-
-            $selection = Yii::$app->request->post('selection');
-
-            foreach ($selection as $select) {
-                $this->actionTransferToTempInvoice($select);
-                // $prices = Prices::find()->where(['category'=>$select])->one();
-                // $category = Category::find()->where(['id'=>$id])->one();
-
-                // $model = new TempInvoice();
-                // $model->category= $id;
-
-                // $model->quantity=1;
-                // $model->costPrice = $prices->costPrice;
-                // $model->salePrice = $prices->minPrice;
-                // $model->box=$category->box;
-                // $model->state= 1;
-
-                // $model->save(false);
-
-            }
-            // return $this->redirect(['create']);
-        }
-
-        return $this->renderAjax('createFast', [
-            // 'searchModel' => $searchModel,
-            'model' => $model,
-            'dataProvider' => $dataProvider,
-        ]);
-    }
-
     public function actionHistrans($client, $allData, $type)
     {
-        if ($allData != 0) {
-            $min_date = '2020-01-30';
-            $max_date = date('Y-m-d');
+        $client = (int) $client;
+        $type = (int) $type;
+        $min_date = '2020-01-30';
+        $max_date = date('Y-m-d');
+        $db = Yii::$app->db;
+
+        if ($type === 0 || $type === 2) {
+            $lastBalance = $db->createCommand(
+                "SELECT sum(histrans_client.dept) as sader, sum(histrans_client.credt) as wared, max(histrans_client.type) as type
+                 FROM histrans_client
+                 WHERE histrans_client.Type = :t AND histrans_client.id = :c AND histrans_client.trandate < :min",
+                [':t' => $type, ':c' => $client, ':min' => $min_date]
+            )->queryAll();
+
+            $info = $db->createCommand(
+                "SELECT histrans_client.id, histrans_client.trandate, histrans_client.name as name,
+                 histrans_client.dept as sader, histrans_client.billId as billId, histrans_client.kind as kind,
+                 histrans_client.credt as wared, histrans_client.printId as printId, histrans_client.type as type, histrans_client.deleviried as deleviried
+                 FROM histrans_client
+                 WHERE histrans_client.Type in(0,2) AND histrans_client.id = :c
+                 AND histrans_client.trandate between :min AND :max
+                 AND histrans_client.sort <> 1
+                 ORDER BY histrans_client.trandate, histrans_client.billId",
+                [':c' => $client, ':min' => $min_date, ':max' => $max_date]
+            )->queryAll();
+        } elseif ($type === 1) {
+            $lastBalance = $db->createCommand(
+                "SELECT sum(histrans_client.dept) as sader, sum(histrans_client.credt) as wared, max(histrans_client.type) as type
+                 FROM histrans_client
+                 WHERE histrans_client.Type = 1 AND histrans_client.id = :c AND histrans_client.trandate < :min",
+                [':c' => $client, ':min' => $min_date]
+            )->queryAll();
+
+            $info = $db->createCommand(
+                "SELECT histrans_supplier.id, histrans_supplier.kind, histrans_supplier.trandate, histrans_supplier.name as name,
+                 histrans_supplier.dept as wared, histrans_supplier.credt as sader, histrans_supplier.billId as billId,
+                 histrans_supplier.printId as printId, histrans_supplier.type as type
+                 FROM histrans_supplier
+                 WHERE histrans_supplier.Type = 1 AND histrans_supplier.id = :c
+                 AND histrans_supplier.trandate between :min AND :max
+                 AND histrans_supplier.sort <> 1
+                 ORDER BY histrans_supplier.trandate, histrans_supplier.billId",
+                [':c' => $client, ':min' => $min_date, ':max' => $max_date]
+            )->queryAll();
+        } else {
+            throw new \yii\web\BadRequestHttpException('نوع غير صحيح.');
         }
 
-        if ($type == 0 || $type == 2) {
-            $sqlSum = " SELECT 
-            sum(histrans_client.dept) as sader, sum(histrans_client.credt) as wared, max(histrans_client.type) as type FROM histrans_client
-            where histrans_client.Type in(" . $type . ") and histrans_client.id = " . $client . " 
-            and histrans_client.trandate < '" . $min_date . "'  ";
-            $connection = Yii::$app->db;
-            $data = $connection->createCommand($sqlSum);
-            $lastBalance = $data->queryAll();
-        }
-
-        if ($type == 1) {
-            $sqlSum = " SELECT 
-            sum(histrans_client.dept) as sader, sum(histrans_client.credt) as wared, max(histrans_client.type) as type FROM histrans_client
-            where histrans_client.Type in(" . $type . ") and histrans_client.id = " . $client . " 
-            and histrans_client.trandate < '" . $min_date . "'  ";
-            $connection = Yii::$app->db;
-            $data = $connection->createCommand($sqlSum);
-            $lastBalance = $data->queryAll();
-        }
-
-        if ($type == 0 || $type == 2) {
-            $type = '0,2';
-            $sql = " SELECT histrans_client.id, histrans_client.trandate, histrans_client.name as name,
-            histrans_client.dept as sader, histrans_client.billId as billId, histrans_client.kind as kind,
-            histrans_client.credt as wared, histrans_client.printId as printId, histrans_client.type as type, histrans_client.deleviried as deleviried
-            FROM histrans_client
-            where histrans_client.Type in(" . $type . ") and histrans_client.id = " . $client . " 
-            and histrans_client.trandate between '" . $min_date . "' and '" . $max_date . "' 
-            and histrans_client.sort <> 1
-            order by  histrans_client.trandate, histrans_client.billId";
-            $connection = Yii::$app->db;
-            $data = $connection->createCommand($sql);
-            $info = $data->queryAll();
-            if ($info == null) {
-                echo '<script type="text/javascript"> 
-                    alert("عفوا لايوجد بيانات للعرض");
-                    window.location.href="?r=client/histrans"
-                    </script>';
-            }
-        } elseif ($type == 1) {
-            $type = '1';
-            $sql = " SELECT histrans_supplier.id, histrans_supplier.kind, histrans_supplier.trandate, histrans_supplier.name as name, 
-            histrans_supplier.dept as wared, histrans_supplier.credt as sader, histrans_supplier.billId as billId,
-            histrans_supplier.printId as printId, histrans_supplier.type as type
-             FROM histrans_supplier
-            where histrans_supplier.Type in(" . $type . ") and histrans_supplier.id = " . $client . " and histrans_supplier.trandate 
-            between '" . $min_date . "' and '" . $max_date . "' 
-            and histrans_supplier.sort <> 1
-            order by histrans_supplier.trandate, histrans_supplier.billId";
-            $connection = Yii::$app->db;
-            $data = $connection->createCommand($sql);
-            $info = $data->queryAll();
-            if ($info == null) {
-                echo '<script type="text/javascript"> 
-                    alert("عفوا لايوجد بيانات للعرض");
-                    window.location.href="?r=client/histrans"
-                    </script>';
-            }
+        if (!$info) {
+            Yii::$app->session->setFlash('error', 'عفوا لايوجد بيانات للعرض');
+            return $this->redirect(['client/histrans']);
         }
 
         return $this->render('/client/histransrep', [
@@ -1888,114 +1011,89 @@ class SalesController extends Controller
 
     public function actionSavePdf($id)
     {
-
-        $totalInvoice = SalesDetails::find()->where(['salesId' => $id])
-            ->sum('salePrice * quantity');
-
         $model = $this->findModel($id);
+        $identity = Yii::$app->user->identity;
 
         $balance = Dept::find()->where(['id' => $model->clinet])->sum('credt');
 
-        // get your HTML raw content without any layouts or scripts
+        // التكلفة لا تُجلب لمن لا يملك صلاحية رؤيتها
+        $costCol = ($identity->seeCostPrice == 1) ? 'salesDetails.costPrice' : 'NULL AS costPrice';
         $sql = "select sales.id, sales.at, sales.payWay, sales.total, sales.disscount, sales.paid, sales.type, sales.billId, sales.notes, sales.deleviried,
-                salesDetails.quantity, salesDetails.costPrice, salesDetails.salePrice,
+                salesDetails.quantity, $costCol, salesDetails.salePrice,
                 Totalinventory.quantity as Qtotalinventory,
                 client.name as client, client.mobile,
                 category.name as category, category.serialNo, category.company,
                 category_reservation.quantity as reservation
                 FROM sales
                 JOIN salesDetails on sales.id = salesDetails.salesId
-                JOIN Totalinventory on salesDetails.category = Totalinventory.id
+                LEFT JOIN Totalinventory on salesDetails.category = Totalinventory.id
+                     AND Totalinventory.branch = :b AND Totalinventory.type <> 3
                 JOIN client on sales.clinet = client.id
                 JOIN category on category.id = salesDetails.category
                 left JOIN category_reservation on salesDetails.category = category_reservation.category
-                where sales.id = " . $id . " and Totalinventory.branch = " . Yii::$app->user->identity->branch . " and Totalinventory.type <> 3 
-                ";
-        $connection = Yii::$app->db;
-        $data = $connection->createCommand($sql);
-        $info = $data->queryAll();
-
-
-        // $balance = Dept::find()->where(['id'=>$info])->sum('credt');
+                where sales.id = :id";
+        $info = Yii::$app->db->createCommand($sql, [':b' => (int) $identity->branch, ':id' => $model->id])->queryAll();
 
         $content = $this->renderPartial('printPdf', [
-            'model' => $this->findModel($id),
+            'model' => $model,
             'infos' => $info,
             'models' => $info,
             'balance' => $balance,
         ]);
-        Yii::$app->response->format = Yii\web\Response::FORMAT_RAW;
+        Yii::$app->response->format = Response::FORMAT_RAW;
 
-        // setup kartik\mpdf\Pdf component
         $pdf = new Pdf([
-            // set to use core fonts only
             'mode' => Pdf::MODE_UTF8,
-            // A4 paper format
             'format' => Pdf::FORMAT_A4,
-            // portrait orientation
             'orientation' => Pdf::ORIENT_PORTRAIT,
-            // stream to browser inline
-            'destination' => Pdf::DEST_DOWNLOAD, //DEST_BROWSER, 
-            // your html content input
-            'filename' => $model->c->name . '-' . $model->billId,
-
+            'destination' => Pdf::DEST_DOWNLOAD,
+            'filename' => ($model->c ? $model->c->name : 'invoice') . '-' . $model->billId,
             'content' => $content,
-            // format content from your own css file if needed or use the
-            // enhanced bootstrap css built by Krajee for mPDF formatting 
             'cssFile' => ['@vendor/kartik-v/yii2-mpdf/src/assets/kv-mpdf-bootstrap.min.css', '@vendor/bower-asset/bootstrap-rtl/dist/css/bootstrap-rtl.css'],
-
             'defaultFont' => 'Sans-serif',
-            // any css to be embedded if required
-            // 'cssInline' => '.kv-heading-1{font-size:10px}', 
-            // set mPDF properties on the fly
             'options' => ['title' => 'فاتورة مبيعات'],
-            // call mPDF methods on the fly
             'methods' => [
                 'SetHeader' => [''],
-                //  'SetFooter'=>['{PAGENO}'],
             ]
         ]);
 
-        // return the pdf output as per the destination setting
         return $pdf->render();
     }
 
     public function actionCategoryHistrans($category, $allData)
     {
-        $category = Category::find()->select('id')->where(['id' => $category])->one();
-
-        if ($allData != 0) {
-            $min_date = '2010-01-01';
-            $max_date = date('Y-m-d');
+        $category = Category::find()->select('id')->where(['id' => (int) $category])->one();
+        if ($category === null) {
+            throw new NotFoundHttpException(Yii::t('app', 'The requested page does not exist.'));
         }
 
-        $sqlSum = " SELECT 
-            sum(category_histrans.quantity) as quantity 
-            FROM category_histrans
-            where category_histrans.id = " . $category->id . " 
-            and category_histrans.tranDate < '" . $min_date . "'  ";
-        $connection = Yii::$app->db;
-        $data = $connection->createCommand($sqlSum);
-        $lastBalance = $data->queryAll();
+        $min_date = '2010-01-01';
+        $max_date = date('Y-m-d');
+        $db = Yii::$app->db;
 
-        $sql = " SELECT category_histrans.kind_id, category_histrans.id, category_histrans.printId, category_histrans.name as name, category_histrans.quantity as quantity, category_histrans.unit as unit, 
-            category_histrans.box as box, category_histrans.class as class, category_histrans.client as client,
-            branches.name as branch, category_histrans.kind as kind, category_histrans.trandate as trandate, category_histrans.billId as billId
-            , category_histrans.deleviried as deleviried 
-            FROM category_histrans, branches
-            where category_histrans.branch = branches.id and category_histrans.id = " . $category->id . " 
-            and category_histrans.trandate  between '" . $min_date . "' and '" . $max_date . "' 
-            order by category_histrans.trandate
-            ";
+        $lastBalance = $db->createCommand(
+            "SELECT sum(category_histrans.quantity) as quantity
+             FROM category_histrans
+             WHERE category_histrans.id = :c AND category_histrans.tranDate < :min",
+            [':c' => (int) $category->id, ':min' => $min_date]
+        )->queryAll();
 
-        $connection = Yii::$app->db;
-        $data = $connection->createCommand($sql);
-        $info = $data->queryAll();
-        if ($info == null) {
-            echo '<script type="text/javascript"> 
-                alert("عفوا لايوجد بيانات للعرض");
-                window.location.href="?r=category"
-                </script>';
+        $info = $db->createCommand(
+            "SELECT category_histrans.kind_id, category_histrans.id, category_histrans.printId, category_histrans.name as name,
+             category_histrans.quantity as quantity, category_histrans.unit as unit,
+             category_histrans.box as box, category_histrans.class as class, category_histrans.client as client,
+             branches.name as branch, category_histrans.kind as kind, category_histrans.trandate as trandate, category_histrans.billId as billId,
+             category_histrans.deleviried as deleviried
+             FROM category_histrans, branches
+             WHERE category_histrans.branch = branches.id AND category_histrans.id = :c
+             AND category_histrans.trandate between :min AND :max
+             ORDER BY category_histrans.trandate",
+            [':c' => (int) $category->id, ':min' => $min_date, ':max' => $max_date]
+        )->queryAll();
+
+        if (!$info) {
+            Yii::$app->session->setFlash('error', 'عفوا لايوجد بيانات للعرض');
+            return $this->redirect(['category/index']);
         }
 
         return $this->render('/category/histransrep', [
@@ -2015,6 +1113,871 @@ class SalesController extends Controller
             'sumSales' => 0,
             'sumBackSales' => 0,
         ]);
+    }
+
+    public function actionItemlistid($q = null, $id = null)
+    {
+        $identity = Yii::$app->user->identity;
+        if ($identity === null) {
+            throw new \yii\web\ForbiddenHttpException();
+        }
+        $isClient = ($identity->client != null);
+        $company = CompanyInfo::find()->one();
+
+        $criteria = ($company->criteriaـvalue != 0) ? (float) $company->criteriaـvalue : 1.0;
+        if ($company->rate != 0) {
+            $crit = sprintf('%.6F', $criteria);
+            $rate = sprintf('%.6F', (float) $company->rate / 100);
+            $maxPrice = "CASE WHEN maxPrice >= $crit THEN ROUND(maxPrice * $rate + maxPrice) ELSE maxPrice END AS maxPrice";
+            $minPrice = "CASE WHEN maxPrice >= $crit THEN ROUND(minPrice * $rate + minPrice) ELSE minPrice END AS minPrice";
+        } else {
+            $maxPrice = 'maxPrice';
+            $minPrice = 'minPrice';
+        }
+
+        $branchCondition = ($identity->seeOtherBranchQ == 0)
+            ? ['stocks.branch' => (int) $identity->branch]
+            : ['in', 'stocks.branch', $this->allBranchIds()];
+
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        $out = ['results' => ['id' => '', 'text' => '']];
+
+        if (!is_null($q)) {
+            $select = [
+                'category.id',
+                'category.name AS text',
+                'company AS company',
+                'stocks.quantity AS quantity',
+                $maxPrice,
+                'serialNo AS serialNo',
+                'place',
+                'commCode',
+                "CASE WHEN `type` = 1 THEN 'متوفر' WHEN `type` = 2 THEN 'متوفر' ELSE 'قريبا' END AS type",
+                'branches.name AS BRNAME',
+            ];
+            if (!$isClient) {
+                $select[] = $minPrice;
+                if ($identity->seeCostPrice == 1) {
+                    $select[] = 'costPrice AS costPrice';
+                }
+            }
+
+            $out['results'] = array_values((new Query())
+                ->select($select)
+                ->from('stocks')
+                ->leftJoin('category', 'stocks.category = category.id')
+                ->leftJoin('prices', 'prices.category = category.id')
+                ->leftJoin('branches', 'branches.id = stocks.branch')
+                ->where(['=', 'category.id', (string) $q])
+                ->andWhere($branchCondition)
+                ->andWhere(['=', 'category.status', 0])
+                ->andWhere(['!=', 'stocks.quantity', 0])
+                ->limit(60)
+                ->orderBy(['category.id' => SORT_ASC])
+                ->all());
+        } elseif ($id > 0) {
+            $item = Totalinventory::find()->where(['id' => (int) $id])->one();
+            if ($item !== null) {
+                $result = [
+                    'id' => (int) $id,
+                    'text' => $item->name,
+                    'company' => $item->company,
+                    'quantity' => $item->quantity,
+                    'maxPrice' => $item->maxPrice,
+                    'serialNo' => $item->serialNo,
+                    'type' => $item->type,
+                    'commCode' => $item->commCode,
+                ];
+                if (!$isClient) {
+                    $result['minPrice'] = $item->minPrice;
+                }
+                $out['results'] = $result;
+            }
+        }
+        return $out;
+    }
+
+    public function actionCreate()
+    {
+        $model = new Sales();
+        $company = CompanyInfo::find()->one();
+        $identity = Yii::$app->user->identity;
+        $userId = (int) $identity->id;
+
+        $model->payWay = ($company->payWayCash == 1) ? 0 : 1;
+
+        if (Yii::$app->request->post($model->formName()) !== null) {
+            $this->loadSalesForm($model);
+            $model->type = (int) $model->type;
+            $back = ['temp-invoice/create', 'id' => 1];
+
+            if (!in_array($model->type, [1, 3, 4], true)) {
+                Yii::$app->session->setFlash('error', 'نوع الفاتورة غير صحيح.');
+                return $this->redirect($back);
+            }
+
+            $client = Client::find()->where(['id' => $model->clinet])->one();
+            if ($client === null) {
+                Yii::$app->session->setFlash('error', 'اختر العميل.');
+                return $this->redirect($back);
+            }
+            if ($identity->client <> null && !in_array((string) $model->clinet, array_map('trim', explode(',', (string) $identity->client)), true)) {
+                Yii::$app->session->setFlash('error', 'هذا العميل غير مسموح لك.');
+                return $this->redirect($back);
+            }
+            if ($client->post_paid != 1 && $model->payWay != 0) {
+                Yii::$app->session->setFlash('error', Yii::t('app', "عفوا هذا الزبون لايمكن البيع له بالآجل"));
+                return $this->redirect($back);
+            }
+
+            $rows = TempInvoice::find()->where(['created_by' => $userId, 'state' => 1])->all();
+            if (!$rows) {
+                Yii::$app->session->setFlash('error', Yii::t('app', "عفوا الفاتورة لاتحتوي على اصناف الرجاء الغاءها"));
+                return $this->redirect($back);
+            }
+
+            $model->total = TempInvoice::find()->where(['created_by' => $userId, 'state' => 1])->sum('salePrice * quantity');
+
+            // الخصم لمن يملك الصلاحية فقط
+            if ($identity->makeDiscount != 1) {
+                $model->disscount = 0;
+            }
+            $model->disscount = ($model->disscount == null) ? 0 : max(0, (float) $model->disscount);
+            $model->paid = ($model->paid == null) ? 0 : max(0, (float) $model->paid);
+
+            if ($identity->client <> null) {
+                $model->deleviried = 0;
+                $model->wholesale = 0;
+                $model->paid = 0;
+            }
+
+            if ((float) $model->disscount > (float) $model->total) {
+                Yii::$app->session->setFlash('error', 'الخصم لا يمكن أن يزيد عن إجمالي الفاتورة.');
+                return $this->redirect($back);
+            }
+            // في الآجل يتحول المتبقي إلى دين، فلا يجوز أن يزيد المدفوع عن صافي الفاتورة
+            if ($model->payWay == 1 && $model->type != 4
+                && (float) $model->paid > (float) $model->total - (float) $model->disscount) {
+                Yii::$app->session->setFlash('error', 'المدفوع لا يمكن أن يزيد عن صافي الفاتورة.');
+                return $this->redirect($back);
+            }
+
+            // سقف الدين: يُتجاوز بصلاحية خاصة مع تنبيه
+            $overDebt = false;
+            $balance = Dept::find()->where(['id' => $model->clinet])->sum('credt');
+            $debtRow = Client::find()->select('debt')->where(['=', 'id', $model->clinet])->one();
+            if ($debtRow !== null && $debtRow['debt'] <> 0 && $model->type == 1) {
+                // المبلغ المقارَن: رصيد العميل + (إجمالي الفاتورة − الخصم − المدفوع)
+                $total = $balance + ((float) $model->total - (float) $model->disscount - (float) $model->paid);
+                if ((float) $total >= (float) $debtRow['debt'] && $model->payWay == 1) {
+                    if (Yii::$app->user->can('userCansellOverDebt')) {
+                        $overDebt = true;
+                    } else {
+                        Yii::$app->session->setFlash('error', Yii::t('app', "Sorry The Client Cross The Line About Debt"));
+                        return $this->redirect($back);
+                    }
+                }
+            }
+
+            try {
+                $id = $this->withStockLock(function () use ($model, $rows, $company, $identity, $userId) {
+                    $branch = (int) $identity->branch;
+                    $model->branch = $branch;
+                    $model->billId = (int) Sales::find()->where(['=', 'type', $model->type])->max('billId') + 1;
+                    $model->created_at = date('Y-m-d H:i:s');
+                    $model->user_insert = Yii::$app->user->id;
+                    $model->save(false);
+                    $id = $model->id;
+                    $saved = 0;
+                    $skipped = [];
+                    $reduced = [];
+
+                    foreach ($rows as $data) {
+                        $modelDetails = new SalesDetails();
+                        $modelDetails->salesId = $id;
+                        $modelDetails->category = $data->category;
+                        $modelDetails->waitQnty = $data->waitQnty;
+                        $modelDetails->costPrice = $data->costPrice;
+                        $modelDetails->salePrice = $data->salePrice;
+                        $modelDetails->box = $data->box;
+                        $modelDetails->expire = $data->expire;
+                        $modelDetails->type = $data->type;
+                        $modelDetails->original_price = $data->salePrice;
+                        $modelDetails->serial_number = $data->serial_number;
+                        $modelDetails->branch = $data->branch;
+
+                        if ($model->type != 4) {
+                            // نوع المخزون الذي يُفحص رصيده: نفس نوع الفاتورة (1 نهائية، 3 حجز)
+                            $qty = $this->allowedQty($data->category, $data->quantity, [$model->type], $company);
+                            if ($qty <= 0) {
+                                // لا رصيد متبقٍ: لا يُدرج السطر في الفاتورة
+                                $skipped[] = $data->category;
+                                continue;
+                            }
+                            if ($qty < (float) $data->quantity) {
+                                $reduced[] = $data->category;
+                            }
+                            $modelDetails->quantity = $qty;
+                            $modelDetails->save(false);
+                            // الخصم من فرع المستخدم دائماً، وينشأ الصف برصيد سالب إن لم يوجد
+                            $this->applyDetail($model->type, $data->category, $branch, $modelDetails->quantity, false);
+                        } else {
+                            $modelDetails->quantity = $data->quantity;
+                            $modelDetails->save(false);
+                        }
+                        $saved++;
+                    }
+
+                    if ($saved === 0) {
+                        // يتراجع الحفظ كله (الفاتورة والمخزون)، وتبقى الفاتورة المؤقتة كما هي
+                        throw new \DomainException('لا يوجد رصيد متاح لأي صنف في الفاتورة، لم يتم الحفظ.');
+                    }
+                    if ($skipped || $reduced) {
+                        $parts = [];
+                        if ($skipped) {
+                            $parts[] = 'أصناف حُذفت لعدم توفر رصيد: ' . implode('، ', $skipped);
+                        }
+                        if ($reduced) {
+                            $parts[] = 'أصناف قُلّصت كمياتها للمتاح: ' . implode('، ', $reduced);
+                        }
+                        Yii::$app->session->addFlash('error', implode(' | ', $parts) . ' (أرقام الأصناف)');
+                    }
+                    $this->recalcTotal($id);
+                    TempInvoice::deleteAll(['created_by' => $userId, 'state' => 1]);
+                    return $id;
+                });
+            } catch (\DomainException $e) {
+                Yii::$app->session->setFlash('error', $e->getMessage());
+                return $this->redirect($back);
+            }
+
+            if ($overDebt) {
+                Yii::$app->session->addFlash('error', Yii::t('app', "عفوا هذا العميل تجاوز سقف الديون ! الرجاء المراجعة"));
+            }
+            return $this->redirect(['print', 'id' => $id]);
+        } elseif (Yii::$app->request->isAjax) {
+            $model->at = date('Y-m-d');
+            $model->clinet = 1;
+            $model->total = TempInvoice::find()->where(['created_by' => $userId, 'state' => 1])
+                ->sum('salePrice * quantity');
+            $model->paid = 0;
+            $model->disscount = 0;
+
+            return $this->renderAjax('_form', [
+                'model' => $model,
+            ]);
+        } else {
+            return $this->render('create', [
+                'model' => $model,
+            ]);
+        }
+    }
+
+    public function actionPrint($id)
+    {
+        $this->layout = 'invoice';
+        $totalInvoice = SalesDetails::find()->where(['salesId' => $id])
+            //->andWhere(['=', 'branch', Yii::$app->user->identity->branch])
+            ->sum('salePrice * quantity');
+
+        $company = CompanyInfo::find()->one();
+        $model = $this->findModel($id);
+        $providerSalesDetails = new ActiveDataProvider([
+            'query' => SalesDetails::find()
+                ->where(['=', 'salesId', $id]),
+            //->andWhere(['=', 'branch', Yii::$app->user->identity->branch]),
+            'sort' => [
+                'defaultOrder' => [
+                    'id' => SORT_DESC,
+                ]
+            ],
+            'pagination' => false,
+        ]);
+
+        $balance = Dept::find()->where(['id' => $model->clinet])->sum('credt');
+        return $this->render('print', [
+            'model' => $this->findModel($id),
+            'providerSalesDetails' => $providerSalesDetails,
+            'company' => $company,
+            'balance' => $balance,
+            'totalInvoice' => $totalInvoice,
+        ]);
+    }
+
+    public function actionPrintNoPrice($id)
+    {
+        $this->layout = 'invoice';
+
+        $company = CompanyInfo::find()->one();
+        $providerSalesDetails = new ActiveDataProvider([
+            'query' => SalesDetails::find()->where(['=', 'salesId', $id]),
+            'sort' => [
+                'defaultOrder' => [
+                    'id' => SORT_DESC,
+                ],
+            ],
+            'pagination' => false,
+        ]);
+
+        return $this->render('noPrice', [
+            'model' => $this->findModel($id),
+            'providerSalesDetails' => $providerSalesDetails,
+            'company' => $company,
+        ]);
+    }
+
+    public function actionPrintForDriver($id)
+    {
+        $this->layout = 'invoice';
+
+        $totalInvoice = SalesDetails::find()->where(['salesId' => $id])
+            //->andWhere(['=', 'branch', Yii::$app->user->identity->branch])
+            ->sum('salePrice * quantity');
+
+        $company = CompanyInfo::find()->one();
+        $model = $this->findModel($id);
+        $providerSalesDetails = new ActiveDataProvider([
+            'query' => SalesDetails::find()
+                ->where(['=', 'salesId', $id]),
+            //->andWhere(['=', 'branch', Yii::$app->user->identity->branch]),
+            'sort' => [
+                'defaultOrder' => [
+                    'id' => SORT_DESC,
+                ]
+            ],
+            'pagination' => false,
+        ]);
+        // $this->layout = false;
+        return $this->render('print_for_driver', [
+            'model' => $this->findModel($id),
+            'providerSalesDetails' => $providerSalesDetails,
+            'company' => $company,
+            'totalInvoice' => $totalInvoice,
+        ]);
+    }
+
+    public function actionRemove($id)
+    {
+        $detail = SalesDetails::findOne((int) $id);
+        if ($detail === null) {
+            throw new NotFoundHttpException(Yii::t('app', 'The requested page does not exist.'));
+        }
+        $sale = $this->findModel($detail->salesId);
+
+        try {
+            $this->ownBranchOrFail($sale);
+            $left = $this->withStockLock(function () use ($sale, $detail) {
+                $this->applyDetail($sale->type, $detail->category, $this->saleBranch($sale), $detail->quantity, true);
+                SalesDetails::deleteAll(['id' => $detail->id]);
+                $total = $this->recalcTotal($sale->id);
+                if ($total === null) {
+                    Sales::deleteAll(['id' => $sale->id]);
+                    return false;
+                }
+                return true;
+            });
+        } catch (\DomainException $e) {
+            Yii::$app->session->setFlash('error', $e->getMessage());
+            return $this->redirect(['update', 'id' => $sale->id]);
+        }
+
+        return $left ? $this->redirect(['update', 'id' => $sale->id]) : $this->redirect(['sales/index']);
+    }
+
+    public function actionItemlist($q = null, $id = null)
+    {
+        $identity = Yii::$app->user->identity;
+        if ($identity === null) {
+            throw new \yii\web\ForbiddenHttpException();
+        }
+        $isClient = ($identity->client != null);
+
+        $company = CompanyInfo::find()->one();
+
+        // أي قيمة تدخل في نص SQL تُحوَّل لرقم أولاً
+        $criteria = ($company->criteriaـvalue != 0) ? (float) $company->criteriaـvalue : 1.0;
+
+        if ($company->rate != 0) {
+            $crit = sprintf('%.6F', $criteria);
+            $rate = sprintf('%.6F', (float) $company->rate / 100);
+            $maxPrice = "CASE WHEN maxPrice >= $crit THEN ROUND(maxPrice * $rate + maxPrice) ELSE maxPrice END AS maxPrice";
+            $minPrice = "CASE WHEN maxPrice >= $crit THEN ROUND(minPrice * $rate + minPrice) ELSE minPrice END AS minPrice";
+        } else {
+            $maxPrice = 'maxPrice';
+            $minPrice = 'minPrice';
+        }
+
+        // الفرع: من يرى كل الفروع
+        $branchCondition = ($identity->seeOtherBranchQ == 0)
+            ? ['stocks.branch' => (int) $identity->branch]
+            : ['in', 'stocks.branch', $this->allBranchIds()];
+
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $out = ['results' => ['id' => '', 'text' => '']];
+
+        if (!is_null($q)) {
+            // نحدد طول النص المدخل بـ 100 حرف
+            $q = mb_substr((string)$q, 0, 100);
+
+            // إذا كان النص فارغاً تماماً (بدون مسافات)، نرجع مصفوفة فارغة
+            if ($q === '') {
+                $out['results'] = [];
+                return $out;
+            }
+
+            // تحويل المسافات إلى % للبحث المفتوح
+            $qSearch = str_replace(' ', '%', trim($q));
+
+            // إذا قام المستخدم بإدخال مسافات فقط، نجعل قيمة البحث % لاسترجاع كل الأصناف
+            if ($qSearch === '') {
+                $qSearch = '%';
+            }
+
+            // الأعمدة المتاحة للجميع
+            $select = [
+                'category.id',
+                'category.name AS text',
+                'company AS company',
+                'stocks.quantity AS quantity',
+                $maxPrice,
+                'serialNo AS serialNo',
+                'place',
+                'commCode',
+                "CASE WHEN `type` = 1 THEN 'متوفر' WHEN `type` = 2 THEN 'متوفر' ELSE 'قريبا' END AS type",
+                'branches.name AS BRNAME',
+                'branches.id AS branchId',
+            ];
+
+            // الموظف فقط يرى السعر الأدنى، ومن يملك الصلاحية يرى التكلفة
+            if (!$isClient) {
+                $select[] = $minPrice;
+                if ($identity->seeCostPrice == 1) {
+                    $select[] = 'costPrice AS costPrice';
+                }
+            }
+
+            $query = (new Query())
+                ->select($select)
+                ->from('stocks')
+                ->leftJoin('category', 'stocks.category = category.id')
+                ->leftJoin('prices', 'prices.category = category.id')
+                ->leftJoin('branches', 'branches.id = stocks.branch')
+                ->where([
+                    'or',
+                    ['like', 'category.name', '%' . $qSearch . '%', false],
+                    ['like', "REPLACE(serialNo, '-', '')", str_replace('-', '', $qSearch)],
+                    ['like', 'commCode', $qSearch],
+                    ['like', 'category.id', $qSearch],
+                    ['like', 'place', $qSearch],
+                    ['like', 'company', $qSearch],
+                ])
+                ->andWhere($branchCondition)
+                ->limit(60)
+                ->orderBy(['category.id' => SORT_ASC]);
+
+            // شرط عرض/إخفاء الأصناف ذات الرصيد الصفري بناءً على صلاحيات الشركة
+            if ($company->zeroQnty == 0) {
+                $query->andWhere(['<>', 'stocks.quantity', 0]);
+            } else {
+                // إذا كانت صلاحية الرصيد الصفري مفعلة، نستبعد القيم الفارغة (NULL) فقط ونعرض الكل (بما في ذلك 0)
+                $query->andWhere(['not', ['stocks.quantity' => null]]);
+            }
+
+            $out['results'] = array_values($query->createCommand()->queryAll());
+        }
+        // elseif ($id > 0) {
+        //     $item = TotalInventory::findOne((int)$id);
+        //     if ($item !== null) {
+        //         $result = [
+        //             'id' => (int) $id,
+        //             'text' => $item->name,
+        //             'company' => $item->company,
+        //             'quantity' => $item->quantity,
+        //             'maxPrice' => $item->maxPrice,
+        //             'serialNo' => $item->serialNo,
+        //             'type' => $item->type,
+        //             'commCode' => $item->commCode,
+        //         ];
+        //         if (!$isClient) {
+        //             $result['minPrice'] = $item->minPrice;
+        //         }
+        //         $out['results'] = $result;
+        //     }
+        // }
+
+        return $out;
+    }
+
+    public function actionBackCreate($client = null)
+    {
+        $model = new Sales();
+        $model->payWay = 1;
+        $identity = Yii::$app->user->identity;
+        $userId = (int) $identity->id;
+
+        if (Yii::$app->request->post($model->formName()) !== null) {
+            $this->loadSalesForm($model, ['type', 'disscount', 'paid']);
+
+            if (Client::find()->where(['id' => $model->clinet])->one() === null) {
+                Yii::$app->session->setFlash('error', 'اختر العميل.');
+                return $this->redirect(['temp-back-sales/create']);
+            }
+            if ($identity->client <> null && !in_array((string) $model->clinet, array_map('trim', explode(',', (string) $identity->client)), true)) {
+                Yii::$app->session->setFlash('error', 'هذا العميل غير مسموح لك.');
+                return $this->redirect(['temp-back-sales/create']);
+            }
+
+            $rows = TempBackSales::find()->where(['created_by' => $userId, 'state' => 1])->all();
+            if (!$rows) {
+                Yii::$app->session->setFlash('error', Yii::t('app', "عفوا الفاتورة لاتحتوي على اصناف الرجاء الغاءها"));
+                return $this->redirect(['temp-back-sales/create']);
+            }
+
+            $model->total = TempBackSales::find()->where(['created_by' => $userId, 'state' => 1])->sum('salePrice * quantity');
+            $model->type = 2;
+            $model->disscount = 0;
+            $model->paid = 0;
+
+            try {
+                $id = $this->withStockLock(function () use ($model, $rows, $identity, $userId) {
+                    $branch = (int) $identity->branch;
+                    $model->branch = $branch;
+                    $model->billId = (int) Sales::find()->where(['=', 'type', $model->type])->max('billId') + 1;
+                    $model->created_at = date('Y-m-d H:i:s');
+                    $model->user_insert = Yii::$app->user->id;
+                    if (!$model->save()) {
+                        throw new \DomainException($this->firstError($model));
+                    }
+                    $id = $model->id;
+
+                    foreach ($rows as $data) {
+                        $modelDetails = new SalesDetails();
+                        $modelDetails->salesId = $id;
+                        $modelDetails->category = $data->category;
+                        $modelDetails->quantity = $data->quantity;
+                        $modelDetails->costPrice = $data->costPrice;
+                        $modelDetails->salePrice = $data->salePrice;
+                        $modelDetails->box = $data->box;
+                        $modelDetails->expire = $data->expire;
+                        $modelDetails->original_price = $data->salePrice;
+                        $modelDetails->serial_number = $data->serial_number;
+                        $modelDetails->branch = $branch;
+                        $modelDetails->save(false);
+                        // المسترجع يعيد الكمية إلى مخزون فرع المستخدم
+                        $this->applyDetail(2, $data->category, $branch, $data->quantity, false);
+                    }
+                    TempBackSales::deleteAll(['created_by' => $userId, 'state' => 1]);
+                    return $id;
+                });
+            } catch (\DomainException $e) {
+                Yii::$app->session->setFlash('error', $e->getMessage());
+                return $this->redirect(['temp-back-sales/create']);
+            }
+
+            return $this->redirect(['print', 'id' => $id]);
+        } elseif (Yii::$app->request->isAjax) {
+            $model->at = date('Y-m-d');
+            $model->clinet = ($client == null) ? 1 : $client;
+            $model->total = TempBackSales::find()->where(['created_by' => $userId, 'state' => 1])
+                ->sum('salePrice * quantity');
+            $model->paid = 0;
+            $model->disscount = 0;
+
+            return $this->renderAjax('back', [
+                'model' => $model,
+            ]);
+        } else {
+            return $this->render('create', [
+                'model' => $model,
+            ]);
+        }
+    }
+
+    public function actionSaveAsNew($oldId)
+    {
+        $old = $this->findModel($oldId);
+        $company = CompanyInfo::find()->one();
+        $identity = Yii::$app->user->identity;
+
+        $model = new Sales();
+        $model->payWay = 1;
+
+        if (Yii::$app->request->post($model->formName()) !== null) {
+            $this->loadSalesForm($model);
+            $model->type = (int) $model->type;
+            $back = ['view', 'id' => $old->id];
+
+            if (!in_array($model->type, [1, 3, 4], true)) {
+                Yii::$app->session->setFlash('error', 'نوع الفاتورة غير صحيح.');
+                return $this->redirect($back);
+            }
+            if (Client::find()->where(['id' => $model->clinet])->one() === null) {
+                Yii::$app->session->setFlash('error', 'اختر العميل.');
+                return $this->redirect($back);
+            }
+
+            $details = SalesDetails::find()->where(['salesId' => $old->id])->all();
+            if (!$details) {
+                Yii::$app->session->setFlash('error', Yii::t('app', "عفوا الفاتورة لاتحتوي على اصناف الرجاء الغاءها"));
+                return $this->redirect($back);
+            }
+
+            $model->total = SalesDetails::find()->where(['salesId' => $old->id])->sum('salePrice * quantity');
+            if ($identity->makeDiscount != 1) {
+                $model->disscount = 0;
+            }
+            $model->disscount = ($model->disscount == null) ? 0 : max(0, (float) $model->disscount);
+            $model->paid = ($model->paid == null) ? 0 : max(0, (float) $model->paid);
+            if ($identity->client <> null) {
+                $model->paid = 0;
+            }
+
+            try {
+                $id = $this->withStockLock(function () use ($model, $details, $company, $identity) {
+                    $branch = (int) $identity->branch;
+                    $model->branch = $branch;
+                    $model->billId = (int) Sales::find()->where(['=', 'type', $model->type])->max('billId') + 1;
+                    $model->created_at = date('Y-m-d H:i:s');
+                    $model->user_insert = Yii::$app->user->id;
+                    if (!$model->save()) {
+                        throw new \DomainException($this->firstError($model));
+                    }
+                    $id = $model->id;
+
+                    foreach ($details as $data) {
+                        $modelDetails = new SalesDetails();
+                        $modelDetails->salesId = $id;
+                        $modelDetails->category = $data->category;
+                        $modelDetails->waitQnty = $data->waitQnty;
+                        $modelDetails->costPrice = $data->costPrice;
+                        $modelDetails->salePrice = $data->salePrice;
+                        $modelDetails->box = $data->box;
+                        $modelDetails->expire = $data->expire;
+                        $modelDetails->type = $data->type;
+                        $modelDetails->original_price = $data->salePrice;
+                        $modelDetails->serial_number = $data->serial_number;
+                        $modelDetails->branch = $data->branch;
+                        $modelDetails->quantity = ($model->type != 4)
+                            ? $this->allowedQty($data->category, $data->quantity, [$model->type], $company)
+                            : $data->quantity;
+                        $modelDetails->save(false);
+                        $this->applyDetail($model->type, $data->category, $branch, $modelDetails->quantity, false);
+                    }
+                    $this->recalcTotal($id);
+                    return $id;
+                });
+            } catch (\DomainException $e) {
+                Yii::$app->session->setFlash('error', $e->getMessage());
+                return $this->redirect($back);
+            }
+
+            return $this->redirect(['print', 'id' => $id]);
+        } elseif (Yii::$app->request->isAjax) {
+            $model->at = date('Y-m-d');
+            $model->clinet = 1;
+            $model->total = SalesDetails::find()->where(['salesId' => $old->id])
+                ->sum('salePrice * quantity');
+            $model->paid = 0;
+            $model->disscount = 0;
+
+            return $this->renderAjax('_form', [
+                'model' => $model,
+            ]);
+        } else {
+            return $this->render('create', [
+                'model' => $model,
+            ]);
+        }
+    }
+
+    /**
+     * ينقل سطراً من فاتورة محفوظة إلى قائمة الفاتورة المؤقتة للمستخدم ويعيد كميته للمخزون.
+     * @return array [رقم الفاتورة، هل حُذفت الفاتورة لأنها فرغت]
+     */
+    private function moveDetailToTemp($detailId)
+    {
+        $detail = SalesDetails::findOne((int) $detailId);
+        if ($detail === null) {
+            throw new \DomainException('السطر غير موجود.');
+        }
+        $sale = $this->findModel($detail->salesId);
+        $this->ownBranchOrFail($sale);
+        if ($sale->type == 2) {
+            throw new \DomainException('لا يمكن نقل سطر مسترجع إلى فاتورة بيع.');
+        }
+
+        return $this->withStockLock(function () use ($sale, $detail) {
+            $temp = new TempInvoice();
+            $temp->category = $detail->category;
+            $temp->quantity = $detail->quantity;
+            $temp->costPrice = $detail->costPrice;
+            $temp->salePrice = $detail->salePrice;
+            $temp->box = $detail->box;
+            $temp->expire = $detail->expire;
+            $temp->type = $detail->type;
+            $temp->branch = $detail->branch;
+            $temp->waitQnty = $detail->waitQnty;
+            $temp->state = 1;
+            $temp->created_by = Yii::$app->user->identity->id;
+            $temp->save(false);
+
+            $this->applyDetail($sale->type, $detail->category, $this->saleBranch($sale), $detail->quantity, true);
+            SalesDetails::deleteAll(['id' => $detail->id]);
+
+            $total = $this->recalcTotal($sale->id);
+            if ($total === null) {
+                Sales::deleteAll(['id' => $sale->id]);
+                return [$sale->id, true];
+            }
+            return [$sale->id, false];
+        });
+    }
+
+    public function actionTransferToTempInvoice($id)
+    {
+        try {
+            list($salesId, $deleted) = $this->moveDetailToTemp($id);
+        } catch (\DomainException $e) {
+            Yii::$app->session->setFlash('error', $e->getMessage());
+            return $this->redirect(Yii::$app->request->referrer ?: ['index']);
+        }
+
+        return $deleted
+            ? $this->redirect(['temp-invoice/create'])
+            : $this->redirect(['update', 'id' => $salesId]);
+    }
+
+    /**
+     * إضافة صنف (كمية 1) إلى فاتورة محفوظة من مربع البحث في شاشة التعديل. POST فقط.
+     * الأسعار من قاعدة البيانات، والمخزون يتأثر من PHP حسب نوع الفاتورة، والتكرار حسب repeatCategory.
+     */
+    public function actionAddItem()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        $categoryId = (int) Yii::$app->request->post('categoryid');
+        $salesId = (int) Yii::$app->request->post('salesId');
+
+        try {
+            $sale = $this->findModel($salesId);
+            $this->ownBranchOrFail($sale);
+            $company = CompanyInfo::find()->one();
+
+            $message = $this->withStockLock(function () use ($sale, $company, $categoryId) {
+                $category = Category::findOne($categoryId);
+                $prices = Prices::find()->where(['category' => $categoryId])->one();
+                if ($category === null || $prices === null) {
+                    throw new \DomainException('الصنف غير موجود أو لا يوجد له سعر.');
+                }
+
+                $exists = SalesDetails::find()->where(['salesId' => $sale->id, 'category' => $categoryId])->exists();
+                if ($exists && $company->repeatCategory == 0) {
+                    throw new \DomainException(Yii::t('app', "Sorry The Item You Insert already exists"));
+                }
+
+                // يخصم المخزون فقط للنهائية والحجز، ويُقيَّد بالمتاح إلا إن كان البيع بلا رصيد مفعلاً
+                if (in_array((int) $sale->type, [1, 3], true) && $company->zeroQnty == 0
+                    && $this->allowedQty($categoryId, 1, [(int) $sale->type], $company) <= 0) {
+                    throw new \DomainException(Yii::t('app', "عفوا لقد تجاوزت الكمية الموجودة لايمكنك الاستمرار"));
+                }
+
+                $detail = new SalesDetails();
+                $detail->salesId = $sale->id;
+                $detail->category = $categoryId;
+                $detail->quantity = 1;
+                $detail->salePrice = $this->defaultSalePrice($prices, $company);
+                $detail->original_price = $detail->salePrice;
+                $detail->costPrice = $prices->costPrice;
+                $detail->box = 1;
+                $detail->branch = $this->saleBranch($sale);
+                $detail->save(false);
+
+                $this->applyDetail($sale->type, $categoryId, $this->saleBranch($sale), 1, false);
+                $this->recalcTotal($sale->id);
+                return '';
+            });
+        } catch (\DomainException $e) {
+            Yii::$app->response->statusCode = 400;
+            return ['ok' => false, 'message' => $e->getMessage()];
+        } catch (NotFoundHttpException $e) {
+            Yii::$app->response->statusCode = 404;
+            return ['ok' => false, 'message' => 'الفاتورة غير موجودة.'];
+        }
+
+        return ['ok' => true];
+    }
+
+    public function actionFast($id)
+    {
+        $sale = $this->findModel($id);
+        $model = new Sales();
+        $dataProvider = new ActiveDataProvider([
+            'query' => SalesDetails::find()->where(['salesId' => $sale->id]),
+            'sort' => [
+                'defaultOrder' => [
+                    'id' => SORT_DESC
+                ]
+            ],
+            'pagination' => [
+                'pageSize' => 100
+            ],
+        ]);
+
+        if ($model->load(Yii::$app->request->post())) {
+            $selection = Yii::$app->request->post('selection');
+            if (is_array($selection)) {
+                foreach ($selection as $select) {
+                    try {
+                        $detail = SalesDetails::findOne((int) $select);
+                        // لا ينقل إلا أسطر هذه الفاتورة
+                        if ($detail === null || (int) $detail->salesId !== (int) $sale->id) {
+                            continue;
+                        }
+                        list(, $deleted) = $this->moveDetailToTemp($detail->id);
+                        if ($deleted) {
+                            break;
+                        }
+                    } catch (\DomainException $e) {
+                        Yii::$app->session->setFlash('error', $e->getMessage());
+                        break;
+                    }
+                }
+            }
+        }
+
+        return $this->renderAjax('createFast', [
+            'model' => $model,
+            'dataProvider' => $dataProvider,
+        ]);
+    }
+
+    public function actionBackItems($id)
+    {
+        $model = SalesDetails::find()->where(['=', 'id', $id])->one();
+        if ($model === null) {
+            throw new NotFoundHttpException(Yii::t('app', 'The requested page does not exist.'));
+        }
+        // يمرّ بفحص الفاتورة (مستخدم العميل لا يصل إلا لفواتير عملائه)
+        $this->findModel($model->salesId);
+
+        $tempInvoice = new TempBackSales();
+        $tempInvoice->category = $model->category;
+        $tempInvoice->quantity = $model->quantity;
+        $tempInvoice->costPrice = $model->costPrice;
+        $tempInvoice->salePrice = $model->salePrice;
+        $tempInvoice->box = $model->box;
+        $tempInvoice->state = 1;
+        $tempInvoice->created_by = Yii::$app->user->identity->id;
+        $tempInvoice->created_at = date('Y-m-d H:i:s');
+        $tempInvoice->save(false);
+
+        return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
+    }
+
+    public function actionDone($id)
+    {
+        Sales::updateAll(['deserving' => null,], ['=', 'id', $id]);
+
+        return $this->redirect(['deserving']);
     }
 
     public function actionWaitQnty()
@@ -2057,84 +2020,4 @@ class SalesController extends Controller
         return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
     }
 
-    public function actionSummationSales()
-    {
-        $model = new Sales();
-
-        if ($model->load(Yii::$app->request->post())) {
-
-            if ($model->user_insert == null) {
-                echo
-                '<script type="text/javascript"> alert(\'الرجاء تحديد اسم الموظف\');
-                        window.location.href="?r=sales%2Fftran";
-                        </script>';
-            }
-
-            if ($model->min_date == null) {
-                echo
-                '<script type="text/javascript"> alert(\'الرجاء تحديد تاريخ الحركة من\');
-                        window.location.href="?r=sales%2Fftran";
-                        </script>';
-            }
-            if ($model->max_date == null) {
-                echo
-                '<script type="text/javascript"> alert(\'الرجاء تحديد تاريخ الحركة إلى\');
-                        window.location.href="?r=sales%2Fftran";
-                        </script>';
-            }
-
-            $sql = "SELECT 'ارباح المبيعات' AS DESCRIBTION, ifNull(sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity),0) AS total
-            , ifNull(sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity),0) AS NET
-            FROM  sales, salesDetails
-            WHERE sales.id = salesDetails.salesId
-            and sales.type = 1
-            and sales.currancy = " . $model->currancy . " and sales.user_insert = " . $model->user_insert . " and  sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "'
-            UNION
-            SELECT     'مسترجع المبيعات', ifNull(sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity),0),
-            ifNull(sum((salesDetails.salePrice - salesDetails.costPrice) * salesDetails.quantity) *-1,0)
-            FROM  sales, salesDetails
-            WHERE sales.id = salesDetails.salesId
-            and sales.type = 2
-            and sales.currancy = " . $model->currancy . " and sales.user_insert = " . $model->user_insert . " and sales.at  between '" . $model->min_date . "' and '" . $model->max_date . "' ";
-
-            $connection = Yii::$app->db;
-            $data = $connection->createCommand($sql);
-            $info = $data->queryAll();
-            if ($info == null) {
-                die("Sorry no thing to preview");
-            }
-
-            return $this->render('summation', [
-                'models' => $info,
-                'model' => $model,
-                'min_date' => $model->min_date,
-                'max_date' =>  $model->max_date,
-                'coun' => 1,
-                'count' => 0,
-                'total' => 0,
-                'disscount' => 0,
-            ]);
-        }
-
-        return $this->render('_summation', [
-            'model' => $model,
-        ]);
-    }
-
-    public function actionBackItems($id)
-    {
-        $model = salesDetails::find()->where(['=', 'id', $id])->one();
-        $tempInvoice = new TempBackSales();
-        $tempInvoice->category = $model->category;
-        $tempInvoice->quantity = $model->quantity;
-        $tempInvoice->costPrice = $model->costPrice;
-        $tempInvoice->salePrice = $model->salePrice;
-        $tempInvoice->box = $model->box;
-        $tempInvoice->state = 1;
-        $tempInvoice->created_by = Yii::$app->user->identity->id;
-        $tempInvoice->created_at = date('Y-m-d H:i:s');
-        $tempInvoice->save(false);
-
-        return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
-    }
 }

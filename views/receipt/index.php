@@ -75,7 +75,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'template' => '<div class="btn-group btn-group-sm" role="group" aria-label="...">{view}</div>',
                 'buttons' => [
                     'view' => function ($url, $searchModel, $key) {
-                        return Html::a('<i class="fa fa-eye"></i>', $url, ['class' => 'btn btn-default']);
+                        return Html::a('<i class="bi bi-eye"></i>', $url, ['class' => 'btn btn-default']);
                     },
 
 

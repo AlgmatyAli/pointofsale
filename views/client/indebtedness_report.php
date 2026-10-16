@@ -1,150 +1,140 @@
 <?php
 
-use yii\helpers\Html;
 use app\models\CompanyInfo;
+use yii\helpers\Html;
 
-/* @var $this yii\web\View */
-/* @var $model app\models\Salaryroll */
-
+/** @var yii\web\View $this */
 /** @var array $models */
 /** @var int $indebtedness */
+
+// تقرير بتخطيط مستقل بلا الشريط الجانبي والعلوي، ويُطبع داخل إطار معزول (printReport في layouts/report.php)
+$this->context->layout = 'report';
+$this->title = $this->title ?: 'تقرير المديونية';
+
+// بيانات الشركة والشعار (المسار النسبي يُنسب إلى مجلد web)
+$company = CompanyInfo::find()->select(['*'])->asArray()->one() ?: [];
+$logo = (string) ($company['path'] ?? '');
+if ($logo !== '' && !preg_match('~^(https?:)?//|^/~', $logo)) {
+    $logo = Yii::getAlias('@web/') . ltrim($logo, '/');
+}
+
+$fmt = static fn ($value): string => number_format((float) $value, 3);
+
+// نفس الحساب القديم: السالب يُجمع في $credt والباقي في $dept
+// (كان $dept غير مُعرَّف قبل الحلقة فيُصدر تحذير PHP، وتمت تهيئته بصفر دون تغيير النتيجة)
+$credt = 0;
+$dept = 0;
+foreach ($models as $row) {
+    if ($row['credt'] < 0) {
+        $credt = $credt + $row['credt'];
+    } else {
+        $dept = $dept + $row['credt'];
+    }
+}
+
+if ($indebtedness == 0) {
+    $reportTitle = 'تقرير بإجمالي الدائنون';
+    $total = $dept;
+} elseif ($indebtedness == 1) {
+    $reportTitle = 'تقرير بإجمالي المدينون';
+    $total = $credt * -1;
+} else {
+    $reportTitle = 'تقرير المديونية';
+    $total = null;
+}
 ?>
 
-<div class="row">
+<!-- شريط الأزرار: لا يُطبع -->
+<div class="no-print d-print-none mb-3 d-flex flex-wrap justify-content-between gap-2">
+    <button type="button" class="btn btn-primary" onclick="printReport()">
+        <i class="bi bi-printer"></i> <?= Yii::t('app', 'Print') ?>
+    </button>
 
-    <div class="col-md-1">
-    </div>
+    <?= Html::a(
+        '<i class="bi bi-arrow-right-circle"></i> ' . Yii::t('app', 'Cancel'),
+        Yii::$app->request->referrer ?: ['index'],
+        ['class' => 'btn btn-outline-secondary']
+    ) ?>
+</div>
 
-    <div class="col-md-10">
-        <br><br>
+<div id="report" class="report">
 
-        <p>
-            <button class='btn btn-info' onClick="window.print()"><?= Yii::t('app', 'Print') ?></button>`
-            <?= Html::a(Yii::t('app', 'Cancel'), Yii::$app->request->referrer, ['class' => 'btn btn-danger btnx']) ?>
-        </p>
+    <header class="report-header">
+        <div class="report-brand">
+            <?php if ($logo !== ''): ?>
+                <img src="<?= Html::encode($logo) ?>" class="report-logo" alt="<?= Html::encode($company['name'] ?? '') ?>">
+            <?php endif; ?>
+            <div class="report-company"><?= Html::encode($company['name'] ?? '') ?></div>
+        </div>
 
-        <div id='div1' class="site-about">
+        <div class="report-heading">
+            <h1 class="report-title"><?= Html::encode($reportTitle) ?></h1>
+            <div class="report-period">حتى تاريخ: <b><?= date('Y/m/d') ?></b></div>
+        </div>
 
-            <?php $title = CompanyInfo::find()->select(['*'])->asArray()->one(); ?>
+        <div class="report-meta">
+            تاريخ الطباعة: <?= date('Y-m-d H:i') ?><br>
+            أعدّه: <?= Html::encode((string) Yii::$app->user->identity?->username) ?>
+        </div>
+    </header>
 
-            <img src=<?php echo $title["path"] ?> class="img-circle logo" alt="Cinque Terre">
-            <h4><?php
-                echo  $title['name'];
-                echo '<br>';
-                ?> </h4>
+    <table class="report-table">
+        <thead>
+            <tr>
+                <th class="rp-idx">#</th>
+                <th>رقم الحساب</th>
+                <th>اسم العميل</th>
+                <th class="rp-bal">الرصيـد</th>
+                <th>رقم الهاتف</th>
+                <th class="rp-actions no-print"></th>
+            </tr>
+        </thead>
 
-            <center>
-                <div>
-                    <?php if ($indebtedness == 0) {
-                        echo '<h3>تقرير بإجمالي الدائنون حتى تاريخ: <u><b>' . date("Y/m/d") . '</b></u></h3>';
-                    } elseif ($indebtedness == 1) {
-                        echo '<h3>تقرير بإجمالي المدينون حتى تاريخ: <u><b>' . date("Y/m/d") . '</b></u></h3>';
-                    }
-                    ?>
-                </div>
-            </center>
-            <div class="clearfix"></div>
-            <br><br>
-
-
-
-            <table class="table table-hover">
-                <thead class="thead-dark">
-                    <tr>
-                        <th>#</th>
-                        <th>
-                            <h5> رقم الحساب</h5>
-                        </th>
-                        <th>
-                            <h5> اسم العميل</h5>
-                        </th>
-                        <th>
-                            <h5> الرصيـد</h5>
-                        </th>
-                        <th>
-                            <h5> رقم الهاتف</h5>
-                        </th>
-                        <th>
-                            <h5></h5>
-                        </th>
-                    </tr>
-                </thead>
-
-                <?php
-                $sum = 0;
-                $credt = 0;
-                $coun = 1;
-                foreach ($models as $model):
-                    if ($model["credt"] < 0) {
-                        $credt = $credt + $model["credt"];
-                    } else {
-                        $dept = $dept + $model["credt"];
-                    }
-                    $count = $count + 1;
-                ?>
-
-                    <tbody>
-                        <tr>
-                            <td><?= $coun++ ?></td>
-                            <td><?= $model["id"] ?></td>
-
-                            <?php
-
-                            if ($model["post_paid"] == 0) {
-                                echo '<td style="color: red;  text-decoration: underline;">' . $model["name"] . '</td>';
-                            } else {
-                                echo '<td>' . $model["name"] . ' </td>';
-                            }
-                            ?>
-
-                            <td><?php
-                                if ($indebtedness == 0) {
-                                    echo number_format($model["credt"], 3)  . "\n";
-                                } elseif ($indebtedness == 1) {
-                                    echo number_format($model["credt"] * -1, 3)  . "\n";
-                                }
-                                ?></td>
-                            <td><?= $model["phone"] ?></td>
-                            <td>
-                                <?php
-                                // if ($model["type"] != 1) {
-                                //     if (!is_null($model["deserving"])) {
-                                //         echo Html::a('<i class="fa fa-circle opacity2"></i>', ['#'], [
-                                //             'title' => Yii::t('yii', 'View'),
-                                //             'class' => ''
-                                //         ]);
-                                //     }
-                                // }
-                                ?>
-                            </td>
-                            <td><?= Html::a(
-                                    '<i class="fa fa-folder-open"></i>',
-                                    ['sales/histrans', 'client' => $model["id"], 'allData' => 1, 'type' => $model["type"]],
-                                    ['class' => 'btn btn-success']
-                                ) ?></td>
-                        </tr>
-                    </tbody>
-                <?php endforeach; ?>
-
+        <tbody>
+            <?php $i = 1; foreach ($models as $row): ?>
                 <tr>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td>
+                    <td class="rp-idx"><?= $i++ ?></td>
+                    <td><?= Html::encode((string) $row['id']) ?></td>
+                    <?php if ($row['post_paid'] == 0): ?>
+                        <?php /* أنماط مضمّنة لأن الطباعة داخل إطار يحمّل report.css فقط */ ?>
+                        <td style="color:#b02a37;text-decoration:underline"><?= Html::encode((string) $row['name']) ?></td>
+                    <?php else: ?>
+                        <td><?= Html::encode((string) $row['name']) ?></td>
+                    <?php endif; ?>
+                    <td class="rp-num rp-bal">
                         <?php
                         if ($indebtedness == 0) {
-                            echo 'الاجمالي : ' . number_format($dept, 3) . "\n";
+                            echo $fmt($row['credt']);
                         } elseif ($indebtedness == 1) {
-                            echo 'الاجمالي : ' . number_format($credt * -1, 3) . "\n";
+                            echo $fmt($row['credt'] * -1);
                         }
                         ?>
                     </td>
-                    <td></td>
+                    <td class="rp-num"><?= Html::encode((string) $row['phone']) ?></td>
+                    <td class="rp-actions no-print">
+                        <?= Html::a(
+                            '<i class="bi bi-folder2-open"></i>',
+                            ['sales/histrans', 'client' => $row['id'], 'allData' => 1, 'type' => $row['type']],
+                            ['title' => 'كشف الحساب', 'class' => 'btn btn-sm btn-success']
+                        ) ?>
+                    </td>
                 </tr>
-            </table>
-        </div>
+            <?php endforeach; ?>
+            <?php if (!$models): ?>
+                <tr><td colspan="6" style="text-align:center;padding:16px">لا توجد بيانات</td></tr>
+            <?php endif; ?>
+        </tbody>
 
-        <div class="col-md-1">
-        </div>
+        <?php if ($total !== null): ?>
+            <tfoot>
+                <tr>
+                    <td colspan="3">الاجمالي :</td>
+                    <td class="rp-num rp-bal"><?= $fmt($total) ?></td>
+                    <td></td>
+                    <td class="rp-actions no-print"></td>
+                </tr>
+            </tfoot>
+        <?php endif; ?>
+    </table>
 
-    </div>
+</div>

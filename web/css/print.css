@@ -1,0 +1,88 @@
+@page {
+  margin: 5mm;
+  size: A4 portrait;
+}
+
+@media print {
+  /* 1. إخفاء كافة الواجهات غير المرغوب فيها عند الطباعة */
+  .app-header,
+  .app-sidebar,
+  .sidebar-overlay,
+  .app-footer,
+  .app-content-header,
+  #scrollUp,
+  .modal,
+  .modal-backdrop,
+  .alert,
+  .no-print,
+  .btn,
+  .btn-group,
+  button,
+  .noprint,
+  #yii-debug-toolbar {
+    display: none !important;
+  }
+
+  /* 2. تفكيك قيود التخطيط الخاصة بـ AdminLTE و Bootstrap */
+  html,
+  body {
+    height: auto !important;
+    width: 100% !important;
+    overflow: visible !important;
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .app-wrapper,
+  .app-main,
+  .app-content,
+  .container-fluid {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: static !important;
+    transform: none !important;
+  }
+
+  /* 3. إلغاء الانكماش والجعل الفاتورة تمتد بعرض الورقة كاملاً */
+  #container {
+    min-height: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: static !important;
+    float: none !important;
+  }
+
+  body:has(#container) #container {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .invoice-top,
+  .invoice-body {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 10px !important;
+  }
+
+  /* 4. تثبيت طباعة الألوان والجداول */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  tr,
+  img {
+    page-break-inside: avoid;
+  }
+}

@@ -1,563 +1,133 @@
 <?php
 
-use yii\helpers\Html;
-use kartik\ipinfo\IpInfo;
 use kartik\select2\Select2;
+use yii\helpers\Html;
+use yii\helpers\Json;
 use yii\helpers\Url;
 use yii\web\JsExpression;
-use yii\widgets\ActiveForm;
+use yii\web\View;
 
 /* @var $this yii\web\View */
+/* @var $company app\models\CompanyInfo */
+/* @var $model app\models\TempInvoice */
 
-//$this->title = Yii::t('app', 'App');
+$identity = Yii::$app->user->identity;
+$this->title = Yii::t('app', 'مرحبا بـك ') . $identity->username . '!';
 
+// ---------------------------------------------------------------------------
+// إعدادات تعتمد على الشركة والمستخدم
+// ---------------------------------------------------------------------------
+
+$days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+$greeting = ((int) date('G') < 12) ? 'صباح الخير' : 'مساء الخير';
+$today = $days[(int) date('w')] . '، ' . date('Y/m/d');
+
+// ---------------------------------------------------------------------------
+// الإشعارات: كما هي بلا أي تغيير (نفس البنود والقيم والروابط)
+// الألوان: danger=أحمر، success=أخضر، info=أزرق فاتح، warning=أصفر، primary=أزرق، purple=بنفسجي
+// ---------------------------------------------------------------------------
+$infoBoxes = [
+    ['color' => 'danger',  'icon' => 'bi-bell',        'text' => 'اصناف وصلت للحد الأدنى',               'value' => $reorder,                        'url' => ['/reorderitems/index'],                                    'link' => 'لعرض الاصناف اضغط هنا...'],
+    ['color' => 'success', 'icon' => 'bi-folder2-open', 'text' => 'فواتير مشتريات لم يتم اعتمادها',      'value' => $tempPurchase,                   'url' => ['/temp-invoice-purchase/create'],                          'link' => 'لعرض الفواتير اضغط هنا...'],
+    ['color' => 'info',    'icon' => 'bi-eye',          'text' => 'فواتير مبيعات لم يتم اعتمادها',        'value' => $tempSales,                      'url' => ['/temp-invoice/create', 'type' => 1],                      'link' => 'لعرض الفواتير اضغط هنا...'],
+    ['color' => 'warning', 'icon' => 'bi-heart-fill',   'text' => 'الأصناف الأكثر رواجا، قاربت على الانتهاء', 'value' => $request,                    'url' => ['/category/more-request'],                                 'link' => 'لعرض الاصناف اضغط هنا...'],
+    ['color' => 'primary', 'icon' => 'bi-heart-fill',   'text' => 'فواتير لم يتم تسليمها',               'value' => $deleviried,                     'url' => ['/sales/index', 'SalesSearch' => ['deleviried' => 0]],     'link' => 'لعرض الفواتير اضغط هنا...'],
+    ['color' => 'purple',  'icon' => 'bi-bell',         'text' => 'فواتير مستحقة حان موعد تسديدها',      'value' => $amount,                         'url' => ['/sales/deserving'],                                       'link' => 'لعرض الفواتير اضغط هنا...'],
+    ['color' => 'purple',  'icon' => 'bi-bell',         'text' => 'فواتير مشتريات حان موعد وصولها',      'value' => $dateOfArrival['dateOfArrival'], 'url' => ['/purchases/date-of-arrival'],                            'link' => 'لعرض الفواتير اضغط هنا...'],
+    ['color' => 'info',    'icon' => 'bi-bell',         'text' => 'اصناف سعر البيع فيها أقل من سعر التكلفة', 'value' => $compare,                      'url' => ['/prices/compare'],                                        'link' => 'لعرض الاصناف اضغط هنا...'],
+    ['color' => 'danger',  'icon' => 'bi-bell',         'text' => 'اصناف كمياتها أقل من الصفر',          'value' => $zeroQ,                          'url' => ['/stocks/zero-q'],                                         'link' => 'لعرض الاصناف اضغط هنا...'],
+];
+// عدد التنبيهات التي فيها قيمة (للعرض فقط في عنوان القسم)
+$activeAlerts = 0;
+foreach ($infoBoxes as $b) {
+    if (is_numeric($b['value']) && $b['value'] > 0) {
+        $activeAlerts++;
+    }
+}
+
+// اختصارات سريعة (عدّل المسارات حسب صلاحياتك وقوائمك)
+$quick = [
+    ['icon' => 'bi-cart-plus',     'label' => 'فاتورة بيع',      'url' => ['/temp-invoice/create', 'type' => 1], 'color' => 'danger'],
+    ['icon' => 'bi-bag-plus',      'label' => 'فاتورة شراء',     'url' => ['/temp-invoice-purchase/create'],     'color' => 'success'],
+    ['icon' => 'bi-receipt',       'label' => 'فواتير المبيعات', 'url' => ['/sales/index'],                      'color' => 'primary'],
+    ['icon' => 'bi-box-seam',      'label' => 'كشف حساب صنف',     'url' => ['/category/histrans'],                'color' => 'info'],
+    ['icon' => 'bi-people ',       'label' => 'كشف حساب عميل',    'url' => ['/client/histrans'],                  'color' => 'warning'],
+];
+
+// ---------------------------------------------------------------------------
+// تنسيقات
+// ---------------------------------------------------------------------------
+$this->registerCss(<<<'CSS'
+.dash-hero { background: linear-gradient(135deg, var(--bs-primary-bg-subtle), var(--bs-body-bg) 70%); border: 1px solid var(--bs-border-color); border-radius: .85rem; }
+.dash-hero .dash-hello { font-size: 1.6rem; font-weight: 700; line-height: 1.2; }
+.dash-tile { display: flex; flex-direction: column; align-items: center; gap: .35rem; padding: .85rem .5rem; text-align: center; text-decoration: none; color: var(--bs-body-color); border: 1px solid var(--bs-border-color); border-radius: .75rem; background: var(--bs-body-bg); height: 100%; }
+.dash-tile i { font-size: 1.6rem; }
+.dash-tile span { font-size: .85rem; font-weight: 600; }
+.dash-tile:hover, .dash-tile:focus-visible { border-color: var(--bs-primary); color: var(--bs-body-color); box-shadow: 0 .25rem .75rem rgba(var(--bs-emphasis-color-rgb), .08); }
+@media (prefers-reduced-motion: no-preference) { .dash-tile { transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; } .dash-tile:hover { transform: translateY(-2px); } }
+.dash-lookup .select2-container .select2-selection--single { min-height: 44px; }
+.dash-result .dash-price { font-size: 2rem; font-weight: 800; line-height: 1; }
+.dash-mini { padding: .5rem .75rem; border: 1px solid var(--bs-border-color); border-radius: .6rem; height: 100%; }
+.dash-mini .k { font-size: .72rem; color: var(--bs-secondary-color); }
+.dash-mini .v { font-weight: 700; }
+.dash-section-title { display: flex; align-items: center; gap: .5rem; margin: 1.25rem 0 .75rem; font-weight: 700; }
+kbd.dash-key { font-size: .7rem; }
+CSS);
 ?>
-<?php $this->title = Yii::t('app', 'مرحبا بـك ') . Yii::$app->user->identity->username . '!'; ?>
 
 <div class="site-index">
 
-  <section class="content">
+    <!-- ترحيب -->
+    <div class="dash-hero p-3 p-md-4 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div>
+            <div class="text-body-secondary small"><i class="bi bi-calendar3"></i> <?= Html::encode($today) ?></div>
+            <div class="dash-hello"><?= Html::encode($greeting) ?>، <?= Html::encode($identity->username) ?></div>
+            <div class="text-body-secondary">إليك ملخص ما يحتاج انتباهك اليوم.</div>
+        </div>
+        <span class="badge text-bg-primary fs-6 fw-semibold align-self-start"><i class="bi bi-calendar-event"></i> السنة <?= date('Y') ?></span>
+    </div>
+
+    <!-- اختصارات سريعة -->
+    <div class="row g-2 mb-3">
+        <?php foreach ($quick as $q): ?>
+            <div class="col-6 col-md">
+                <?= Html::a(
+                    '<i class="bi ' . $q['icon'] . ' text-' . $q['color'] . '"></i><span>' . Html::encode($q['label']) . '</span>',
+                    $q['url'],
+                    ['class' => 'dash-tile']
+                ) ?>
+            </div>
+        <?php endforeach; ?>
+    </div>
+
+    <!-- الإشعارات: بلا تغيير في البنود أو الروابط أو القيم -->
+    <div class="dash-section-title">
+        <i class="bi bi-bell"></i> التنبيهات
+        <?php if ($activeAlerts > 0): ?>
+            <span class="badge text-bg-danger"><?= (int) $activeAlerts ?> تحتاج انتباه</span>
+        <?php else: ?>
+            <span class="badge text-bg-success">لا توجد تنبيهات</span>
+        <?php endif; ?>
+    </div>
 
     <div class="row">
-      <div class="col-md-4">
-        <h3><?= Html::encode($this->title); ?></h3>
-      </div>
-      <div class="col-md-4"></div>
-      <div class="col-md-4">
-
-        <h3> السنة- <?php echo date('Y') ?>
-          <?php
-          // echo IpInfo::widget([
-          //   'showFlag' => true,
-          //   'showPopover' => true,
-          //   'template' => ['inlineContent' => '{flag} {city} {countryCode}'],
-          // ]);
-          ?>
-        </h3>
-      </div>
+        <?php foreach ($infoBoxes as $b): ?>
+            <div class="col-md-4">
+                <div class="info-box text-bg-<?= $b['color'] ?>">
+                    <span class="info-box-icon"><i class="bi <?= $b['icon'] ?>"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text"><?= Html::encode($b['text']) ?></span>
+                        <span class="info-box-number"><?= Html::encode((string) $b['value']) ?></span>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: 70%"></div>
+                        </div>
+                        <span class="progress-description">
+                            <?= Html::a(Html::encode($b['link']), $b['url'], ['class' => 'text-reset fw-semibold']) ?>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        <?php endforeach; ?>
     </div>
-    <hr>
-    <?php
-    $form = ActiveForm::begin(
-      [
-        'id' => 'temp-invoice-form',
-        'enableAjaxValidation' => false,
-        'enableClientValidation' => false,
-      ]
-    ) ?>
-    <div class="row">
-      <div class="col-md-12">
-        <?php
-        if ($company->criteriaـvalue <> 0) {
-          $formatJs = <<< 'JS'
-            var formatProduct = function (product) {
-            if (product.loading) {
-                return product.text;
-            }
-         let maxPrice = parseFloat(product.maxPrice);
-         maxPrice = Math.round(maxPrice);
-         let diff
-         let len = maxPrice.toString().length;
-         let value = maxPrice.toString().substr(len-1, len-1);
-         if(parseInt(value) < 5 && parseInt(value) != 0){
-          diff = 5 - parseInt(value);
-          maxPrice += diff;
-         }
-         if (parseInt(value) > 5) {
-          diff = 10 - parseInt(value);
-          maxPrice += diff;
-         }
-         let minPrice = parseFloat(product.minPrice);
-         minPrice = Math.round(minPrice);
-         let mDiff
-         let mLen = minPrice.toString().length;
 
-         let mValue = minPrice.toString().substr(mLen-1, mLen-1);
-         if(parseInt(mValue) < 5 && parseInt(mValue) != 0){
-            mDiff = 5 - parseInt(mValue);
-          minPrice += mDiff;
-         }
-         if (parseInt(mValue) > 5) {
-            mDiff = 10 - parseInt(mValue);
-          minPrice += mDiff;
-        }
-    var markup =
-     '<div class="row">' +
-     '<div class="col-sm-3">' +
-       '<b style="margin-center:5px">' + product.text + '</b>' +
-     '</div>' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill">  سعر التكلفة - </i> '+product.costPrice + '</div>' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill">  سعر البيع - </i> <span class="label label-danger">' + maxPrice + '</span> </div>' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> سعر البيع الأدنى - </i> ' + minPrice + '</div>' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> مكان الصنف - </i> ' + product.place + '</div>' +
-     '<div class="col-sm-1"><i class="badge badge-primary badge-pill"> - </i> <span class="label label-info"> ' + product.BRNAME + '</div>' +
-     '</div>' +
-     '<br>' +
-     '<div class="row">' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> رقم القطعة - </i> ' + product.serialNo + '</div>' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> رقم القطعة التجاري- </i> ' + product.commCode + '</div>' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> رقم التسلسل - </i> '  + product.id + '</div>' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill">حالة القطعة</i> ' +product.type+ '</div>' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الكمية = </i> <span class="label label-success">' + '  ' + product.quantity + '<span> </div>' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الشركة - </i> <span class="label label-warning">' + product.company + '</span> </div>' +
-   '</div>';
-   return '<div style="overflow:hidden;">' + markup + '</div>';
- };
-
-
- var formatProductSelection = function (product) {
-   return product.name || product.text;
- }
-JS;
-          // Register the formatting script
-          $this->registerJs($formatJs, $this::POS_HEAD);
-          // script to parse the results into the format expected by Select2
-          $resultsJs = <<< JS
-            function (data, params) {
-            params.page = params.page || 5;
-            return {
-                // Change `data.items` to `data.results`.
-                // `results` is the key that you have been selected on
-                // `actionJsonlist`.
-                results: data.results
-            };
-   }
-JS;
-          echo $form->field($model, 'kind')->widget(Select2::class, [
-            'name' => 'kv-repo-template1',
-            'id' => 'kind',
-            'language' => 'en',
-            'options' => [
-              'placeholder' => Yii::t('app', 'Search...'),
-              'dir' => 'rtl',
-              'multiple' => false,
-            ],
-            'pluginOptions' => [
-              //'autofocus' => true,
-              'minimumInputLength' => 1,
-              'ajax' => [
-                'url' => Url::to(['/sales/itemlist']),
-                'dataType' => 'json',
-                'data' => new JsExpression('function(params) { return {q:params.term, page: params.page}; }'),
-                'processResults' => new JsExpression($resultsJs),
-                'cache' => true,
-              ],
-              'escapeMarkup' => new JsExpression('function (markup) { return markup; }'),
-              'templateResult' => new JsExpression('formatProduct'),
-              'templateSelection' => new JsExpression('formatProductSelection'),
-            ],
-          ])->label('اسم الصنف او كود الصنف');;
-        } else {
-          $formatJs = <<< 'JS'
-            var formatProduct = function (product) {
-            if (product.loading) {
-                return product.text;
-            }
-         
-    var markup =
-     '<div class="row">' +
-     '<div class="col-sm-4">' +
-       '<b style="margin-center:5px">' + product.text + '</b>' +
-     '</div>' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill">  سعر التكلفة - </i> '+product.costPrice + '</div>' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill">  سعر البيع - </i> <span class="label label-danger">' + product.maxPrice + '</span> </div>' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> سعر البيع الأدنى - </i> ' +product. minPrice + '</div>' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> مكان الصنف - </i> ' + product.place + '</div>' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> - </i> <span class="label label-info"> ' + product.BRNAME + '</div>' +
-     '</div>' +
-     '<br>' +
-     '<div class="row">' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> رقم القطعة - </i> ' + product.serialNo + '</div>' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> رقم القطعة التجاري- </i> ' + product.commCode + '</div>' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> رقم التسلسل - </i> '  + product.id + '</div>' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill">حالة القطعة</i> ' +product.type+ '</div>' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الكمية = </i> <span class="label label-success">' + '  ' + product.quantity + '<span> </div>' +
-     '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الشركة - </i> <span class="label label-warning">' + product.company + '</span> </div>' +
-   '</div>';
-   return '<div style="overflow:hidden;">' + markup + '</div>';
- };
-
-
- var formatProductSelection = function (product) {
-   return product.name || product.text;
- }
-JS;
-          // Register the formatting script
-          $this->registerJs($formatJs, $this::POS_HEAD);
-          // script to parse the results into the format expected by Select2
-          $resultsJs = <<< JS
-            function (data, params) {
-            params.page = params.page || 5;
-            return {
-                // Change `data.items` to `data.results`.
-                // `results` is the key that you have been selected on
-                // `actionJsonlist`.
-                results: data.results
-            };
-   }
-JS;
-          echo $form->field($model, 'kind')->widget(Select2::class, [
-            'name' => 'kv-repo-template1',
-            'id' => 'kind',
-            'language' => 'en',
-            'options' => [
-              'placeholder' => Yii::t('app', 'Search...'),
-              'dir' => 'rtl',
-              'multiple' => false,
-            ],
-            'pluginOptions' => [
-              'autofocus' => true,
-              'minimumInputLength' => 1,
-              'ajax' => [
-                'url' => Url::to(['/sales/itemlist']),
-                'dataType' => 'json',
-                'data' => new JsExpression('function(params) { return {q:params.term, page: params.page}; }'),
-                'processResults' => new JsExpression($resultsJs),
-                'cache' => true,
-              ],
-              'escapeMarkup' => new JsExpression('function (markup) { return markup; }'),
-              'templateResult' => new JsExpression('formatProduct'),
-              'templateSelection' => new JsExpression('formatProductSelection'),
-            ],
-          ])->label('اسم الصنف او كود الصنف');
-        }
-
-
-        ?>
-        <br>
-        <hr>
-        <?php ActiveForm::end(); ?>
-      </div>
-      <br>
-      <hr>
-      <!-- Apply any bg-* class to to the info-box to color it -->
-      <div class='row'>
-        <div class="col-md-4">
-          <div class="info-box bg-red">
-            <span class="info-box-icon"><i class="fa fa-bell-o"></i></span>
-            <div class="info-box-content">
-              <span class="info-box-text">اصناف وصلت للحد الأدنى</span>
-              <span class="info-box-number"><?php echo  $reorder ?></span>
-              <!-- The progress section is optional -->
-              <div class="progress">
-                <div class="progress-bar" style="width: 70%"></div>
-              </div>
-              <span class="progress-description">
-                <a href="?r=reorderitems/index" style="color:white"><b> لعرض الاصناف اضغط هنا...</a>
-              </span>
-            </div><!-- /.info-box-content -->
-          </div><!-- /.info-box -->
-        </div>
-        <div class="col-md-4">
-          <div class="info-box bg-green">
-            <span class="info-box-icon"><i class="fa fa-folder-open-o"></i></span>
-            <div class="info-box-content">
-              <span class="info-box-text">فواتير مشتريات لم يتم اعتمادها</span>
-              <span class="info-box-number"><?php echo $tempPurchase ?></span>
-              <!-- The progress section is optional -->
-              <div class="progress">
-                <div class="progress-bar" style="width: 70%"></div>
-              </div>
-              <span class="progress-description">
-                <a href="?r=temp-invoice-purchase%2Fcreate" style="color:white"><b> لعرض الفواتير اضغط هنا...</a>
-              </span>
-            </div><!-- /.info-box-content -->
-          </div><!-- /.info-box -->
-        </div>
-        <div class="col-md-4">
-          <div class="info-box bg-aqua">
-            <span class="info-box-icon"><i class="fa fa-eye"></i></span>
-            <div class="info-box-content">
-              <span class="info-box-text">فواتير مبيعات لم يتم اعتمادها</span>
-              <span class="info-box-number"><?php echo $tempSales ?></span>
-              <!-- The progress section is optional -->
-              <div class="progress">
-                <div class="progress-bar" style="width: 70%"></div>
-              </div>
-              <span class="progress-description">
-                <a href="?r=temp-invoice%2Fcreate&type=1" style="color:white"><b> لعرض الفواتير اضغط هنا...</a>
-              </span>
-            </div><!-- /.info-box-content -->
-          </div><!-- /.info-box -->
-        </div>
-      </div>
-
-      <div class='row'>
-        <div class="col-md-4">
-          <div class="info-box bg-yellow">
-            <span class="info-box-icon"><i class="fa fa-heart"></i></span>
-            <div class="info-box-content">
-              <span class="info-box-text">الأصناف الأكثر رواجا، قاربت على الانتهاء</span>
-              <span class="info-box-number"><?php echo  $request ?></span>
-              <!-- The progress section is optional -->
-              <div class="progress">
-                <div class="progress-bar" style="width: 70%"></div>
-              </div>
-              <span class="progress-description">
-                <a href="?r=category/more-request" style="color:white"><b> لعرض الاصناف اضغط هنا...</a>
-              </span>
-            </div><!-- /.info-box-content -->
-          </div><!-- /.info-box -->
-        </div>
-
-        <div class="col-md-4">
-          <div class="info-box bg-blue">
-            <span class="info-box-icon"><i class="fa fa-heart"></i></span>
-            <div class="info-box-content">
-              <span class="info-box-text">فواتير لم يتم تسليمها</span>
-              <span class="info-box-number"><?php echo  $deleviried ?></span>
-              <!-- The progress section is optional -->
-              <div class="progress">
-                <div class="progress-bar" style="width: 70%"></div>
-              </div>
-              <span class="progress-description">
-                <a href="?r=sales%2Findex&SalesSearch%5Bdeleviried%5D=0" style="color:white"><b> لعرض الفواتير اضغط هنا...</a>
-              </span>
-            </div><!-- /.info-box-content -->
-          </div><!-- /.info-box -->
-        </div>
-        <div class="col-md-4">
-          <div class="info-box bg-purple">
-            <span class="info-box-icon"><i class="fa fa-bell-o"></i></span>
-            <div class="info-box-content">
-              <span class="info-box-text">فواتير مستحقة حان موعد تسديدها</span>
-              <span class="info-box-number"><?php echo  $amount ?></span>
-              <!-- The progress section is optional -->
-              <div class="progress">
-                <div class="progress-bar" style="width: 70%"></div>
-              </div>
-              <span class="progress-description">
-                <a href="?r=sales/deserving" style="color:white"><b> لعرض الفواتير اضغط هنا...</a>
-              </span>
-            </div><!-- /.info-box-content -->
-          </div><!-- /.info-box -->
-        </div>
-        <div class="col-md-4">
-          <div class="info-box bg-purple">
-            <span class="info-box-icon"><i class="fa fa-bell-o"></i></span>
-            <div class="info-box-content">
-              <span class="info-box-text">فواتير مشتريات حان موعد وصولها </span>
-              <span class="info-box-number"><?php echo  $dateOfArrival['dateOfArrival'] ?></span>
-              <!-- The progress section is optional -->
-              <div class="progress">
-                <div class="progress-bar" style="width: 70%"></div>
-              </div>
-              <span class="progress-description">
-                <a href="?r=purchases/date-of-arrival" style="color:white"><b> لعرض الفواتير اضغط هنا...</a>
-              </span>
-            </div><!-- /.info-box-content -->
-          </div><!-- /.info-box -->
-        </div>
-        <div class="col-md-4">
-          <div class="info-box bg-aqua">
-            <span class="info-box-icon"><i class="fa fa-bell-o"></i></span>
-            <div class="info-box-content">
-              <span class="info-box-text">اصناف سعر البيع فيها أقل من سعر التكلفة</span>
-              <span class="info-box-number"><?php echo $compare ?></span>
-              <!-- The progress section is optional -->
-              <div class="progress">
-                <div class="progress-bar" style="width: 70%"></div>
-              </div>
-              <span class="progress-description">
-                <a href="?r=prices/compare" style="color:white"><b> لعرض الفواتير اضغط هنا...</a>
-              </span>
-            </div><!-- /.info-box-content -->
-          </div><!-- /.info-box -->
-        </div>
-        <div class="col-md-4">
-          <div class="info-box bg-red">
-            <span class="info-box-icon"><i class="fa fa-bell-o"></i></span>
-            <div class="info-box-content">
-              <span class="info-box-text">اصناف كمياتها أقل من الصفر</span>
-              <span class="info-box-number"><?php echo $zeroQ ?></span>
-              <!-- The progress section is optional -->
-              <div class="progress">
-                <div class="progress-bar" style="width: 70%"></div>
-              </div>
-              <span class="progress-description">
-                <a href="?r=stocks/zero-q" style="color:white"><b> لعرض الفواتير اضغط هنا...</a>
-              </span>
-            </div><!-- /.info-box-content -->
-          </div><!-- /.info-box -->
-        </div>
-      </div>
-      <!-- <hr> -->
-      <div class="row">
-        <div class="col-sm-6">
-          <?php
-          // foreach ($infos as $info) :
-          //   $bestCustomer[] = $info["cleintName"];
-          //   $count[] = $info['countt'];
-          ?>
-          <?php //endforeach; 
-          ?>
-
-          <?php
-          // if (Yii::$app->user->identity->client == null) {
-          //   echo ChartJs::widget([
-          //     'options' => [
-          //       'height' => 300,
-          //       'width' => 400,
-          //     ],
-          //     'type' => 'doughnut',
-          //     'clientOptions' => [
-          //       'legend' => [
-          //         'display' => true,
-          //         'position' => 'bottom',
-          //         'labels' => [
-          //           'fontSize' => 12,
-          //           'fontColor' => "#425062",
-          //         ]
-          //       ],
-          //       'tooltips' => [
-          //         'enabled' => true,
-          //         'intersect' => true
-          //       ],
-          //       'hover' => [
-          //         'mode' => true
-          //       ],
-          //       'maintainAspectRatio' => true,
-          //       'scales' => [
-          //         'yAxes' => [
-          //           [
-          //             'ticks' => [
-          //               'beginAtZero' => true,
-          //               'precision' => '0'
-          //             ]
-          //           ]
-          //         ]
-          //       ]
-          //     ],
-          //     'data' => [
-          //       'labels' => $bestCustomer,
-          //       'datasets' => [
-          //         [
-          //           'data' => $count,
-          //           'label' => Yii::t('app', 'Number Of Bill'),
-          //           'backgroundColor' => [
-          //             '#1d96f6',
-          //             '#631a78',
-          //             '#10bad1',
-          //             '#de5c79',
-          //             '#e907c4',
-          //             '#74107d',
-          //             '#f15932',
-          //             '#c4520b',
-          //             '#ef409f',
-          //             '#b5d6dc',
-          //             '#fa9c45',
-          //             '#631a78',
-          //             '#1d96f6',
-          //           ],
-          //           'borderColor' => [
-          //             '#fff',
-          //             '#fff',
-          //             '#fff'
-          //           ],
-          //           'borderWidth' => 2,
-          //           'hoverBorderColor' => ["#999", "#999", "#999"],
-          //         ]
-          //       ]
-          //     ]
-          //   ]);
-          // }
-          ?>
-        </div>
-
-        <div class="col-sm-6">
-          <?php
-          // foreach ($details as $detail) :
-          //   $bestCategory[] = $detail["categoryName"];
-          //   $counts[] = $detail['counts'];
-          ?>
-          <?php //endforeach; 
-          ?>
-          <?php
-          // ChartJs::widget([
-          //   'options' => [
-          //     'height' => 300,
-          //     'width' => 400,
-          //   ],
-          //   'type' => 'bar',
-          //   'clientOptions' => [
-          //     'legend' => [
-          //       'display' => true,
-          //       'position' => 'bottom',
-          //       'labels' => [
-          //         'fontSize' => 12,
-          //         'fontColor' => "#425062",
-          //       ]
-          //     ],
-          //     'tooltips' => [
-          //       'enabled' => true,
-          //       'intersect' => true
-          //     ],
-          //     'hover' => [
-          //       'mode' => true
-          //     ],
-          //     'maintainAspectRatio' => true,
-          //     'scales' => [
-          //       'yAxes' => [
-          //         [
-          //           'ticks' => [
-          //             'beginAtZero' => true,
-          //             'precision' => '0'
-          //           ]
-          //         ]
-          //       ]
-          //     ]
-          //   ],
-          //   'data' => [
-          //     'labels' => $bestCategory,
-          //     'datasets' => [
-          //       [
-          //         'data' => $counts,
-          //         'label' => Yii::t('app', 'Number Of Category'),
-          //         'backgroundColor' => [
-          //           '#adc3fe',
-          //           '#10bad1',
-          //           '#de5c79',
-          //           '#e907c4',
-          //           '#74107d',
-          //           '#f15932',
-          //           '#c4520b',
-          //           '#ef409f',
-          //           '#b5d6dc',
-          //           '#fa9c45',
-          //           '#631a78',
-          //           '#1d96f6',
-          //         ],
-          //         'borderColor' => [
-          //           '#fff',
-          //           '#fff',
-          //           '#fff'
-          //         ],
-          //         'borderWidth' => 2,
-          //         'hoverBorderColor' => ["#999", "#999", "#999"],
-          //       ]
-          //     ]
-          //   ]
-          // ]);
-          ?>
-        </div>
-      </div>
-      <!-- <hr> -->
-      <div class="row">
-        <div class="col-sm-4">
-          <?php
-          /* echo
-     \yii2fullcalendar\yii2fullcalendar::widget(array( 
-       'options' => [
-        'lang' => 'ar-LY',
-        //... more options to be defined here!
-      ],
-      'events'=> $events,
-     ));
-     */
-          ?>
-        </div>
-
-      </div>
-    </div>
-  </section>
 </div>

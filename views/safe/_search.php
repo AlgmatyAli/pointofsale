@@ -7,9 +7,10 @@ use yii\helpers\ArrayHelper;
 use app\models\Branches;
 use kartik\daterange\DateRangePicker;
 use yii\helpers\Url;
-/* @var $this yii\web\View */
-/* @var $model app\models\SafeSearch */
-/* @var $form yii\widgets\ActiveForm */
+
+/** @var  yii\web\View $this*/
+/** @var  app\models\SafeSearch $model*/
+/** @var  yii\widgets\ActiveForm $form*/
 ?>
 
 <div class="safe-search">
@@ -22,55 +23,56 @@ use yii\helpers\Url;
         ],
     ]); ?>
     <div class="row">
-    <div class="col-lg-2"></div>
-    <div class="col-lg-4">
- 
-    <?php  
-                echo $form->field($model, 'branch')->widget(Select2::class, [
-                'data' => ArrayHelper::map(Branches::find()->all(),'id', 'name'),
+        <div class="col-lg-2"></div>
+        <div class="col-lg-4">
+
+            <?php
+            echo $form->field($model, 'branch')->widget(Select2::class, [
+                'data' => ArrayHelper::map(Branches::find()->all(), 'id', 'name'),
                 'language' => 'ar',
                 'options' => ['placeholder' => 'الرجاء اختيار اسم الفرع ...'],
                 'pluginOptions' => [
                     'allowClear' => true,
-                    'multiple'=>false
+                    'multiple' => false
                 ],
-             ]);
-    ?>
+            ]);
+            ?>
 
-    <?= $form->field($model, 'safeNo')->dropDownList([ '1' => ' خزينة رقـم 1', '2' => 'خزينة رقـم 2' ], ['prompt' => 'اختيار اسم الخزينة']) ?>
+            <?= $form->field($model, 'safeNo')->dropDownList(['1' => ' خزينة رقـم 1', '2' => 'خزينة رقـم 2'], ['prompt' => 'اختيار اسم الخزينة']) ?>
 
-    <?= $form->field($model, 'value') ?>
+            <?= $form->field($model, 'value') ?>
 
-    <br><div class="form-group">
-        <?= Html::submitButton('<i class="fa fa-fw fa-search"></i>'.' '.Yii::t('app', 'Search'), ['class' => 'btn btn-primary btn-lg']) ?>
-        <?= Html::a('<i class="fa fa-fw fa-eraser"></i>'.' '.Yii::t('app', "Erase"), Url::toRoute(['index']), ['class' => 'btn btn-danger btn-lg']) ?>
+            <br>
+            <div class="form-group">
+                <?= Html::submitButton('<i class="fa fa-fw fa-search"></i>' . ' ' . Yii::t('app', 'Search'), ['class' => 'btn btn-primary btn-lg']) ?>
+                <?= Html::a('<i class="fa fa-fw fa-eraser"></i>' . ' ' . Yii::t('app', "Erase"), Url::toRoute(['index']), ['class' => 'btn btn-danger btn-lg']) ?>
+            </div>
+        </div>
+        <div class="col-lg-4">
+
+            <?php
+            echo '<label class="control-label">تاريخ الحركة</label>';
+            echo DateRangePicker::widget([
+                'model' => $model,
+                'attribute' => 'at',
+                'language' => 'en',
+                'convertFormat' => false,
+                'pluginOptions' => [
+                    'timePicker' => false,
+                    'timePickerIncrement' => 30,
+                    'locale' => [
+                        'format' => 'YYYY-MM-DD'
+                    ]
+                ]
+            ]);
+
+            ?><br>
+
+            <?= $form->field($model, 'type')->dropDownList(['1' => ' صادر', '2' => 'وارد'], ['prompt' => 'اختيار نوع الحركة']) ?>
+
+        </div>
     </div>
-    </div>
-    <div class="col-lg-4">
-    
-    <?php
-     echo '<label class="control-label">تاريخ الحركة</label>';
-     echo DateRangePicker::widget([
-        'model'=>$model,
-        'attribute'=>'at',
-        'language' => 'en',
-        'convertFormat'=>false,
-        'pluginOptions'=>[
-            'timePicker'=>false,
-            'timePickerIncrement'=>30,
-            'locale'=>[
-                'format'=>'YYYY-MM-DD'
-            ]
-        ]
-    ]);
 
-    ?><br>
-
-     <?= $form->field($model, 'type')->dropDownList([ '1' => ' صادر', '2' => 'وارد' ], ['prompt' => 'اختيار نوع الحركة']) ?>
-
-    </div>
-    </div>
-    
 
     <?php ActiveForm::end(); ?>
 

@@ -1,0 +1,64 @@
+/* شاشة نقطة البيع: ملء الشاشة بلا تمرير للصفحة، والتمرير داخل السلة والأصناف فقط */
+.pos-body { height: 100vh; margin: 0; overflow: hidden; background: #f1f3f5; font-size: 15px; }
+.pos-app { height: 100vh; display: flex; flex-direction: column; }
+.pos-topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: .4rem 1rem; background: #fff; border-bottom: 1px solid #dee2e6;
+}
+.pos-main { flex: 1; min-height: 0; display: flex; gap: .75rem; padding: .75rem; }
+
+/* السلة */
+.pos-cart {
+    width: 40%; min-width: 360px; max-width: 560px;
+    display: flex; flex-direction: column; background: #fff;
+    border: 1px solid #dee2e6; border-radius: .6rem; overflow: hidden;
+}
+.pos-cart-head { display: flex; justify-content: space-between; align-items: center; padding: .6rem .8rem; border-bottom: 1px solid #eee; }
+.pos-cart-body { flex: 1; min-height: 0; overflow-y: auto; }
+.pos-cart-body thead th { position: sticky; top: 0; background: #f8f9fa; z-index: 1; font-size: .8rem; }
+.pos-cart-foot { padding: .8rem; border-top: 1px solid #eee; background: #f8f9fa; }
+.pos-total { font-size: 2rem; font-weight: 700; color: var(--bs-primary); line-height: 1; }
+.pos-pay { font-size: 1.25rem; font-weight: 700; padding: .8rem; }
+.cart-qty, .cart-price { min-width: 60px; }
+
+/* البحث والأصناف */
+.pos-products { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .6rem; }
+.pos-classes { display: flex; gap: .4rem; overflow-x: auto; padding-bottom: .2rem; }
+.pos-classes .btn { white-space: nowrap; border-radius: 2rem; }
+.pos-grid {
+    flex: 1; min-height: 0; overflow-y: auto; align-content: start;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: .6rem;
+}
+.pos-card {
+    display: flex; flex-direction: column; text-align: right; padding: 0; overflow: hidden;
+    background: #fff; border: 1px solid #dee2e6; border-radius: .6rem; cursor: pointer;
+    transition: box-shadow .12s, transform .12s;
+}
+.pos-card:hover { box-shadow: 0 .4rem .9rem rgba(0, 0, 0, .12); transform: translateY(-1px); }
+.pos-card:active { transform: scale(.98); }
+.pos-card-img { height: 90px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; color: #adb5bd; font-size: 2.2rem; }
+.pos-card-img img { width: 100%; height: 100%; object-fit: cover; }
+.pos-card-name { padding: .4rem .5rem 0; font-weight: 600; font-size: .85rem; line-height: 1.3; height: 2.9em; overflow: hidden; }
+.pos-card-foot { display: flex; justify-content: space-between; align-items: center; padding: .4rem .5rem; }
+
+/* نافذة الدفع */
+.pos-net, .pos-change { display: flex; justify-content: space-between; align-items: center; padding: .6rem .8rem; border-radius: .5rem; }
+.pos-net { background: #e7f1ff; font-size: 1.2rem; }
+.pos-net strong { font-size: 1.6rem; }
+.pos-change { background: #e8f7ee; font-size: 1.1rem; }
+.pos-change strong { font-size: 1.5rem; }
+
+@media (max-width: 900px) {
+    .pos-main { flex-direction: column; overflow-y: auto; }
+    .pos-cart { width: 100%; max-width: none; min-height: 55vh; }
+}
+
+/* قائمة اقتراحات البحث تحت حقل الباركود */
+.pos-suggest {
+    position: absolute; top: 100%; right: 0; left: 0; z-index: 30; margin-top: 2px;
+    max-height: 60vh; overflow-y: auto; box-shadow: 0 .6rem 1.2rem rgba(0, 0, 0, .18);
+}
+.pos-suggest .list-group-item { cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: .75rem; }
+.pos-suggest .list-group-item.active { background: #e7f1ff; color: inherit; border-color: #b6d4fe; }
+.pos-suggest .sg-name { font-weight: 600; }
+.pos-suggest .sg-meta { color: #6c757d; font-size: .8rem; }

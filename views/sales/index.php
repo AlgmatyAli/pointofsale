@@ -2,25 +2,19 @@
 
 use kartik\grid\GridView;
 use yii\helpers\Html;
-
 use yii\widgets\Pjax;
 
-/* @var $this yii\web\View */
-/* @var $searchModel app\models\SalesSearch */
-/* @var $dataProvider yii\data\ActiveDataProvider */
+/** @var  yii\web\View $this*/
+/** @var  app\models\SalesSearch $searchModel*/
+/** @var  yii\data\ActiveDataProvider $dataProvider */
 
-$search = "$('.search-button').click(function(){ 
-    $('.search-form').toggle(1000); 
-    return false; 
- });";
-$this->registerJs($search);
 
-$this->title = Yii::t('app', 'Sales');
-$this->params['breadcrumbs'][] = $this->title;
+$this->title = Yii::t('app', 'تقرير تفصيلي عن المبيعات');
 ?>
 <div class="sales-index">
-
+    <h3><?= Html::encode($this->title) ?></h3>
     <hr>
+
     <?php echo $this->render('_search', ['model' => $searchModel]); ?>
     <?php Pjax::begin(); ?>
 
@@ -30,7 +24,7 @@ $this->params['breadcrumbs'][] = $this->title;
         'summary' => '',
         'rowOptions' => function ($searchModel) {
             if ($searchModel->deleviried == '0') {
-                return ['class' => 'danger'];
+                return ['class' => 'table-danger'];
             }
         },
         'columns' => [
@@ -45,7 +39,13 @@ $this->params['breadcrumbs'][] = $this->title;
                     return Yii::$app->controller->renderPartial('_expand', ['model' => $model]);
                 },
                 'headerOptions' => ['class' => 'kartik-sheet-style'],
-                'expandOneOnly' => true
+                'expandOneOnly' => true,
+
+                // ---- إضافة أيقونات Bootstrap Icons وتنسيقها ----
+                'expandIcon' => '<i class="bi bi-chevron-left"></i>',    // أو bi-plus-circle
+                'collapseIcon' => '<i class="bi bi-chevron-down"></i>',  // أو bi-dash-circle
+                'expandTitle' => Yii::t('app', 'Expand'),
+                'collapseTitle' => Yii::t('app', 'Collapse'),
             ],
 
             'billId',
@@ -53,20 +53,16 @@ $this->params['breadcrumbs'][] = $this->title;
 
             [
                 'label' => Yii::t('app', 'C ID'),
-                'format' => 'raw',
+                'format' => 'text',
                 'value' => 'c.name',
-                // function ($data) {
-                //     return $data->c->name;
-                // },
                 'contentOptions' => function ($model) {
                     return [
                         'class' => 'cell-with-tooltip',
-                        'data-toggle' => 'tooltip',
+                        'data-bs-toggle' => 'tooltip',
                         'style' => 'font-size:14px;',
-                        'data-placement' => 'top', // top, bottom, left, right
-                        'data-container' => 'body', // to prevent breaking table on hover
-                        'title' =>  $model->notes,
-                        'value' => 'notes',
+                        'data-bs-placement' => 'top',
+                        'data-bs-container' => 'body',
+                        'title' => $model->notes,
                     ];
                 }
 
@@ -98,7 +94,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => Yii::t('app', 'Payment Type'),
                 'format' => 'raw',
                 'value' => function ($searchModel) {
-                    return $searchModel->paymentType0->name;
+                    return Html::encode($searchModel->paymentType0?->name);
                 }
             ],
 
@@ -122,7 +118,6 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'label' => Yii::t('app', 'Total'),
                 'attribute' => 'total',
-                // 'format' => 'currency',
                 'format' => ['decimal', 3],
                 'hAlign' => 'right',
                 'pageSummary' => true,
@@ -131,7 +126,6 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'label' => Yii::t('app', 'Disscount'),
                 'attribute' => 'disscount',
-                // 'format' => 'currency',
                 'format' => ['decimal', 3],
                 'hAlign' => 'right',
                 'pageSummary' => true,
@@ -150,7 +144,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => Yii::t('app', 'User Insert'),
                 'format' => 'raw',
                 'value' => function ($data) {
-                    return $data->userInsert->username;
+                    return Html::encode($data->userInsert?->username);
                 }
             ],
 
@@ -161,7 +155,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'template' => '<div class="btn-group btn-group-sm" role="group" aria-label="...">{print}</div>',
                 'buttons' => [
                     'print' => function ($url, $searchModel, $key) {
-                        return Html::a('<i class="fa fa-eye"></i>', $url, ['class' => 'btn btn-default']);
+                        return Html::a('<i class="bi bi-eye"></i>', $url, ['class' => 'btn btn-outline-secondary btn-sm']);
                     },
                 ]
             ],

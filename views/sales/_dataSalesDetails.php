@@ -20,17 +20,18 @@ $gridColumns = [
         'attribute' => 'cat.company',
         'label' => Yii::t('app', 'Company')
     ],
-    'quantity',
+    [
+        'label' => Yii::t('app', 'Quantity'),
+        'attribute' => 'quantity',
+        'format' => ['decimal', 0],
+        'pageSummary' => true,
+    ],
     'waitQnty',
 
     [
         'label' => Yii::t('app', 'Sale Price'),
         'attribute' => 'salePrice',
         'format' => ['decimal', 3],
-        // 'format' => 'currency',
-        // 'format' => 'decimal',
-        // 'hAlign' => 'right',
-        'pageSummary' => true,
     ],
     [
         'class' => 'kartik\grid\FormulaColumn',
@@ -47,20 +48,21 @@ $gridColumns = [
         'mergeHeader' => true,
         'pageSummary' => true,
         'footer' => true
-
-
     ],
 
     [
         'class' => 'yii\grid\ActionColumn',
         'template' => '{back}',
+        // إضافة السطر لقائمة المرتجع المؤقتة: لمن يملك createBackSales فقط، ولا معنى لها في المسترجع أو المبدئية
+        'visible' => Yii::$app->user->can('createBackSales') && !in_array((int) $model->type, [2, 4], true),
         'buttons' => [
             'back' => function ($url, $model, $key) {
-
                 $url = Url::to(['sales/back-items', 'id' => $model['id']]);
-
-                return Html::a('<span class="glyphicon glyphicon-retweet"></span>', $url, [
+                // تغيّر حالة (تُضيف للمرتجع المؤقت) فتكون عبر POST
+                return Html::a('<i class="bi bi-arrow-repeat fs-5"></i>', $url, [
                     'title' => Yii::t('app', 'Return the item'),
+                    'data-method' => 'post',
+                    'data-pjax' => '0',
                 ]);
             }
         ],
@@ -88,6 +90,5 @@ echo GridView::widget([
     'condensed' => true,
     'responsive' => true,
     'hover' => true,
-    // 'showPageSummary' => false,
     'persistResize' => false,
 ]);

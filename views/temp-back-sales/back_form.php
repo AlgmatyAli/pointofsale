@@ -1,321 +1,422 @@
 <?php
 
 use app\models\Client;
-use yii\helpers\Html;
 use kartik\grid\GridView;
+use kartik\select2\Select2;
+use yii\bootstrap5\ActiveForm;
+use yii\helpers\ArrayHelper;
+use yii\helpers\Html;
+use yii\helpers\Json;
 use yii\helpers\Url;
 use yii\web\JsExpression;
-use kartik\select2\Select2;
-use yii\helpers\ArrayHelper;
-use yii\widgets\ActiveForm;
+use yii\web\View;
+use yii\widgets\Pjax;
 
-/* @var $this yii\web\View */
-/* @var $model app\models\TempInvoice */
-/* @var $form yii\widgets\ActiveForm */
+/** @var yii\web\View $this */
+/** @var app\models\TempBackSales $model */
+/** @var app\models\Client|null $serial_number */
+/** @var yii\data\ActiveDataProvider $dataProvider */
+
+// الزبون المرتبط بالحركة الحالية (الافتراضي القديم 1 يبقى كما هو)
+$clientId = is_null($serial_number) ? 1 : $serial_number->serial_number;
+
+// إجماليات البطاقات: عدد الأصناف + مجموع الكميات + الإجمالي (كمية × سعر البيع)
+$qtyTotal = 0;
+$invoiceTotal = 0;
+foreach ($dataProvider->getModels() as $row) {
+    $qtyTotal += $row->quantity;
+    $invoiceTotal += $row->quantity * $row->salePrice;
+}
+
+$this->registerCss(<<<'CSS'
+.sx-stat { display:flex; align-items:center; gap:.6rem; padding:.35rem .75rem; border-radius:.6rem; line-height:1.15; height:100%; }
+.sx-stat > i { font-size:1.35rem; }
+.sx-stat .sx-lbl { font-size:.72rem; opacity:.85; }
+.sx-stat .sx-val { font-size:1.05rem; font-weight:700; }
+.sx-search .form-label { font-size:.8rem; margin-bottom:.15rem; color:var(--bs-secondary-color); }
+.sx-search .mb-3 { margin-bottom:.6rem !important; }
+.sx-search .select2-container .select2-selection--single { min-height:44px; }
+@media (max-width: 575.98px) { .sx-head .btn { flex:1 1 auto; } }
+CSS);
+
+// ---------------------------------------------------------------------------
+// إعدادات وJavaScript موحّد (نفس أسلوب شاشة المسترجع الأخرى)
+// ---------------------------------------------------------------------------
+$this->registerJs(
+    'window.byClientCfg = ' . Json::htmlEncode([
+        'infoUrl'  => Url::to(['temp-back-sales/get-info']),
+        'gridPjax' => '#w0',
+        'statsPjax' => '#pjax-by-client-stats',
+    ]) . ';',
+    View::POS_HEAD,
+    'by-client-cfg'
+);
+
+$this->registerJs(<<<'JS'
+(function (w) {
+    function esc(s) {
+        if (s === null || s === undefined) { return ''; }
+        return String(s).replace(/[&<>"']/g, function (c) {
+            return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+        });
+    }
+
+    // شارة (عنوان: قيمة)؛ الشارات الفارغة تُتجاهل
+    function chip(label, value, cls) {
+        if (value === null || value === undefined || value === '') { return ''; }
+        return '<span class="badge ' + (cls || 'text-bg-light border') + ' fw-normal">' +
+            '<span class="text-body-secondary">' + esc(label) + ':</span> ' + esc(value) + '</span>';
+    }
+
+    // شكل حركة البيع السابقة داخل القائمة المنسدلة: الاسم في سطر وتحته الشارات
+    w.byClientFormat = function (product) {
+        if (product.loading) { return esc(product.text); }
+
+        var markup =
+            '<div class="fw-semibold mb-1">' + esc(product.text) + '</div>' +
+            '<div class="d-flex flex-wrap gap-5">' +
+                chip('تاريخ الحركة', product.at, 'text-bg-danger') +
+                chip('تسلسل الحركة', product.id) +
+                chip('الكمية', product.quantity, 'text-bg-success') +
+                chip('سعر البيع', product.salePrice) +
+                chip('رقم القطعة 1', product.serialNo) +
+                chip('الشركة', product.company) +
+            '</div>';
+
+        return '<div style="overflow:hidden;">' + markup + '</div>';
+    };
+
+    w.byClientSelection = function (product) {
+        return esc(product.name || product.text);
+    };
+
+    // إعادة تحميل الجدول
+    w.byClientRefresh = function () {
+        $.pjax.reload({container: w.byClientCfg.statsPjax, async: false});
+        $.pjax.reload({container: w.byClientCfg.gridPjax});
+    };
+
+    // عند اختيار حركة: تعبئة الكمية والسعر ومعرّف الصنف
+    w.byClientPick = function (id) {
+        if (!id) { return; }
+        $.get(w.byClientCfg.infoUrl, {id: id}, function (data) {
+            if (data != null) {
+                $('#tempbacksales-quantity').val(1);
+                $('#tempbacksales-saleprice').val(data.salePrice);
+                $('#tempbacksales-category').val(data.category);
+                $('#tempbacksales-costprice').val(data.costPrice);
+                $('#tempbacksales-quantity').trigger('focus').trigger('select');
+            }
+        });
+    };
+
+    // بعد نجاح الإضافة: نفرّغ حقول الصنف فقط (يبقى الزبون محدداً لإضافة صنف آخر له)
+    w.byClientAfterAdd = function () {
+        $('#category').val(null).trigger('change');
+        $('#tempbacksales-quantity, #tempbacksales-saleprice, #tempbacksales-category, #tempbacksales-costprice').val('');
+        w.byClientRefresh();
+        $('#category').select2('open');
+    };
+
+    w.byClientError = function (text) {
+        if (typeof swal === 'function') {
+            swal({title: 'منظومة المبيعات', text: text, type: 'error', confirmButtonText: 'حسنا'});
+        } else {
+            alert(text);
+        }
+    };
+})(window);
+JS, View::POS_HEAD, 'by-client-helpers');
+
+// تحرير داخل الخلية (بدل النافذة المنبثقة) وتحديث الجدول بعد كل حفظ ناجح
+$editable = [
+    'asPopover' => false,
+    'bsVersion' => '5.x',
+    'submitButton' => ['icon' => '<i class="bi bi-check-lg"></i>'],
+    'resetButton' => ['icon' => '<i class="bi bi-arrow-counterclockwise"></i>'],
+    'pluginEvents' => ['editableSuccess' => new JsExpression('function () { byClientRefresh(); }')],
+];
+
+// تنبيه: FormulaColumn يعتمد على ترتيب الأعمدة (6 = الكمية، 7 = السعر). لا تغيّر الترتيب بدون تعديل الأرقام.
+$gridColumns = [
+    ['class' => 'yii\grid\SerialColumn'],
+
+    ['attribute' => 'id', 'visible' => false],
+
+    [
+        'class' => 'kartik\grid\EditableColumn',
+        'attribute' => 'category',
+        'label' => Yii::t('app', 'ID'),
+        'contentOptions' => ['style' => 'font-size:14px;'],
+        'headerOptions' => ['style' => 'width:15%'],
+        'editableOptions' => $editable,
+    ],
+
+    [
+        'attribute' => 'category',
+        'headerOptions' => ['style' => 'width:40%'],
+        'format' => 'raw',
+        'value' => function ($model) {
+            $category = $model->category0;
+            if ($category === null) {
+                return '';
+            }
+            // Html::encode: اسم الصنف يُدخله المستخدم ولا يجوز طباعته كما هو داخل HTML
+            return Html::a(
+                Html::encode($category->name),
+                ['category/info', 'id' => $category->id],
+                ['class' => 'btn-link popupModal fw-semibold']
+            );
+        },
+    ],
+
+    [
+        'attribute' => 'serial_number',
+        'label' => Yii::t('app', 'Serial No'),
+        'contentOptions' => ['style' => 'font-size:14px;'],
+        'headerOptions' => ['style' => 'width:15%'],
+        'value' => 'category0.serialNo',
+    ],
+
+    [
+        'attribute' => 'serial_number',
+        'label' => Yii::t('app', 'Comm Code'),
+        'contentOptions' => ['style' => 'font-size:14px;'],
+        'headerOptions' => ['style' => 'width:15%'],
+        'value' => 'category0.commCode',
+    ],
+
+    [
+        'class' => 'kartik\grid\EditableColumn',
+        'attribute' => 'quantity',
+        'label' => Yii::t('app', 'quantity'),
+        'contentOptions' => ['style' => 'font-size:14px;'],
+        'headerOptions' => ['style' => 'width:15%'],
+        'editableOptions' => $editable,
+    ],
+
+    [
+        'class' => 'kartik\grid\EditableColumn',
+        'attribute' => 'salePrice',
+        'label' => Yii::t('app', 'Sale Price'),
+        'contentOptions' => ['style' => 'font-size:14px;'],
+        'headerOptions' => ['style' => 'width:15%'],
+        'editableOptions' => $editable,
+    ],
+
+    [
+        'class' => 'kartik\grid\FormulaColumn',
+        'header' => Yii::t('app', 'Total'),
+        'vAlign' => 'middle',
+        'value' => function ($model, $key, $index, $widget) {
+            $p = compact('model', 'key', 'index');
+            return $widget->col(6, $p) * $widget->col(7, $p);
+        },
+        'headerOptions' => ['class' => 'kartik-sheet-style'],
+        'hAlign' => 'right',
+        'width' => '15%',
+        'format' => ['decimal', 3],
+        'mergeHeader' => true,
+        'pageSummary' => true,
+        'footer' => true,
+    ],
+
+    [
+        'class' => 'yii\grid\ActionColumn',
+        'template' => '<div class="btn-group btn-group-sm" role="group">{delete}</div>',
+        'buttons' => [
+            'delete' => function ($url) {
+                return Html::a('<i class="bi bi-trash"></i>', $url, [
+                    'title' => Yii::t('yii', 'Delete'),
+                    'data-confirm' => Yii::t('yii', 'Are you sure you want to delete this item?'),
+                    'data-method' => 'post',
+                    'data-pjax' => '0',
+                    'class' => 'btn btn-outline-danger btn-sm',
+                ]);
+            },
+        ],
+    ],
+];
 ?>
 
 <div class="temp-back-sale">
 
+    <!-- العنوان + الأزرار في سطر واحد -->
+    <div class="sx-head d-flex flex-wrap align-items-center gap-2 mb-2">
+        <h4 class="mb-0 flex-grow-1 text-nowrap">
+            <i class="bi bi-arrow-return-left text-danger"></i> مرتجع مبيعات حسب الزبون
+        </h4>
 
-    <div class="row">
-        <div class="col-md-12">
-            <?php
-            if (is_null($serial_number)) {
-                $client = 1;
-            } else {
-                $client = $serial_number->serial_number;
-            }
-            echo Html::button(
-                '<i class="fa fa-fw fa-step-forward"></i>' . ' ' . Yii::t('app', 'Complete Sale'),
-                ['value' => Url::to(['sales/back-create', 'client' => $client]), 'class' => 'btn btn-danger popup']
-            ); ?>
-
-            <?= Html::a('<i class="fa fa-fw fa-trash "></i>' . ' ' . Yii::t('app', 'Delete All'), ['delete-all'], [
-                'class' => 'btn btn-warning pull-left',
+        <?= Html::a(
+            '<i class="bi bi-trash"></i> ' . Yii::t('app', 'Delete All'),
+            ['delete-all'],
+            [
+                'class' => 'btn btn-sm btn-outline-danger',
                 'data' => [
                     'confirm' => Yii::t('app', 'Are you sure you want to delete this item?'),
                     'method' => 'post',
                 ],
-            ])
-            ?>
+            ]
+        ) ?>
 
+        <?= Html::button(
+            '<i class="bi bi-check2-circle"></i> ' . Yii::t('app', 'Complete Sale'),
+            ['value' => Url::to(['sales/back-create', 'client' => $clientId]), 'class' => 'btn btn-success fw-bold px-4 popup']
+        ) ?>
+    </div>
+
+    <!-- إحصاءات مصغّرة -->
+    <?php Pjax::begin(['id' => 'pjax-by-client-stats']); ?>
+    <div class="row g-2 mb-2">
+        <div class="col-6 col-md-3">
+            <div class="sx-stat bg-info-subtle text-info-emphasis">
+                <i class="bi bi-list-ol"></i>
+                <div>
+                    <div class="sx-lbl"><?= Html::encode(Yii::t('app', 'Items Count')) ?></div>
+                    <div class="sx-val"><?= (int) $dataProvider->getCount() ?></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="sx-stat bg-primary-subtle text-primary-emphasis">
+                <i class="bi bi-boxes"></i>
+                <div>
+                    <div class="sx-lbl"><?= Html::encode(Yii::t('app', 'items quantity')) ?></div>
+                    <div class="sx-val"><?= Html::encode((string) $qtyTotal) ?></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="sx-stat bg-danger-subtle text-danger-emphasis">
+                <i class="bi bi-cash-coin"></i>
+                <div>
+                    <div class="sx-lbl"><?= Html::encode(Yii::t('app', 'Total Invoice')) ?></div>
+                    <div class="sx-val fs-5" dir="ltr"><?= number_format((float) $invoiceTotal, 3) ?></div>
+                </div>
+            </div>
         </div>
     </div>
-    <br>
-    <?php $form = ActiveForm::begin(['id' => 'backSale']) ?>
-    <div class="row">
-        <div class="col-md-8">
-            <?php
-            echo $form->field($model, 'client')->widget(Select2::class, [
-                'data' =>  ArrayHelper::map(Client::find()
-                    ->where(['in', 'type', [0, 2]])
-                    ->orderBy('id')->asArray()->all(), 'id', 'name'),
-                'options' => ['placeholder' => Yii::t('app', 'Select a client ...'), 'dir' => 'rtl', 'id' => 'client'],
-                'pluginOptions' => [
-                    'allowClear' => true
+    <?php Pjax::end(); ?>
+
+    <div class="card shadow-sm mb-3 sx-search">
+        <div class="card-body py-2">
+            <?php $form = ActiveForm::begin(['id' => 'backSale']); ?>
+
+            <?= $form->field($model, 'client')->widget(Select2::class, [
+                'data' => ArrayHelper::map(
+                    Client::find()->where(['in', 'type', [0, 2]])->orderBy('id')->asArray()->all(),
+                    'id',
+                    'name'
+                ),
+                'options' => [
+                    'placeholder' => Yii::t('app', 'Select a client ...'),
+                    'dir' => 'rtl',
+                    'id' => 'client',
                 ],
-            ])->label(Yii::t('app', 'اسم الزبون'));
-            ?>
+                'pluginOptions' => ['allowClear' => true],
+                // عند تغيير الزبون تُفرَّغ حركة الصنف المختارة (لأن قائمة البحث تعتمد على الزبون) وينتقل التركيز إلى البحث
+                'pluginEvents' => [
+                    'change' => 'function () { $("#category").val(null).trigger("change"); }',
+                ],
+            ])->label(Yii::t('app', 'اسم الزبون')) ?>
 
-            <?php
-            $formatJs = <<< 'JS'
-   var formatProduct = function (product) {
-   if (product.loading) {
-    return product.text;
-   }
- var markup =
-    '<div class="row">' + 
-      '<div class="col-sm-7">' +
-      '<b style="margin-center:5px">' + product.text + '</b>' + 
-      '</div>' +
-       '<div class="col-sm-3"><i class="badge badge-primary badge-pill">تاريخ الحركة</i> <span class="label label-danger">'  + product.at + '</span></div>' +
-       '<div class="col-sm-2"><i class="badge badge-primary badge-pill">تسلسل الحركة</i> ' + product.id + '</div>' +
-
-      '</div>' +
-      '<br>'+
-      '<div class="row">' + 
-      '<div class="col-sm-2"><i class="badge badge-primary badge-pill">الكمـية</i> ' + '  ' + product.quantity + '</div>' +
-      '<div class="col-sm-3"><i class="badge badge-primary badge-pill">سعر البيع</i> ' + product.salePrice + '</div>' +
-      '<div class="col-sm-4"><i class="badge badge-primary badge-pill">1 رقم القطعة</i> ' + product.serialNo + '</div>' +
-      '<div class="col-sm-2"><i class="badge badge-primary badge-pill">الشركة</i> ' + product.company + '</div>' +
-    '</div>';
-    return '<div style="overflow:hidden;">' + markup + '</div>';
-  };                
-    
-
-  var formatProductSelection = function (product) {
-    return product.name || product.text;
-  }
-JS;
-            // Register the formatting script
-            $this->registerJs($formatJs, $this::POS_HEAD);
-
-            // script to parse the results into the format expected by Select2
-            $resultsJs = <<< JS
-    function (data, params) {
-       params.page = params.page || 5;
-        return {
-            // Change `data.items` to `data.results`.
-            // `results` is the key that you have been selected on
-            // `actionJsonlist`.
-            results: data.results
-        };
-    }
-JS;
-            echo $form->field($model, 'id')->widget(Select2::class, [
+            <?= $form->field($model, 'id')->widget(Select2::class, [
                 'language' => 'en',
                 'options' => [
                     'placeholder' => Yii::t('app', 'Search...'),
                     'dir' => 'rtl',
                     'multiple' => false,
-                    'id' => 'category'
+                    'id' => 'category',
                 ],
                 'pluginOptions' => [
-                    'autofocus' => false,
                     'minimumInputLength' => 1,
                     'ajax' => [
                         'url' => Url::to(['/except/item-list-by-client']),
                         'dataType' => 'json',
-                        'data' => new JsExpression('function(params) { return {q:params.term, client: $("#client").val()}; }'),
-                        'processResults' => new JsExpression($resultsJs),
-                        'cache' => true
+                        'data' => new JsExpression('function (params) { return {q: params.term, client: $("#client").val()}; }'),
+                        'processResults' => new JsExpression('function (data) { return {results: data.results}; }'),
+                        'cache' => true,
                     ],
                     'escapeMarkup' => new JsExpression('function (markup) { return markup; }'),
-                    'templateResult' => new JsExpression('formatProduct'),
-                    'templateSelection' => new JsExpression('formatProductSelection'),
+                    'templateResult' => new JsExpression('byClientFormat'),
+                    'templateSelection' => new JsExpression('byClientSelection'),
                 ],
                 'pluginEvents' => [
-                    'change' => 'function(event){
-                var data_id = event.currentTarget.value;
-
-                var el = $(this).find(":selected");
-                 var id = el.val();
-                $.get("' . Url::to(['temp-back-sales/get-info']) . '&id="+id, function(data){
-                if(data != null){
-               $("#tempbacksales-quantity").val(1);
-               $("#tempbacksales-saleprice").val(data.salePrice);
-               $("#tempbacksales-category").val(data.category);
-               $("#tempbacksales-costprice").val(data.costPrice);
-               }
-           });
-       }',
+                    'change' => 'function (event) { byClientPick(event.currentTarget.value); }',
                 ],
-            ]);
-            ?>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-1"></div>
-        <div class="col-md-2">
-            <?= $form->field($model, 'quantity')->textInput(['placeholder' => 'Quantity']) ?>
-            <br>
-            <div class="form-group">
-                <?= Html::submitButton($model->isNewRecord ? '<i class="fa fa-fw fa-plus"></i>' . ' ' . Yii::t('app', 'Add') : Yii::t('app', 'Update'), ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']) ?>
+            ]) ?>
+
+            <div class="row g-2 align-items-end">
+                <div class="col-6 col-md-2">
+                    <?= $form->field($model, 'quantity')->textInput(['placeholder' => 'Quantity', 'inputmode' => 'decimal', 'autocomplete' => 'off']) ?>
+                </div>
+
+                <div class="col-6 col-md-2">
+                    <?= $form->field($model, 'salePrice')->textInput(['placeholder' => 'Sale Price', 'inputmode' => 'decimal', 'autocomplete' => 'off']) ?>
+                </div>
+
+                <div class="col-12 col-md-auto mb-3">
+                    <?= Html::submitButton(
+                        $model->isNewRecord
+                            ? '<i class="bi bi-plus-lg"></i> ' . Yii::t('app', 'Add')
+                            : Yii::t('app', 'Update'),
+                        ['class' => ($model->isNewRecord ? 'btn btn-primary' : 'btn btn-primary') . ' w-100 px-4']
+                    ) ?>
+                </div>
             </div>
-        </div>
-        <div class="col-md-2">
-            <?php
-            echo $form->field($model, 'salePrice')->textInput(['placeholder' => 'Sale Price']);
+
+            <?php // حقلان مخفيان خارج الأعمدة (يبقى الحقل ليظهر خطأ التحقق عند الإرسال بدون اختيار حركة) 
             ?>
-        </div>
-        <div class="col-md-2">
-            <?php
-            echo $form->field($model, 'category')->hiddenInput(['placeholder' => 'Category'])->label('');
-            ?>
-            <?php
-            echo $form->field($model, 'costPrice')->hiddenInput(['placeholder' => 'Category'])->label('');
-            ?>
+            <?= $form->field($model, 'category')->hiddenInput()->label(false) ?>
+            <?= $form->field($model, 'costPrice')->hiddenInput()->label(false) ?>
+
+            <?php ActiveForm::end(); ?>
         </div>
     </div>
 
-    <?php ActiveForm::end(); ?>
-    <?php
-    $gridColumn = [
-        ['class' => 'yii\grid\SerialColumn'],
-
-        ['attribute' => 'id', 'visible' => false],
-
-        [
-            'class' => 'kartik\grid\EditableColumn',
-            'attribute' => Yii::t('app', 'category'),
-            'label' => Yii::t('app', 'ID'),
-            'contentOptions' => ['style' => 'font-size:14px;'],
-            'headerOptions' => ['style' => 'width:15%'],
-        ],
-
-        [
-            'attribute' => 'category',
-            'headerOptions' => ['style' => 'width:40%'],
-            'value' => function ($model) {
-                return Html::a(Yii::t('app', ' {modelClass}', [
-                    'modelClass' => $model->category0->name,
-                ]), ['category/info', 'id' => $model->category0->id], ['class' => 'btn-link popupModal']);
-            },
-            'format' => 'raw',
-        ],
-
-        [
-            'class' => 'kartik\grid\EditableColumn',
-            'attribute' => Yii::t('app', 'serial_number'),
-            'label' => Yii::t('app', 'Serial No'),
-            'contentOptions' => ['style' => 'font-size:14px;'],
-            'headerOptions' => ['style' => 'width:15%'],
-            'value' => 'category0.serialNo',
-            'editableOptions' => [
-                'asPopover' => true,
-            ],
-        ],
-
-        [
-            'class' => 'kartik\grid\EditableColumn',
-            'attribute' => Yii::t('app', 'serial_number'),
-            'label' => Yii::t('app', 'Comm Code'),
-            'contentOptions' => ['style' => 'font-size:14px;'],
-            'headerOptions' => ['style' => 'width:15%'],
-            'value' => 'category0.commCode',
-            'editableOptions' => [
-                'asPopover' => true,
-            ],
-        ],
-
-        [
-            'class' => 'kartik\grid\EditableColumn',
-            'attribute' => 'quantity',
-            'label' => Yii::t('app', 'quantity'),
-            'contentOptions' => ['style' => 'font-size:14px;'],
-            'headerOptions' => ['style' => 'width:15%'],
-            'editableOptions' => [
-                'asPopover' => true,
-            ],
-        ],
-
-        [
-            'class' => 'kartik\grid\EditableColumn',
-            'attribute' => Yii::t('app', 'salePrice'),
-            'contentOptions' => ['style' => 'font-size:14px;'],
-            'headerOptions' => ['style' => 'width:15%'],
-            'editableOptions' => [
-                'asPopover' => true,
-            ],
-        ],
-
-        [
-            'class' => 'kartik\grid\FormulaColumn',
-            'header' => Yii::t('app', 'Total'),
-            'vAlign' => 'middle',
-            'value' => function ($model, $key, $index, $widget) {
-                $p = compact('model', 'key', 'index');
-                return $widget->col(6, $p) * $widget->col(7, $p);
-            },
-            'headerOptions' => ['class' => 'kartik-sheet-style'],
-            'hAlign' => 'right',
-            'width' => '15%',
-            'format' => ['decimal', 3],
-            'mergeHeader' => true,
-            'pageSummary' => true,
-            'footer' => true,
-        ],
-        [
-            'class' => 'yii\grid\ActionColumn',
-            'template' => '<div class="btn-group btn-group-sm" role="group" aria-label="...">{delete}</div>',
-            'buttons' => [
-                'delete' => function ($url, $searchModel, $key) {
-                    return Html::a('<i class="fa fa-trash"></i>', $url, [
-                        'title' => Yii::t('yii', 'Delete'),
-                        'data-confirm' => Yii::t('yii', 'Are you sure you want to delete this item?'),
-                        'data-method' => 'post',
-                        'data-pjax' => '0',
-                        'class' => 'btn btn-default',
-                    ]);
-                },
-            ],
-        ],
-    ];
-    ?>
-    <br>
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
         'layout' => '{items}{pager}',
         'summary' => true,
-        'columns' => $gridColumn,
+        'columns' => $gridColumns,
         'pjax' => true,
         'pjaxSettings' => [
             'neverTimeout' => true,
-            'options' => [
-                'id' => 'w0',
-            ]
+            'options' => ['id' => 'w0'],
         ],
-        // 'pjaxSettings' => ['options' => ['id' => 'kv-pjax-container-temp-invoice']],
         'showPageSummary' => true,
-    ]); ?>
+        'condensed' => true,
+        'hover' => true,
+        'striped' => true,
+        'bordered' => false,
+    ]) ?>
+
 </div>
 
 <?php
-$script = <<< JS
-$('form').on('beforeSubmit', function(e) {
-    e.preventDefault();
+// إرسال النموذج عبر AJAX. كان الربط على كل النماذج في الصفحة ($('form'))،
+// فيتداخل مع نماذج التحرير داخل الجدول. الآن مقيّد بنموذج #backSale فقط.
+$this->registerJs(<<<'JS'
+$('#backSale').on('beforeSubmit', function () {
     var form = $(this);
-    if (form.find('.has-error').length) {
+    if (form.find('.is-invalid, .has-error').length) {
         return false;
     }
     $.ajax({
         url: form.attr('action'),
         type: 'post',
         data: form.serialize(),
-        success: function(result) {
-            if(result == 'success') {
-                // handle success response
-                $.pjax.reload({container: '#w0'}); // Reload the grid
-                form.trigger('reset');
+        success: function (result) {
+            if (String(result).trim() === 'success') {
+                byClientAfterAdd();
             } else {
-                // handle validation errors
-                alert('Error occurred while submitting the form');
-                form.trigger('reset');
+                byClientError('حدث خطأ اثناء الإضافة');
             }
         },
+        error: function () {
+            byClientError('حدث خطأ اثناء الإضافة');
+        }
     });
     return false;
 });
-JS;
-$this->registerJs($script);
-?>
+JS, View::POS_READY, 'by-client-submit');

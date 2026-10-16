@@ -3,23 +3,34 @@
 namespace app\controllers;
 
 use Yii;
+use app\models\Category;
 use app\models\TransferItems;
 use app\models\TransferItemsSearch;
 use app\models\TransferItemsDetails;
 use yii\web\Controller;
+use yii\web\BadRequestHttpException;
 use yii\web\NotFoundHttpException;
+use yii\web\Response;
 use yii\filters\VerbFilter;
 use app\models\base\TempTransferItems;
-use app\models\Stocks;
 use yii\data\ActiveDataProvider;
 use yii\filters\AccessControl;
-use yii\helpers\Json;
 
 /**
  * TransferItemsController implements the CRUD actions for TransferItems model.
+ *
+ * قواعد المخزون (جدول stocks، النوع 1 فقط):
+ *  - الحفظ: يزيد رصيد الفرع المستلم ويخصم من الفرع المرسل.
+ *  - إضافة صنف / تعديل كمية / حذف سطر داخل شاشة التعديل: تعدّل الفرعين معاً بنفس الفرق.
+ *  - الحذف: يعكس كل الأسطر الحالية.
+ *  - لا يُسمح بخصم أكثر من رصيد الفرع المرسل، ولا بعكس أكثر من رصيد الفرع المستلم.
+ *  - كل عملية مخزون داخل transaction مع قفل MySQL مسمّى واحد (STOCK_LOCK).
  */
 class TransferItemsController extends Controller
 {
+    /** اسم القفل المشترك لعمليات المخزون (النقل والجرد) */
+    const STOCK_LOCK = 'pos_stock_change';
+
     /**
      * {@inheritdoc}
      */
@@ -27,13 +38,14 @@ class TransferItemsController extends Controller
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
+                    'remove' => ['POST'],   // كان رابط GET يحذف السطر؛ الواجهة ترسله POST أصلاً
                 ],
             ],
             'access' => [
-                'class' => AccessControl::className(),
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
@@ -98,64 +110,24 @@ class TransferItemsController extends Controller
         $model = new TransferItems();
 
         if ($model->load(Yii::$app->request->post())) {
-            $model->created_at     = date('Y-m-d H:i:s');
-            $model->user_insert = Yii::$app->user->identity->id;
-            $model->save();
-            // ==============
-            $items =  TempTransferItems::find()->where('created_by = ' . Yii::$app->user->identity->id)
-                ->all();
-            //============== add to TransferItemsDetails
-            foreach ($items  as $value) {
-                $TransferItemsDetails = new TransferItemsDetails();
-                $TransferItemsDetails->transfer = $model->id;
-                $TransferItemsDetails->category = $value->category;
-                $TransferItemsDetails->quantity = $value->quantity;
-                $TransferItemsDetails->save(false);
-                //  ===============================
-                $exsit = Stocks::find()->where(['=', 'branch', $model->toBranch])
-                    ->andWhere(['=', 'category', $value->category])
-                    ->andWhere(['=', 'type', 1])
-                    ->one();
-                if ($exsit == null){
-                    Yii::$app->db->createCommand('INSERT INTO stocks(category, quantity, branch, type) VALUES
-            (:category, :quantity, :branch, :type)')
-                        ->bindValues([':category' => $value->category])
-                        ->bindValues([':quantity' => $value->quantity])
-                        ->bindValues([':branch' => $model->toBranch])
-                        ->bindValues([':type' => 1])
-                        ->execute();
+            $userId = (int) Yii::$app->user->identity->id;
+            $model->created_at = date('Y-m-d H:i:s');
+            $model->user_insert = $userId;
 
-                        Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  - $value->quantity
-                        WHERE category=:category
-                        and branch = :branch
-                        and type = :type")
-                        ->bindValue(':category', $value->category)
-                        ->bindValue(':branch', $model->fromBranch)
-                        ->bindValue(':type', 1)
-                        ->execute();
-                }else{
-                    Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + $value->quantity
-                        WHERE category=:category
-                        and branch = :branch
-                        and type = :type")
-                        ->bindValue(':category', $value->category)
-                        ->bindValue(':branch', $model->toBranch)
-                        ->bindValue(':type', 1)
-                        ->execute();
+            $items = TempTransferItems::find()->where(['created_by' => $userId])->all();
 
-                        Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  - $value->quantity
-                        WHERE category=:category
-                        and branch = :branch
-                        and type = :type")
-                        ->bindValue(':category', $value->category)
-                        ->bindValue(':branch', $model->fromBranch)
-                        ->bindValue(':type', 1)
-                        ->execute();
-                }
+            $error = $this->checkNewTransfer($model, $items);
+            if ($error === null) {
+                $error = $this->saveNewTransfer($model, $items, $userId);
             }
-           TempTransferItems::deleteAll(['created_by' => Yii::$app->user->identity->id]);
-            return $this->redirect(['view', 'id' => $model->id]);
 
+            if ($error === null) {
+                return $this->redirect(['view', 'id' => $model->id]);
+            }
+
+            // الأصناف المؤقتة تبقى كما هي ليصحح المستخدم ويعيد المحاولة
+            Yii::$app->session->setFlash('error', 'لم يُحفظ النقل: ' . $error);
+            return $this->redirect(['/temp-transfer-items/create']);
         } elseif (Yii::$app->request->isAjax) {
             $model->at = date('Y-m-d');
             return $this->renderAjax('_form', [
@@ -190,50 +162,18 @@ class TransferItemsController extends Controller
             'pagination' => false,
         ]);
 
-        if (yii::$app->request->post('hasEditable')) {
-            $id = Yii::$app->request->post('editableKey');
-            $result = TransferItemsDetails::findOne($id);
-            $out = Json::encode(['output' => '', 'message' => '']);
-            $post = [];
-            $posted = current($_POST['TransferItemsDetails']);
-            $post['TransferItemsDetails'] = $posted;
-            if ($result->load($post)) {
-                $result->save(false);
-                if (isset($posted['quantity'])) {
-                    $outMessage = $result->quantity;
-                }
-
-                $output = $outMessage;
-
-                $out = Json::encode(['output' => $output]);
-
-                return $out;
-            }
+        if (Yii::$app->request->post('hasEditable')) {
+            return $this->inlineEditDetail($model);
         }
+
         if ($model->load(Yii::$app->request->post())) {
-
-            if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
-                $branch = Yii::$app->user->identity->branch;
-            } else {
-                $branch = [1, 2, 3];
-            }
-
-            $item = Stocks::find()
-                ->select([
-                    'stocks.category as id', 'stocks.quantity as quantity',
-                    'prices.costPrice', 'prices.minPrice', 'prices.maxPrice'
-                ])
-                ->leftJoin('prices', 'stocks.category = prices.category')
-                ->where(['stocks.category' => $model->category])
-                ->andWhere(['<>', 'stocks.quantity', 0])
-                ->andwhere(['in', 'stocks.type', 1])
-                ->andWhere(['in', 'stocks.branch', $branch])
-                ->one();
-
-            if ($item != null) {
-                if ($model->quantity > $item->quantity) {
-                    $model->quantity = abs($item->quantity);
-                }
+            // الأرصدة تحركت عند الحفظ حسب الفرعين؛ تغيير أي منهما الآن يترك الأرصدة غير متسقة
+            if (
+                (int) $model->fromBranch !== (int) $model->getOldAttribute('fromBranch')
+                || (int) $model->toBranch !== (int) $model->getOldAttribute('toBranch')
+            ) {
+                Yii::$app->session->setFlash('error', 'لا يمكن تغيير الفرع المسحوب منه أو المودع له بعد حفظ النقل. احذف النقل وأنشئ نقلاً جديداً.');
+                return $this->redirect(['update', 'id' => $id]);
             }
 
             $model->update_at = date('Y-m-d H:i:s');
@@ -257,34 +197,34 @@ class TransferItemsController extends Controller
      */
     public function actionDelete($id)
     {
-        $transferItems = TransferItems::find()->where(['id'=> $id])->one();
-        $TransferItemsDetails= TransferItemsDetails::find()->where(['transfer'=> $id])->all();
+        $transferItems = $this->findModel($id);
 
-        foreach ($TransferItemsDetails as $data) {
-                Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + $data->quantity 
-                 WHERE category=:category
-                 and branch = :branch
-                 and type = :type")
-                    ->bindValue(':category', $data->category)
-                    ->bindValue(':branch', $transferItems->fromBranch)
-                    ->bindValue(':type', 1)
-                    ->execute();
+        $error = $this->withStockLock(function () use ($transferItems) {
+            $details = TransferItemsDetails::find()->where(['transfer' => $transferItems->id])->all();
 
-                Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  - $data->quantity
-                WHERE category=:category
-                and branch = :branch
-                and type = :type")
-                    ->bindValue(':category', $data->category)
-                    ->bindValue(':branch', $transferItems->toBranch)
-                    ->bindValue(':type', 1)
-                    ->execute();
+            // الفرع المستلم يجب أن يملك الكميات التي سنعكسها
+            foreach ($this->sumByCategory($details) as $category => $qty) {
+                $available = $this->stockQty($category, $transferItems->toBranch);
+                if ($qty > $available + 0.0005) {
+                    return 'لا يمكن حذف النقل: الفرع المستلم لا يملك الكمية الكافية من الصنف '
+                        . $this->categoryName($category) . ' (المتاح ' . $available . ' والمطلوب عكسه ' . $qty . ').';
+                }
+            }
+
+            foreach ($details as $data) {
+                $this->changeStock($data->category, $transferItems->fromBranch, (float) $data->quantity, true);
+                $this->changeStock($data->category, $transferItems->toBranch, -(float) $data->quantity, false);
+            }
+
+            TransferItemsDetails::deleteAll(['transfer' => $transferItems->id]);
+            $transferItems->delete();
+            return null;
+        });
+
+        if ($error !== null) {
+            Yii::$app->session->setFlash('error', $error);
+            return $this->redirect(['view', 'id' => $id]);
         }
-    
-        Yii::$app
-        ->db
-        ->createCommand()
-        ->delete('transferItems', ['id' => $id])
-        ->execute();
 
         return $this->redirect(['index']);
     }
@@ -326,81 +266,283 @@ class TransferItemsController extends Controller
         ]);
     }
 
+    /**
+     * إضافة وحدة واحدة من الصنف إلى أمر النقل (تستدعيها الواجهة بـ $.get ثم تعيد رسم الجدول).
+     * تزيد رصيد الفرع المستلم وتخصم من المرسل، وترفض الإضافة إن لم يكفِ رصيد المرسل.
+     */
     public function actionAdd($categoryid, $transfer)
     {
-        $model = new TransferItemsDetails();
-        $transferData = TransferItems::find()->where(['=','id', $transfer])->one();
-        
-        $temp = TransferItemsDetails::find()->where([
-            'category' => $categoryid,
-            'transfer' => $transfer,
-        ])->one();
+        $transferData = $this->findModel((int) $transfer);
+        $categoryid = (int) $categoryid;
 
-        if (!isset($temp)) {
-            $model->transfer = $transfer;
-            $model->quantity = 1;
-            $model->category = $categoryid;
-            $model->save(false);
-            // ================
-            $exsit = Stocks::find()->where(['=', 'branch', $transferData->toBranch])
-            ->andWhere(['=', 'category', $categoryid])
-            ->andWhere(['=', 'type', 1])
-            ->one();
-        if ($exsit == null){
-            Yii::$app->db->createCommand('INSERT INTO stocks(category, quantity, branch, type) VALUES
-                 (:category, :quantity, :branch, :type)')
-                ->bindValues([':category' => $categoryid])
-                ->bindValues([':quantity' => 1])
-                ->bindValues([':branch' => $transferData->toBranch])
-                ->bindValues([':type' => 1])
-                ->execute();
-        }else{
-            Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + 1
-                 WHERE category=:category
-                 and branch = :branch
-                 and type = :type")
-                ->bindValue(':category', $categoryid)
-                ->bindValue(':branch', $transferData->toBranch)
-                ->bindValue(':type', 1)
-                ->execute();
-        }
+        $error = null;
+        if (!Category::find()->where(['id' => $categoryid])->exists()) {
+            $error = 'الصنف غير موجود.';
         } else {
-            $temp->quantity = $temp->quantity + 1;
-            $temp->save(false);
-            // ===============
-             $exsit = Stocks::find()->where(['=', 'branch', $transferData->toBranch])
-             ->andWhere(['=', 'category', $categoryid])
-             ->andWhere(['=', 'type', 1])
-             ->one();
-         if ($exsit == null){
-             Yii::$app->db->createCommand('INSERT INTO stocks(category, quantity, branch, type) VALUES
-                  (:category, :quantity, :branch, :type)')
-                 ->bindValues([':category' => $categoryid])
-                 ->bindValues([':quantity' => 1])
-                 ->bindValues([':branch' => $transferData->toBranch])
-                 ->bindValues([':type' => 1])
-                 ->execute();
-         }else{
-             Yii::$app->db->createCommand("UPDATE  stocks  SET  quantity =  quantity  + 1
-                  WHERE category=:category
-                  and branch = :branch
-                  and type = :type")
-                 ->bindValue(':category', $categoryid)
-                 ->bindValue(':branch', $transferData->toBranch)
-                 ->bindValue(':type', 1)
-                 ->execute();
-         }
+            $error = $this->withStockLock(function () use ($transferData, $categoryid) {
+                $available = $this->stockQty($categoryid, $transferData->fromBranch);
+                if ($available < 1) {
+                    return 'رصيد الفرع المسحوب منه من الصنف ' . $this->categoryName($categoryid) . ' غير كافٍ (المتاح ' . $available . ').';
+                }
+
+                $temp = TransferItemsDetails::find()->where([
+                    'category' => $categoryid,
+                    'transfer' => $transferData->id,
+                ])->one();
+
+                if ($temp === null) {
+                    $temp = new TransferItemsDetails();
+                    $temp->transfer = $transferData->id;
+                    $temp->category = $categoryid;
+                    $temp->quantity = 1;
+                } else {
+                    $temp->quantity = $temp->quantity + 1;
+                }
+                $temp->save(false);
+
+                $this->changeStock($categoryid, $transferData->toBranch, 1, true);
+                $this->changeStock($categoryid, $transferData->fromBranch, -1, false);
+                return null;
+            });
         }
-        // ========
-            return $this->redirect(['transfer-items/update', 'id' => $transfer]);
+
+        if (Yii::$app->request->isAjax) {
+            if ($error !== null) {
+                // تُظهر الواجهة رسالة الخطأ العامة عند فشل الطلب
+                throw new BadRequestHttpException($error);
+            }
+            return 'ok';
+        }
+
+        if ($error !== null) {
+            Yii::$app->session->setFlash('error', $error);
+        }
+        return $this->redirect(['transfer-items/update', 'id' => $transferData->id]);
     }
 
+    /**
+     * حذف سطر من أمر النقل مع عكس أثره على الفرعين (POST).
+     */
     public function actionRemove($id)
     {
-        $details =  TransferItemsDetails::find()->where(['id' => $id])->one();
-        $transferId = $details["transfer"];
-        
-        TransferItemsDetails::deleteAll(['id' => $id]);
-        return $this->redirect(['update', 'id' => $transferId]);
+        $details = TransferItemsDetails::findOne((int) $id);
+        if ($details === null) {
+            throw new NotFoundHttpException(Yii::t('app', 'The requested page does not exist.'));
+        }
+        $transferData = $this->findModel($details->transfer);
+
+        $error = $this->withStockLock(function () use ($details, $transferData) {
+            $qty = (float) $details->quantity;
+            $available = $this->stockQty($details->category, $transferData->toBranch);
+            if ($qty > $available + 0.0005) {
+                return 'لا يمكن حذف السطر: الفرع المستلم لا يملك الكمية الكافية من الصنف '
+                    . $this->categoryName($details->category) . ' (المتاح ' . $available . ').';
+            }
+
+            $this->changeStock($details->category, $transferData->fromBranch, $qty, true);
+            $this->changeStock($details->category, $transferData->toBranch, -$qty, false);
+            $details->delete();
+            return null;
+        });
+
+        if ($error !== null) {
+            Yii::$app->session->setFlash('error', $error);
+        }
+        return $this->redirect(['update', 'id' => $transferData->id]);
+    }
+
+    // =====================================================================
+    // أدوات داخلية
+    // =====================================================================
+
+    /**
+     * التعديل المباشر لكمية سطر داخل الجدول. الكمية فقط؛ تغيير الصنف غير مسموح.
+     */
+    private function inlineEditDetail(TransferItems $header)
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+
+        $key = (int) Yii::$app->request->post('editableKey');
+        $all = Yii::$app->request->post('TransferItemsDetails');
+        $posted = is_array($all) ? current($all) : null;
+
+        $detail = TransferItemsDetails::findOne(['id' => $key, 'transfer' => $header->id]);
+        if ($detail === null || !is_array($posted)) {
+            return ['output' => '', 'message' => 'السطر غير موجود.'];
+        }
+        if (isset($posted['category'])) {
+            return ['output' => '', 'message' => 'لا يمكن تغيير الصنف. احذف السطر وأضف الصنف الصحيح.'];
+        }
+        if (!isset($posted['quantity']) || !is_numeric($posted['quantity']) || (float) $posted['quantity'] <= 0) {
+            return ['output' => '', 'message' => 'الكمية يجب أن تكون رقماً أكبر من صفر.'];
+        }
+        $newQty = round((float) $posted['quantity'], 3);
+
+        $error = $this->withStockLock(function () use ($header, $detail, $newQty) {
+            $detail->refresh();
+            $delta = round($newQty - (float) $detail->quantity, 3);
+
+            if ($delta > 0) {
+                $available = $this->stockQty($detail->category, $header->fromBranch);
+                if ($delta > $available + 0.0005) {
+                    return 'رصيد الفرع المسحوب منه غير كافٍ (المتاح ' . $available . ').';
+                }
+            } elseif ($delta < 0) {
+                $available = $this->stockQty($detail->category, $header->toBranch);
+                if (-$delta > $available + 0.0005) {
+                    return 'الفرع المستلم لا يملك الكمية الكافية لتخفيض النقل (المتاح ' . $available . ').';
+                }
+            }
+
+            $this->changeStock($detail->category, $header->toBranch, $delta, $delta > 0);
+            $this->changeStock($detail->category, $header->fromBranch, -$delta, $delta < 0);
+
+            $detail->quantity = $newQty;
+            $detail->save(false);
+            return null;
+        });
+
+        if ($error !== null) {
+            return ['output' => '', 'message' => $error];
+        }
+        return ['output' => $detail->quantity, 'message' => ''];
+    }
+
+    /**
+     * فحوص ما قبل الحفظ (بدون لمس قاعدة البيانات). ترجع نص الخطأ أو null.
+     */
+    private function checkNewTransfer(TransferItems $model, array $items)
+    {
+        if (!$model->validate()) {
+            return implode(' ', array_values($model->getFirstErrors()));
+        }
+        if (empty($model->fromBranch) || empty($model->toBranch)) {
+            return 'اختر الفرع المسحوب منه والفرع المودع له.';
+        }
+        if ((int) $model->fromBranch === (int) $model->toBranch) {
+            return 'الفرع المسحوب منه والمودع له متطابقان.';
+        }
+        if (empty($items)) {
+            return 'لا توجد أصناف في قائمة النقل.';
+        }
+        foreach ($items as $item) {
+            if (!is_numeric($item->quantity) || (float) $item->quantity <= 0) {
+                return 'كمية الصنف ' . $this->categoryName($item->category) . ' غير صحيحة.';
+            }
+        }
+        return null;
+    }
+
+    /**
+     * حفظ النقل وتحريك الأرصدة في transaction واحدة تحت القفل. ترجع نص الخطأ أو null.
+     */
+    private function saveNewTransfer(TransferItems $model, array $items, $userId)
+    {
+        return $this->withStockLock(function () use ($model, $items, $userId) {
+            // الرصيد وقت الحفظ (وليس وقت الإضافة للقائمة المؤقتة)
+            foreach ($this->sumByCategory($items) as $category => $qty) {
+                $available = $this->stockQty($category, $model->fromBranch);
+                if ($qty > $available + 0.0005) {
+                    return 'رصيد الصنف ' . $this->categoryName($category) . ' في الفرع المسحوب منه غير كافٍ (المتاح ' . $available . ' والمطلوب ' . $qty . ').';
+                }
+            }
+
+            if (!$model->save()) {
+                return implode(' ', array_values($model->getFirstErrors()));
+            }
+
+            foreach ($items as $value) {
+                $details = new TransferItemsDetails();
+                $details->transfer = $model->id;
+                $details->category = $value->category;
+                $details->quantity = $value->quantity;
+                $details->save(false);
+
+                $this->changeStock($value->category, $model->toBranch, (float) $value->quantity, true);
+                $this->changeStock($value->category, $model->fromBranch, -(float) $value->quantity, false);
+            }
+
+            TempTransferItems::deleteAll(['created_by' => $userId]);
+            return null;
+        });
+    }
+
+    /**
+     * ينفّذ العملية تحت القفل وفي transaction. إن أرجعت $callback نصاً فهو خطأ: يُتراجع عن كل شيء.
+     * @return string|null نص الخطأ أو null عند النجاح
+     */
+    private function withStockLock(callable $callback)
+    {
+        $db = Yii::$app->db;
+        $gotLock = (int) $db->createCommand('SELECT GET_LOCK(:n, 10)', [':n' => self::STOCK_LOCK])->queryScalar() === 1;
+        if (!$gotLock) {
+            return 'النظام مشغول بعملية مخزون أخرى. أعد المحاولة بعد لحظات.';
+        }
+
+        $transaction = $db->beginTransaction();
+        try {
+            $error = $callback();
+            if ($error !== null) {
+                $transaction->rollBack();
+                return $error;
+            }
+            $transaction->commit();
+            return null;
+        } catch (\Throwable $e) {
+            $transaction->rollBack();
+            Yii::error($e->getMessage() . "\n" . $e->getTraceAsString(), __METHOD__);
+            return 'تعذر تنفيذ العملية بسبب خطأ غير متوقع. لم يتغير أي رصيد.';
+        } finally {
+            $db->createCommand('SELECT RELEASE_LOCK(:n)', [':n' => self::STOCK_LOCK])->queryScalar();
+        }
+    }
+
+    /** رصيد الصنف في الفرع (النوع 1) */
+    private function stockQty($category, $branch)
+    {
+        return (float) Yii::$app->db->createCommand(
+            'SELECT COALESCE(SUM(quantity), 0) FROM stocks WHERE category = :c AND branch = :b AND type = 1',
+            [':c' => $category, ':b' => $branch]
+        )->queryScalar();
+    }
+
+    /**
+     * يغيّر رصيد الصنف في الفرع بفرق موقّع (UPDATE بالقيمة النسبية وليس قراءة ثم كتابة).
+     * إن لم يوجد سجل رصيد: يُنشأ عند $createIfMissing، وإلا لا شيء (لا يمكن الخصم من رصيد غير موجود).
+     */
+    private function changeStock($category, $branch, $delta, $createIfMissing)
+    {
+        $delta = round((float) $delta, 3);
+        if ($delta == 0.0) {
+            return;
+        }
+        $db = Yii::$app->db;
+        $affected = $db->createCommand(
+            'UPDATE stocks SET quantity = quantity + :d WHERE category = :c AND branch = :b AND type = 1',
+            [':d' => $delta, ':c' => $category, ':b' => $branch]
+        )->execute();
+
+        if ($affected === 0 && $createIfMissing) {
+            $db->createCommand(
+                'INSERT INTO stocks (category, quantity, branch, type) VALUES (:c, :q, :b, 1)',
+                [':c' => $category, ':q' => $delta, ':b' => $branch]
+            )->execute();
+        }
+    }
+
+    /** مجموع الكميات لكل صنف (قد يتكرر الصنف في عدة أسطر) */
+    private function sumByCategory(array $rows)
+    {
+        $sum = [];
+        foreach ($rows as $row) {
+            $sum[$row->category] = round(($sum[$row->category] ?? 0) + (float) $row->quantity, 3);
+        }
+        return $sum;
+    }
+
+    private function categoryName($id)
+    {
+        $category = Category::findOne($id);
+        return $category !== null ? $category->name : ('#' . $id);
     }
 }

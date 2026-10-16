@@ -1,96 +1,49 @@
 <?php
 
-use app\models\CompanyInfo;
+use yii\bootstrap5\Nav;
 use yii\helpers\Html;
-use app\models\User;
-use yii\helpers\Url;
-/* @var $this \yii\web\View */
-/* @var $content string */
+
+/** @var \yii\web\View $this */
+/** @var string $companyName */
+
+$username = Yii::$app->user->isGuest ? '' : Yii::$app->user->identity->username;
 ?>
-<?php  $path = User::find()->select(['path','username'])->where(['id'=>Yii::$app->user->identity->id])->one(); ?>
-<?php  $company = CompanyInfo::find()->select(['name'])->one(); ?>
-<header class="main-header">
+<nav class="app-header navbar navbar-expand bg-body">
+    <div class="container-fluid">
 
-    <?= Html::a('<span class="logo-mini">J</span><span class="logo-lg">' . $company->name . '</span>', Yii::$app->homeUrl, ['class' => 'logo']) ?>
-         
-    <nav class="navbar navbar-static-top " role="navigation">
+        <!-- زر طي/فتح الشريط الجانبي -->
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button"
+                   aria-label="<?= Html::encode(Yii::t('app', 'Toggle navigation')) ?>">
+                    <i class="bi bi-list fs-5"></i>
+                </a>
+            </li>
+        </ul>
 
-        <a href="#" class="sidebar-toggle" data-toggle="push-menu" role="button">
-            <span class="sr-only">Toggle navigation</span>
-        </a>
+        <!-- قائمة المستخدم (ms-auto تُعكس تلقائياً في RTL فتظهر في الطرف المقابل) -->
+        <?= Nav::widget([
+            'options' => ['class' => 'navbar-nav ms-auto'],
+            'items' => [
+                [
+                    'label' => '<i class="bi bi-person-circle me-1"></i>' . Html::encode($username),
+                    'encode' => false,
+                    'dropdownOptions' => ['class' => 'dropdown-menu-end'],
+                    'items' => [
+                        [
+                            'label' => Yii::t('app', 'Change Password'),
+                            'url' => ['/user/changepassword'],
+                            'linkOptions' => ['data-method' => 'post'],
+                        ],
+                        [
+                            'label' => Yii::t('app', 'Sign out'),
+                            'url' => ['/site/logout'],
+                            'linkOptions' => ['data-method' => 'post'],
+                        ],
+                    ],
+                ],
+            ],
+        ]) ?>
 
-        <div class="navbar-custom-menu">
-
-            <ul class="nav navbar-nav ">  
-            
-            <!-- <form class="navbar-form navbar-left" role="search">
-              <div class="form-group">
-                <input type="text" class="form-control" id="navbar-search-input" placeholder="Search">
-              </div>
-            </form> -->
-
-            <!-- Collect the nav links, forms, and other content for toggling -->
-            <!-- <ul class="nav navbar-nav ">
-              <li class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-fw fa-plus"></i>  <span class="caret"></span></a>
-                <ul class="dropdown-menu" role="menu">
-                  <li><a href="?r=claim-form/create">تسجيل فاتورة مبيعات</a></li>
-                  <li class="divider"></li>
-                  <li><a href="#">Policy</a></li>
-                  <li class="divider"></li>
-                  <li><a href="?r=ehealth-care">E Health Care Card</a></li>
-                </ul>
-              </li>
-            </ul> -->
-            <!--  -->
-                <li class="dropdown user user-menu">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                        <!-- <img src="<?php //echo $path["path"]  ?>" class="user-image" alt="User Image"/> -->
-                        <span class="hidden-xs"><?=$path["username"]?></span>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <!-- User image -->
-                        <li class="user-header">
-                            <!-- <img src="<?php //echo $path["path"]?>"  class="img-circle" alt="User Image"/> -->
-                            <p>
-                               <?=$path["username"]?>
-                                <small><?= date('Y-m-d');?></small>
-                            </p>
-                        </li>
-                        <!-- Menu Body -->
-                        <li class="user-body">
-                            <div class="col-xs-4 text-center">
-                                <a href="#"></a>
-                            </div>
-                            <div class="col-xs-4 text-center">
-                                <a href="#"></a>
-                            </div>
-                            <div class="col-xs-4 text-center">
-                                <a href="#"></a>
-                            </div>
-                        </li>
-                        <!-- Menu Footer-->
-                        <li class="user-footer">
-                            <div class="pull-left">
-                            <?= Html::a(
-                                    Yii::t('app', 'Change Password'),
-                                    ['/user/changepassword'],
-                                    ['data-method' => 'post', 'class' => 'btn btn-default btn-flat']
-                                ) ?>
-                                <!-- <a href="?r=user/changepassword" class="btn btn-default btn-flat">
-                                Change Password</a> -->
-                            </div>
-                            <div class="pull-right">
-                                <?= Html::a(
-                                    Yii::t('app', 'Sign out'),
-                                    ['/site/logout'],
-                                    ['data-method' => 'post', 'class' => 'btn btn-default btn-flat']
-                                ) ?>
-                            </div>
-                        </li>
-                    </ul>
-                </li>
-            </ul>
-        </div>
-    </nav>
-</header>
+    </div>
+</nav>

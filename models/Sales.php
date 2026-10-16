@@ -30,9 +30,10 @@ use Yii;
  * @property int|null $wholesale
  * @property int|null $client
  * @property int|null $waitQnty
+ * @property int $payment_type
  *
  * @property Branches $branch0
- * @property Client $clinet0
+ * @property Client $c
  * @property Currancy $currancy0
  * @property Salesdetails[] $salesdetails
  * @property User $userInsert

@@ -43,8 +43,8 @@ class PurchasesDetails extends \yii\db\ActiveRecord
     {
         return [
             [['PurchasesId', 'category', 'quantity', 'costPrice', 'box'], 'required'],
-            [['PurchasesId', 'category', 'quantity', 'box'], 'integer'],
-            [['costPrice', 'totalCost', 'salePrice', 'salePrice_', 'salePrice_2', 'salePrice_3'], 'number'],
+            [['PurchasesId', 'category', 'box'], 'integer'],
+            [['quantity', 'costPrice', 'totalCost', 'salePrice', 'salePrice_', 'salePrice_2', 'salePrice_3'], 'number'],
             [['expire', 'name', 'company', 'serialNo'], 'safe'],
             [['totalCost'], 'string', 'max' => 255],
             [['category'], 'exist', 'skipOnError' => true, 'targetClass' => Category::class, 'targetAttribute' => ['category' => 'id']],

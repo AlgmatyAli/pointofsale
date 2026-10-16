@@ -3,11 +3,13 @@
 use yii\helpers\Html;
 use kartik\tabs\TabsX;
 
+/** @var app\models\Purchases $model */
+
 $items = [
 
     [
-        'label' => '<i class="glyphicon glyphicon-book"></i> ' . Html::encode(Yii::t('app', 'Sales Details')),
-        'content' => $this->render('_dataSalesDetails', [
+        'label' => '<i class="glyphicon glyphicon-book"></i> ' . Html::encode(Yii::t('app', 'Purchases Details')),
+        'content' => $this->render('_dataPurchasesDetails', [
             'model' => $model,
             'row' => $model->purchasesDetails,
         ]),

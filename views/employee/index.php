@@ -2,14 +2,14 @@
 
 use yii\helpers\Html;
 use yii\grid\GridView;
-use yii\helpers\Url;
 use yii\widgets\Pjax;
+
 /* @var $this yii\web\View */
-/* @var $searchModel app\models\EmployeeSearch */
+
+/** @var  app\models\EmployeeSearch $searchModel*/
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
 $this->title = Yii::t('app', 'Employees');
-$this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="employee-index">
 
@@ -48,7 +48,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'template' => '<div class="btn-group btn-group-sm" role="group" aria-label="...">{view}</div>',
                 'buttons' => [
                     'view' => function ($url, $searchModel, $key) {
-                        return Html::a('<i class="fa fa-eye"></i>', $url, ['class' => 'btn btn-default']);
+                        return Html::a('<i class="bi bi-eye"></i>', $url, ['class' => 'btn btn-default']);
                     },
                 ]
             ],

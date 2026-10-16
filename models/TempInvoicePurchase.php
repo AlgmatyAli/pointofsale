@@ -13,7 +13,6 @@ class TempInvoicePurchase extends BaseTempInvoicePurchase
     /**
      * @inheritdoc
      */
-    public $rate, $totalInvoice, $totalCost; 
     public function rules()
     {
         return array_replace_recursive(parent::rules(),

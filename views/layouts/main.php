@@ -1,88 +1,72 @@
 <?php
-use yii\helpers\Html;
+
+use app\assets\AppAsset;
 use app\models\CompanyInfo;
-use yii\bootstrap\Modal;
+use yii\bootstrap5\Modal;
+use yii\helpers\Html;
 
+/** @var \yii\web\View $this */
+/** @var string $content */
 
-/* @var $this \yii\web\View */
-/* @var $content string */
+// للإبقاء على السلوك القديم. الأفضل لاحقاً: $this->layout = 'main-login'; داخل الكنترولر.
+if (Yii::$app->controller->action->id === 'login') {
+    echo $this->render('main-login', ['content' => $content]);
+    return;
+}
 
-if (Yii::$app->controller->action->id === 'login') { 
-/**
- * Do not use this code in your template. Remove it. 
- * Instead, use the code  $this->layout = '//main-login'; in your controller.
- */
-    echo $this->render(
-        'main-login',
-        ['content' => $content]
-    );
-} else {
-    app\assets\AppAsset::register($this);
-    //dmstr\web\AdminLteAsset::register($this);
-    airani\AdminLteRtlAsset::register($this);
+AppAsset::register($this);
 
+// استعلام واحد مخزّن مؤقتاً بدل استعلامين في كل طلب (يُحذف المفتاح عند حفظ CompanyInfo)
+$company = Yii::$app->cache->getOrSet(
+    'company-info',
+    fn() => CompanyInfo::find()->select(['skin', 'name'])->asArray()->one() ?: [],
+    3600
+);
+$companyName = $company['name'] ?? Yii::$app->name;
 
-    $directoryAsset = Yii::$app->assetManager->getPublishedUrl('@vendor/almasaeed2010/adminlte/dist');
-        app\assets\AppAsset::register($this);
-    ?>
-    <?php $info = CompanyInfo::find()->select(['skin', 'name'])->one(); 
-          $body = '"' ."hold-transition ". $info->skin ." sidebar-mini" .'"';
-          $title = $info->name;
-    ?>
-    <?php //die($body);?>
+// قيم skin القديمة في AdminLTE 2 مثل skin-blue-light => شريط جانبي فاتح، وغيرها => داكن
+$sidebarTheme = str_ends_with((string) ($company['skin'] ?? ''), '-light') ? 'light' : 'dark';
+?>
+<?php $this->beginPage() ?>
+<!DOCTYPE html>
+<html lang="<?= Yii::$app->language ?>" dir="rtl" data-bs-theme="light">
 
-    <?php $this->beginPage() ?>
-    <!DOCTYPE html>
-    <html lang="<?= Yii::$app->language ?>">
-    <head>
-        <meta charset="<?= Yii::$app->charset ?>"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <?= Html::csrfMetaTags() ?>
-        <title><?= Html::encode($title) ?></title>
-        <?php $this->head() ?>
-    </head> 
-    <!-- skin-blue -->
-    <body class= <?= $body ?>>
+<head>
+    <meta charset="<?= Yii::$app->charset ?>">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <?= Html::csrfMetaTags() ?>
+    <title><?= Html::encode($this->title ? $this->title . ' | ' . $companyName : $companyName) ?></title>
+    <?php $this->head() ?>
+</head>
+
+<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
     <?php $this->beginBody() ?>
-    <div class="wrapper">
 
-        <?= $this->render(
-            'header.php',
-            ['directoryAsset' => $directoryAsset]
-        ) ?>
+    <div class="app-wrapper">
 
-        <?= $this->render(
-            'left.php',
-            ['directoryAsset' => $directoryAsset]
-        )
-        ?>
-        
-        <?= $this->render(
-            'content.php',
-            ['content' => $content, 'directoryAsset' => $directoryAsset]
-        ) ?>
+        <?= $this->render('header', ['companyName' => $companyName]) ?>
+
+        <?= $this->render('left', ['companyName' => $companyName, 'sidebarTheme' => $sidebarTheme]) ?>
+
+        <?= $this->render('content', ['content' => $content]) ?>
 
     </div>
 
     <?php
-        Modal::begin([
-            'header' => '<b>' . Yii::t('app', 'منظومة المبيعات') . '<hr></b>',
-            'headerOptions' => ['id' => 'modalHeader'],
-            'id' => 'modal',
-            'size' => Modal::SIZE_LARGE,
-             //keeps from closing modal with esc key or by clicking out of the modal.
-             // user must click cancel or X to close
-            'clientOptions' => ['backdrop' => 'static', 'keyboard' => true]
-        ]);
-            echo "<div id='modalContent'></div>";
-            Modal::end();
+    Modal::begin([
+        'id' => 'modal',
+        'title' => '<b>' . Yii::t('app', 'منظومة المبيعات') . '</b>',
+        'headerOptions' => ['id' => 'modalHeader'],
+        'size' => Modal::SIZE_EXTRA_LARGE,
+        // static: لا يُغلق بالنقر خارج النافذة، ويُغلق بزر ESC أو بزر الإغلاق
+        'clientOptions' => ['backdrop' => 'static', 'keyboard' => true],
+    ]);
+    echo '<div id="modalContent"></div>';
+    Modal::end();
     ?>
 
-     <?= \ibrarturi\scrollup\ScrollUp::widget([
-    	'theme' => 'pill',   // pill, link, image, tab
-    ]); ?>
     <?php $this->endBody() ?>
-    </body>
-    </html>
-    <?php $this->endPage() ?>
-<?php } ?>
+</body>
+
+</html>
+<?php $this->endPage() ?>

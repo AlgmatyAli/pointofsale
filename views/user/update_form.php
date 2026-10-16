@@ -1,121 +1,151 @@
 <?php
 
+use app\models\AuthItem;
+use app\models\Branches;
+use app\models\Client;
+use kartik\file\FileInput;
+use kartik\select2\Select2;
+use yii\bootstrap5\ActiveForm;
+use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
 use yii\helpers\Url;
-use yii\widgets\ActiveForm;
-use yii\helpers\ArrayHelper;
-use kartik\file\FileInput;
-use app\models\Branches;
-use kartik\select2\Select2;
+
 /* @var $this yii\web\View */
 /* @var $model app\models\User */
-/* @var $form yii\widgets\ActiveForm */
+
+// الصلاحيات الإضافية: [الحقل، الوصف]
+$flags = [
+    'seeCostPrice' => 'رؤية سعر التكلفة وهامش الربح',
+    'editSalePrice' => 'تعديل سعر البيع في الفاتورة',
+    'makeDiscount' => 'منح خصم على الفاتورة',
+    'printPurtchaseInvoice' => 'طباعة فواتير المشتريات',
+    'seeOtherBranchQ' => 'رؤية كميات الفروع الأخرى',
+];
+
+$switch = function (string $attribute, string $hint) use ($model) {
+    $id = Html::getInputId($model, $attribute);
+    return '<div class="form-check form-switch mb-2">'
+        . Html::activeCheckbox($model, $attribute, ['class' => 'form-check-input', 'role' => 'switch', 'label' => null, 'id' => $id])
+        . '<label class="form-check-label fw-semibold" for="' . Html::encode($id) . '">' . Html::encode($model->getAttributeLabel($attribute)) . '</label>'
+        . '<div class="form-text mt-0">' . Html::encode($hint) . '</div></div>';
+};
+
+// حالة المستخدم: القيمتان المخزّنتان active / disabled كما كانتا
+$statusValue = $model->isActive ?: 'active';
+
+$this->registerCss(<<<'CSS'
+.user-form .form-label { font-size: .85rem; margin-bottom: .2rem; }
+.user-form .uf-save { position: sticky; bottom: 0; z-index: 5; background: var(--bs-body-bg); border-top: 1px solid var(--bs-border-color); padding: .75rem 0; margin-top: 1rem; }
+.user-form .btn-group > .btn { white-space: nowrap; }
+CSS);
 ?>
 <div class="user-form">
-    <?php $form = ActiveForm::begin(); ?>
-    <div class='row'>
-        <div class='col-md-1'></div>
-        <div class='col-md-5'>
+    <?php $form = ActiveForm::begin(['id' => 'user-form', 'options' => ['enctype' => 'multipart/form-data']]); ?>
 
-            <?= $form->field($model, 'username')->textInput(['maxlength' => true]) ?>
+    <?= $form->errorSummary($model, ['class' => 'alert alert-danger py-2 small']) ?>
 
-            <?= $form->field($model, 'phone')->textInput(['maxlength' => true]) ?>
+    <div class="row g-3">
 
-            <?= $form->field($model, 'email')->textInput(['maxlength' => true]) ?>
+        <!-- بيانات الحساب -->
+        <div class="col-lg-5">
+            <div class="card h-100">
+                <div class="card-header fw-bold"><i class="bi bi-person-badge text-primary"></i> بيانات الحساب</div>
+                <div class="card-body">
 
-            <?= $form->field($model, 'isActive')->dropDownList(['active' => 'active', 'disabled' => 'disabled',], ['prompt' => 'Select User Status...']) ?>
+                    <?= $form->field($model, 'username')->textInput(['maxlength' => true, 'autocomplete' => 'off']) ?>
 
-            <?php
-            echo $form->field($model, 'branch')->widget(Select2::classname(), [
-                'data' => ArrayHelper::map(Branches::find()->all(), 'id', 'name'),
-                'language' => 'ar',
-                'options' => ['placeholder' => 'الرجاء اختيار اسم الفرع ...'],
-                'pluginOptions' => [
-                    'allowClear' => true,
-                    'multiple' => false
-                ],
-            ]);
-            ?>
+                    <div class="row g-2">
+                        <div class="col-sm-6"><?= $form->field($model, 'phone')->textInput(['maxlength' => true, 'inputmode' => 'tel']) ?></div>
+                        <div class="col-sm-6"><?= $form->field($model, 'email')->textInput(['maxlength' => true, 'inputmode' => 'email']) ?></div>
+                    </div>
 
-            <?= $form->field($model, 'permission')->widget(\kartik\widgets\Select2::classname(), [
-                'data' => \yii\helpers\ArrayHelper::map(\app\models\AuthItem::find()->where(['!=', 'type', '2'])->asArray()->all(), 'type', 'name'),
-                'options' => ['placeholder' => Yii::t('app', 'Choose User Type')],
-                'pluginOptions' => [
-                    'allowClear' => true
-                ],
-            ]);
-            ?>
+                    <?= $form->field($model, 'isActive')->radioList(
+                        ['active' => 'نشط', 'disabled' => 'معطّل'],
+                        [
+                            'class' => 'btn-group w-100',
+                            'role' => 'group',
+                            'value' => $statusValue,
+                            'item' => function ($index, $label, $name, $checked, $value) {
+                                $id = 'user-status-' . $index;
+                                $color = $value === 'active' ? 'success' : 'secondary';
+                                return Html::radio($name, $checked, ['value' => $value, 'id' => $id, 'class' => 'btn-check', 'autocomplete' => 'off'])
+                                    . Html::label(Html::encode($label), $id, ['class' => 'btn btn-outline-' . $color . ' flex-fill']);
+                            },
+                        ]
+                    ) ?>
 
-            <?= $form->field($model, 'client')->widget(\kartik\widgets\Select2::classname(), [
-                'data' => \yii\helpers\ArrayHelper::map(\app\models\Client::find()->orderBy('id')->asArray()->all(), 'id', 'name'),
-                'options' => ['placeholder' => Yii::t('app', 'Choose User Type')],
-                'pluginOptions' => [
-                    'allowClear' => true,
-                    'multiple' => true,
-                ],
-            ]);
-            ?>
+                    <?= $form->field($model, 'branch')->widget(Select2::class, [
+                        'data' => ArrayHelper::map(Branches::find()->all(), 'id', 'name'),
+                        'language' => 'ar',
+                        'options' => ['placeholder' => 'الرجاء اختيار اسم الفرع ...'],
+                        'pluginOptions' => ['allowClear' => true, 'multiple' => false],
+                    ]) ?>
 
-            <br>
-            <div class="form-group">
+                    <?= $form->field($model, 'permission')->widget(Select2::class, [
+                        'data' => ArrayHelper::map(AuthItem::find()->where(['!=', 'type', '2'])->asArray()->all(), 'type', 'name'),
+                        'options' => ['placeholder' => Yii::t('app', 'Choose User Type')],
+                        'pluginOptions' => ['allowClear' => true],
+                    ]) ?>
 
-                <?= Html::a('<i class="fa fa-fw fa-eraser"></i>' . ' ' . "Erase all", Url::toRoute(['create']), ['class' => 'btn btn-danger']) ?>
-                <?= Html::submitButton($model->isNewRecord ? '<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Create') : '<i class="fa fa-fw fa-edit"></i>' . ' ' . Yii::t('app', 'Update'), ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']) ?>
+                    <?= $form->field($model, 'client')->widget(Select2::class, [
+                        'data' => ArrayHelper::map(Client::find()->orderBy('id')->asArray()->all(), 'id', 'name'),
+                        'options' => ['placeholder' => 'اختر العملاء (اختياري) ...'],
+                        'pluginOptions' => ['allowClear' => true, 'multiple' => true],
+                    ])->hint('اختياري: يقتصر المستخدم على العملاء المحددين.') ?>
 
+                </div>
             </div>
         </div>
-        <div class='col-md-3'>
-            <?php if (empty($model->path)) {
 
-                echo $form->field($model, 'file')->widget(FileInput::classname(), ['options' => ['accept' => 'image/*'],]);
-            } else {
-                $allimage[] = Html::img("$model->path",  ['class' => 'file-preview-image']);
-
-                echo $form->field($model, 'file')->widget(
-                    FileInput::classname(),
-                    [
-                        'options' => ['accept' => 'image/*'],
-                        'pluginOptions' => [
-                            'initialPreview' => [$allimage],
-                            'overwriteInitial' => false
-                        ],
-                    ]
-                );
-            }
-            ?>
+        <!-- الصورة -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100">
+                <div class="card-header fw-bold"><i class="bi bi-image text-info"></i> الصورة</div>
+                <div class="card-body">
+                    <?php
+                    $fileOptions = ['options' => ['accept' => 'image/*']];
+                    if (!empty($model->path)) {
+                        // كانت المعاينة تُمرَّر مصفوفة داخل مصفوفة فلا تظهر الصورة الحالية
+                        $fileOptions['pluginOptions'] = [
+                            'initialPreview' => [Html::img($model->path, ['class' => 'file-preview-image img-fluid'])],
+                            'overwriteInitial' => false,
+                        ];
+                    }
+                    echo $form->field($model, 'file')->widget(FileInput::class, $fileOptions)->label(false);
+                    ?>
+                </div>
+            </div>
         </div>
-        <div class='col-md-3'>
-            <br>
-            <div class="panel panel-primary">
-                <div class="panel-heading">صلاحيات اضافية</div>
-                <br>
-                <div class="row">
-                    <div class='col-md-1'></div>
-                    <div class='col-md-11'>
-                        <?= $form->field($model, 'seeCostPrice')->checkBox() ?>
-                        <?= $form->field($model, 'editSalePrice')->checkBox() ?>
-                        <?= $form->field($model, 'makeDiscount')->checkBox() ?>
-                        <?= $form->field($model, 'printPurtchaseInvoice')->checkBox() ?>
-                        <?= $form->field($model, 'seeOtherBranchQ')->checkBox() ?>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class='col-md-1'></div>
-                    <div class='col-md-7'>
-                        <hr>
-                        <?= $form->field($model, 'maxDiscount')->textInput(['maxlength' => true]) ?>
-                        <?= $form->field($model, 'maxExpenses')->textInput(['maxlength' => true]) ?>
-                        <?= $form->field($model, 'maxReceipt')->textInput(['maxlength' => true]) ?>
-                    </div>
-                    <div class='col-md-4'></div>
-                </div>
 
+        <!-- الصلاحيات الإضافية -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 border-primary">
+                <div class="card-header fw-bold bg-primary-subtle"><i class="bi bi-shield-check text-primary"></i> صلاحيات اضافية</div>
+                <div class="card-body">
+                    <?php foreach ($flags as $attribute => $hint): ?>
+                        <?= $switch($attribute, $hint) ?>
+                    <?php endforeach; ?>
+
+                    <hr class="opacity-25">
+                    <div class="text-body-secondary small mb-2">الحدود القصوى</div>
+                    <?= $form->field($model, 'maxDiscount')->textInput(['maxlength' => true, 'inputmode' => 'decimal']) ?>
+                    <?= $form->field($model, 'maxExpenses')->textInput(['maxlength' => true, 'inputmode' => 'decimal']) ?>
+                    <?= $form->field($model, 'maxReceipt')->textInput(['maxlength' => true, 'inputmode' => 'decimal']) ?>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
+    <!-- شريط الحفظ -->
+    <div class="uf-save d-flex gap-2">
+        <?= Html::submitButton(
+            $model->isNewRecord
+                ? '<i class="bi bi-save"></i> ' . Yii::t('app', 'Create')
+                : '<i class="bi bi-pencil-square"></i> ' . Yii::t('app', 'Update'),
+            ['class' => 'btn btn-lg flex-grow-1 ' . ($model->isNewRecord ? 'btn-success' : 'btn-primary')]
+        ) ?>
+        <?= Html::a('<i class="bi bi-x-circle"></i> ' . Yii::t('app', 'Cancel'), ['index'], ['class' => 'btn btn-lg btn-outline-secondary']) ?>
+    </div>
 
-
-<?php ActiveForm::end(); ?>
+    <?php ActiveForm::end(); ?>
 </div>

@@ -34,13 +34,20 @@ class EmpSalaryController extends Controller
                 'rules' => [
                     [
                         'allow' => true,
-                        'actions' => ['create', 'c-discount', 'view', 'get-drawing',
-                         'histrans', 'get-salary', 'c-extra-job'],
+                        'actions' => [
+                            'create',
+                            'c-discount',
+                            'view',
+                            'get-drawing',
+                            'histrans',
+                            'get-salary',
+                            'c-extra-job'
+                        ],
                         'roles' => ['createSalary'],
                     ],
                     [
                         'allow' => true,
-                        'actions' => ['update', 'c-discount', 'view', 'get-drawing', 'get-salary', 'c-extra-job'],
+                        'actions' => ['update', 'u-disscount', 'view', 'get-drawing', 'get-salary', 'u-extra-job'],
                         'roles' => ['updateSalary'],
                     ],
                     [
@@ -138,7 +145,10 @@ class EmpSalaryController extends Controller
     {
         $model = $this->findModel($id);
 
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
+        if ($model->load(Yii::$app->request->post())) {
+            $model->updated_at = date('Y-m-d H:i:s');
+            $model->updated_by = Yii::$app->user->identity->id;
+            $model->save();
             return $this->redirect(['view', 'id' => $model->id]);
         }
 
@@ -211,6 +221,22 @@ class EmpSalaryController extends Controller
         ]);
     }
 
+    public function actionUDisscount($id)
+    {
+        $model = $this->findModel($id);
+
+        if ($model->load(Yii::$app->request->post())) {
+            $model->updated_at = date('Y-m-d H:i:s');
+            $model->updated_by = Yii::$app->user->identity->id;
+            $model->save();
+            return $this->redirect(['view', 'id' => $model->id]);
+        }
+
+        return $this->render('udiscount', [
+            'model' => $model,
+        ]);
+    }
+
     public function actionCExtraJob()
     {
         $model = new EmpSalary();
@@ -224,6 +250,22 @@ class EmpSalaryController extends Controller
         }
 
         return $this->render('cextrajob', [
+            'model' => $model,
+        ]);
+    }
+
+    public function actionUExtraJob($id)
+    {
+        $model = $this->findModel($id);
+
+        if ($model->load(Yii::$app->request->post())) {
+            $model->updated_at = date('Y-m-d H:i:s');
+            $model->updated_by = Yii::$app->user->identity->id;
+            $model->save();
+            return $this->redirect(['view', 'id' => $model->id]);
+        }
+
+        return $this->render('uextrajob', [
             'model' => $model,
         ]);
     }
@@ -273,24 +315,24 @@ class EmpSalaryController extends Controller
         FROM `emp_salary` LEFT JOIN `employee` ON employee.id = emp_salary.employee
         where emp_salary.type = 1 and emp_salary.employee = $employee   and month = $month and year = $year
         ORDER BY `emp_salary`.`id` DESC LIMIT 1";
-        
+
         $connection = Yii::$app->db;
         $data = $connection->createCommand($sql);
         $info = $data->queryAll();
-       
+
         foreach ($info as $value) {
             $val = $value;
-    }
-        if ($val['salary'] == null) {
-           
-           $sql = "SELECT salary FROM  employee  where  id = $employee ";
-           $connection = Yii::$app->db;
-           $data = $connection->createCommand($sql);
-           $info = $data->queryAll();
-           foreach ($info as $value) {
-                $val = $value;
-             }
         }
-         return $val;
+        if ($val['salary'] == null) {
+
+            $sql = "SELECT salary FROM  employee  where  id = $employee ";
+            $connection = Yii::$app->db;
+            $data = $connection->createCommand($sql);
+            $info = $data->queryAll();
+            foreach ($info as $value) {
+                $val = $value;
+            }
+        }
+        return $val;
     }
 }

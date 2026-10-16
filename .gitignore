@@ -28,3 +28,6 @@
 /web/img/
 /config/db.php
 /app/config/db.php
+/web/assets/*
+.env
+yii2-bs5-layout.zip

@@ -2,292 +2,209 @@
 
 use yii\helpers\Html;
 use yii\grid\GridView;
+
+/** @var yii\web\View $this */
+/** @var app\models\Sales $model */
+/** @var app\models\CompanyInfo $company */
+/** @var yii\data\ActiveDataProvider $providerSalesDetails */
+/** @var float $totalInvoice */
+/** @var float $balance */
+
+// 1. تحديد الـ Layout المستقل أولاً
+$this->context->layout = 'invoice';
+
+// template.css يُحمَّل تلقائياً من تخطيط invoice (بعد AppAsset)، فلا حاجة لتسجيله هنا
+
+$logo = (string) $company->path;
+if ($logo !== '' && !preg_match('~^(https?:)?//|^/~', $logo)) {
+    $logo = Yii::getAlias('@web/') . ltrim($logo, '/');
+}
+
+$client = $model->c;
+
+$titles = [
+    1 => 'Sales Invoice',
+    2 => 'Back Sales Invoice',
+    3 => 'Reservation Invoice',
+    4 => 'Proforma Invoice',
+];
+$title = $titles[(int) $model->type] ?? 'Invoice';
+
+$payWayText = '';
+if (in_array($model->type, [1, 3, 4])) {
+    $payWayText = ['0' => 'نقدا', '1' => 'آجل', '2' => 'دفعة على الحساب'][(string) $model->payWay] ?? '';
+} elseif ($model->type == 2) {
+    $payWayText = ['1' => 'نقدا', '2' => 'آجل'][(string) $model->payWay] ?? '';
+}
 ?>
 
-<!DOCTYPE html>
-<html lang="ar">
-
-<head>
-  <meta charset="utf-8">
-</head>
-
-<body id='div1'>
-  <p>
-  <div class="btn-group">
-    <button class='btn btn-primary' onClick="window.print()"><?= Yii::t('app', 'Print') ?></button>`
-  </div>
-  <?= Html::a(Yii::t('app', 'Cancel'), Yii::$app->request->referrer, ['class' => 'btn btn-warning pull-left']) ?>
-  </p>
-
-  <div>
-    <div id="container">
-      <div class="invoice-top">
-
-        <section id="memo" class="text-center">
-          <div class="pull-left">
-            <img src=<?php
-                      echo $company->path
-                      ?> class="logo" alt="Cinque Terre">
-          </div>
-          <br><br>
-
-          <div class="company-info">
-            <span class="company-name"><?php echo $company->name ?> </span>
-
-            <span class="spacer"></span>
-            <span class="company-name1"><?php echo $company->work ?> </span>
-
-            <span class="spacer"></span>
-            <div></div>
-            <div><?php echo $company->address ?> </div>
-
-            <span class="clearfix"></span>
-
-            <div><?php echo $company->phone1 ?> |</div>
-            <div><?php echo $company->phone2 ?> </div>
-          </div>
-
-        </section>
-
-        <?php
-        if ($model->type == 1) { ?>
-          <h2 class="text-center white"><?= Yii::t('app', 'Sales Invoice'); ?></h2>
-
-        <?php
-        } elseif ($model->type == 2) { ?>
-          <h2 class="text-center white"><?= Yii::t('app', 'Back Sales Invoice'); ?></h2>
-
-        <?php
-        } elseif ($model->type == 4) { ?>
-          <h2 class="text-center white"><?= Yii::t('app', 'Proforma Invoice'); ?></h2>
-
-        <?php
-        } elseif ($model->type == 3) { ?>
-          <h2 class="text-center white"><?= Yii::t('app', 'Reservation Invoice'); ?></h2>
-
-        <?php
-        }; ?>
-
-        <section id="invoice-info">
-          <div>
-            <span><?= $model->billId ?></span>
-            <span><?= $model->at ?></span>
-            <span><?= Yii::$app->formatter->asTime($model->created_at) ?></span>
-            <span><?php
-                  if ($model->deleviryAt == null) {
-                    echo '';
-                  } else {
-                    echo $model->deleviryAt;
-                  }
-                  ?></span>
-            <span><?php
-                  if ($model->type == 1 || $model->type == 3 || $model->type == 4) {
-                    if ($model->payWay == '0') {
-                      echo 'نقدا';
-                    } elseif ($model->payWay == '1') {
-                      echo 'آجل';
-                    } elseif ($model->payWay == '2') {
-                      echo 'دفعة على الحساب';
-                    }
-                  }
-                  if ($model->type == 2) {
-                    if ($model->payWay == '1') {
-                      echo 'نقدا';
-                    } elseif ($model->payWay == '2') {
-                      echo 'آجل';
-                    }
-                  }
-                  ?></span>
-            <span></span>
-          </div>
-
-          <div>
-            <span>رقـم الفاتورة:</span>
-            <span>تاريخ الفاتورة:</span>
-            <span>توقيت الفاتورة:</span>
-            <span>تاريخ التسليم:</span>
-            <span>طريقة الدفع:</span>
-            <span></span>
-          </div>
-
-          <!-- <span class="clearfix"></span> -->
-
-        </section>
-
-        <section id="client-info">
-          <span>تفاصيل الزبون</span>
-          <div>
-            <span class="bold"><?= $model->c->name ?></span>
-          </div>
-
-          <div>
-            <span><?= $model->c->phone ?></span>
-          </div>
-
-          <div>
-            <span><?= $model->c->email ?></span>
-          </div>
-
-        </section>
-
-        <!-- <div class="clearfix"></div> -->
-      </div>
-
-      <div class="invoice-body">
-        <section id="items">
-
-
-
-          <?php
-
-          echo GridView::widget([
-            'summary' => '',
-            'dataProvider' => $providerSalesDetails,
-            'layout' => "{items}",
-            'options' => ['style' => 'font-size:12px;'],
-
-            'columns' => [
-              ['class' => 'yii\grid\SerialColumn'],
-
-              [
-                'label' => Yii::t('app', 'Name'),
-                'contentOptions' => ['style' => 'font-size:12px;'],
-                'headerOptions' => ['style' => 'width:50%'],
-
-                'value' => function ($data) {
-                  return $data->cat->name;
-                }
-
-              ],
-
-              [
-                'label' => Yii::t('app', 'Company'),
-                'contentOptions' => ['style' => 'font-size:12px;'],
-                'headerOptions' => ['style' => 'width:25%'],
-
-                'value' => function ($data) {
-                  return $data->cat->company;
-                }
-              ],
-
-              [
-                'label' => Yii::t('app', 'quantity'),
-                'contentOptions' => ['style' => 'font-size:12px;'],
-                'headerOptions' => ['style' => 'width:15%'],
-                'value' => function ($data) {
-                  return $data->quantity;
-                }
-
-              ],
-
-              [
-                'label' => Yii::t('app', 'Price'),
-                'contentOptions' => ['style' => 'font-size:12px;'],
-                'headerOptions' => ['style' => 'width:20%'],
-                'format' => ['decimal', 3],
-
-                'value' => function ($data) {
-                  return $data->salePrice;
-                }
-
-              ],
-
-              [
-                'label' => Yii::t('app', 'Total'),
-                'contentOptions' => ['style' => 'font-size:12px;'],
-                'headerOptions' => ['style' => 'width:20%'],
-                'format' => ['decimal', 3],
-                'value' => function ($data) {
-                  return $data->salePrice * $data->quantity;
-                }
-
-              ],
-
-              [
-                'label' => Yii::t('app', 'Branch'),
-                'contentOptions' => ['style' => 'font-size:12px;'],
-                'headerOptions' => ['style' => 'width:20%'],
-                'value' => function ($data) {
-                  return $data->branchName;
-                }
-              ]
-
-            ],
-          ]);
-          ?>
-
-        </section>
-
-        <section id="sums">
-
-          <table cellpadding="0" cellspacing="0">
-            <tr>
-              <th>الاجمـــالي</th>
-              <td><?php echo
-                  number_format((float) $totalInvoice, 3);
-                  //number_format($totalInvoice, 3) . "\n"; //$model->total
-                  ?></td>
-              <td></td>
-            </tr>
-
-            <tr>
-              <th>المدفـوع</th>
-              <td><?php echo number_format($model->paid, 3) . "\n"; ?></td>
-              <td></td>
-            </tr>
-            <tr>
-              <th><?= yii::t('app', 'Disscount') ?></th>
-              <td><?php echo number_format($model->disscount, 3) . "\n"; ?> </td>
-              <td></td>
-            </tr>
-            <tr>
-              <th>الصـــافي</th>
-              <td><?php echo number_format($totalInvoice - $model->paid - $model->disscount, 3) . "\n"; ?></td>
-              <td></td>
-            </tr>
-            <th>الرصيد</th>
-            <td><?php echo number_format($balance, 3) . "\n"; ?></td>
-            <td></td>
-            </tr>
-          </table>
-
-        </section>
-
-        <!-- <div class="clearfix"></div> -->
-        <br><br><br>
-        <section id="terms">
-          <div class="row">
-            <div class="col-md-12">
-              <span class="noprint"> ملاحظـات:
-                <?= $model->notes ?>
-              </span>
-            </div>
-
-          </div>
-          <div class="row">
-            <div class="col-md-12">
-              <span>الشروط والأحكام:</span>
-              <?= $company->terms ?>
-            </div>
-
-          </div>
-
-      </div>
-
-      </section>
-
+<!-- شريط الأزرار: لا يُطبع -->
+<?= $this->render('_flash') ?>
+<div class="no-print d-print-none mb-3 d-flex justify-content-between align-items-center">
+    <div>
+        <button type="button" class="btn btn-primary" onclick="printInvoice()">
+            <i class="bi bi-printer"></i> <?= Yii::t('app', 'Print') ?>
+        </button>
     </div>
+    <?= Html::a(
+        Yii::t('app', 'Cancel'),
+        Yii::$app->request->referrer ?: ['index'],
+        ['class' => 'btn btn-warning']
+    ) ?>
+</div>
 
-  </div>
-  </div>
-</body>
+<!-- الفاتورة بنفس هيكلية print.php -->
+<div id="div1">
+    <div id="container">
+        <div class="invoice-top">
 
-<?php $this->registerCssFile("@web/css/template.css"); ?>
+            <section id="memo" class="text-center">
+                <div style="float:left">
+                    <?php if ($logo !== ''): ?>
+                        <img src="<?= Html::encode($logo) ?>" class="logo" alt="<?= Html::encode($company->name) ?>">
+                    <?php endif; ?>
+                </div>
+                <br><br>
 
-<!-- <script type="text/javascript">
-    window.onload = function(printContent) {
-    window.print();
-  }
-</script> -->
+                <div class="company-info">
+                    <span class="company-name"><?= Html::encode($company->name) ?> </span>
+                    <span class="spacer"></span>
+                    <span class="company-name1"><?= Html::encode($company->work) ?> </span>
+                    <span class="spacer"></span>
+                    <div></div>
+                    <div><?= Html::encode($company->address) ?> </div>
+                    <span class="clearfix"></span>
+                    <div><?= Html::encode($company->phone1) ?> |</div>
+                    <div><?= Html::encode($company->phone2) ?> </div>
+                </div>
+            </section>
 
-</html>
+            <h2 class="text-center white"><?= Yii::t('app', $title) ?></h2>
+
+            <section id="invoice-info">
+                <div>
+                    <span><?= Html::encode((string) $model->billId) ?></span>
+                    <span><?= Html::encode((string) $model->at) ?></span>
+                    <span><?= Yii::$app->formatter->asTime($model->created_at) ?></span>
+                    <span><?= Html::encode((string) $model->deleviryAt) ?></span>
+                    <span><?= Html::encode($payWayText) ?></span>
+                    <span></span>
+                </div>
+
+                <div>
+                    <span>رقـم الفاتورة:</span>
+                    <span>تاريخ الفاتورة:</span>
+                    <span>توقيت الفاتورة:</span>
+                    <span>تاريخ التسليم:</span>
+                    <span>طريقة الدفع:</span>
+                    <span></span>
+                </div>
+            </section>
+
+            <section id="client-info">
+                <span>تفاصيل الزبون</span>
+                <div><span class="bold"><?= Html::encode((string) $client?->name) ?></span></div>
+                <div><span><?= Html::encode((string) $client?->phone) ?></span></div>
+                <div><span><?= Html::encode((string) $client?->email) ?></span></div>
+            </section>
+        </div>
+
+        <div class="invoice-body">
+            <section id="items">
+                <?= GridView::widget([
+                    'summary' => '',
+                    'dataProvider' => $providerSalesDetails,
+                    'layout' => '{items}',
+                    'options' => ['style' => 'font-size:12px;'],
+                    'columns' => [
+                        ['class' => 'yii\grid\SerialColumn'],
+                        [
+                            'label' => Yii::t('app', 'Name'),
+                            'contentOptions' => ['style' => 'font-size:12px;'],
+                            'headerOptions' => ['style' => 'width:50%'],
+                            'value' => fn ($data) => $data->cat?->name,
+                        ],
+                        [
+                            'label' => Yii::t('app', 'Company'),
+                            'contentOptions' => ['style' => 'font-size:12px;'],
+                            'headerOptions' => ['style' => 'width:25%'],
+                            'value' => fn ($data) => $data->cat?->company,
+                        ],
+                        [
+                            'label' => Yii::t('app', 'quantity'),
+                            'contentOptions' => ['style' => 'font-size:12px;'],
+                            'headerOptions' => ['style' => 'width:15%'],
+                            'value' => fn ($data) => $data->quantity,
+                        ],
+                        [
+                            'label' => Yii::t('app', 'Price'),
+                            'contentOptions' => ['style' => 'font-size:12px;'],
+                            'headerOptions' => ['style' => 'width:20%'],
+                            'format' => ['decimal', 3],
+                            'value' => fn ($data) => $data->salePrice,
+                        ],
+                        [
+                            'label' => Yii::t('app', 'Total'),
+                            'contentOptions' => ['style' => 'font-size:12px;'],
+                            'headerOptions' => ['style' => 'width:20%'],
+                            'format' => ['decimal', 3],
+                            'value' => fn ($data) => $data->salePrice * $data->quantity,
+                        ],
+                        [
+                            'label' => Yii::t('app', 'Branch'),
+                            'contentOptions' => ['style' => 'font-size:12px;'],
+                            'headerOptions' => ['style' => 'width:20%'],
+                            'value' => fn ($data) => $data->branchName,
+                        ]
+                    ],
+                ]) ?>
+            </section>
+
+            <section id="sums">
+                <table cellpadding="0" cellspacing="0">
+                    <tr>
+                        <th>الاجمـــالي</th>
+                        <td><?= number_format((float) $totalInvoice, 3) ?></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <th>المدفـوع</th>
+                        <td><?= number_format((float) $model->paid, 3) ?></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <th><?= Yii::t('app', 'Disscount') ?></th>
+                        <td><?= number_format((float) $model->disscount, 3) ?></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <th>الصـــافي</th>
+                        <td><?= number_format((float) $totalInvoice - (float) $model->paid - (float) $model->disscount, 3) ?></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <th>الرصيد</th>
+                        <td><?= number_format((float) $balance, 3) ?></td>
+                        <td></td>
+                    </tr>
+                </table>
+            </section>
+
+            <div class="clearfix"></div>
+
+            <section id="terms">
+                <div class="row">
+                    <div class="col-md-12">
+                        <span class="noprint">ملاحظـات: <?= Html::encode((string) $model->notes) ?></span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <span>الشروط والأحكام:</span>
+                        <?= $company->terms ?>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>

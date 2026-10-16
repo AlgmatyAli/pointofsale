@@ -147,6 +147,7 @@ JS;
             <?php echo $form->field($model, 'serialNo')->textInput(['maxlength' => true, 'placeholder' => 'Serial No'])  ?>
         </div>
     </div>
+    <br>
     <div class='row'>
         <div class='col-md-6'>
             <div class="form-group">
@@ -155,6 +156,7 @@ JS;
             </div>
         </div>
     </div>
+    <br>
     <?php ActiveForm::end(); ?>
 
 </div>

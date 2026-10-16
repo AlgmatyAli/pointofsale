@@ -1,78 +1,82 @@
 <?php
 
 use yii\helpers\Html;
-use yii\widgets\DetailView;
+use yii\web\YiiAsset;
 
 /** @var yii\web\View $this */
 /** @var app\models\DisscountClients $model */
 
-$this->title = $model->client0->name . ' - ' . $model->notes;
-$this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Disscount Clients'), 'url' => ['index']];
+$clientName = (string) $model->client0?->name;
+$notes = trim((string) $model->notes);
+$this->title = $clientName . ($notes !== '' ? ' - ' . mb_strimwidth($notes, 0, 40, '…') : '');
+
+$isSale = (string) $model->type === '1';
+$indexRoute = $isSale ? ['index'] : ['index_'];
+$this->params['breadcrumbs'][] = [
+    'label' => Yii::t('app', $isSale ? 'Disscount Clients' : 'Disscount Suppliers'),
+    'url' => $indexRoute,
+];
 $this->params['breadcrumbs'][] = $this->title;
-\yii\web\YiiAsset::register($this);
+YiiAsset::register($this);
+
+$kind = $isSale
+    ? ['تخفيض على المبيعات', 'text-bg-success', 'bi-tag']
+    : ['خصم من المشتريات', 'text-bg-warning', 'bi-bag-dash'];
+
+$row = function (string $label, string $html) {
+    return '<div class="col-sm-6"><div class="small text-body-secondary">' . Html::encode($label) . '</div><div class="fw-semibold">' . $html . '</div></div>';
+};
+$dash = '<span class="text-body-secondary">—</span>';
+
+$this->registerCss('@media print { .disscount-clients-view .d-print-none { display: none !important; } }');
 ?>
 <div class="disscount-clients-view">
 
-    <h1><?= Html::encode($this->title) ?></h1>
-    <hr>
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <h4 class="mb-0 me-auto"><i class="bi <?= $kind[2] ?>"></i> <?= Html::encode($this->title) ?></h4>
+        <div class="d-flex gap-2 d-print-none">
+            <?= Html::a('<i class="bi bi-pencil-square"></i> ' . Yii::t('app', 'Update'), ['update', 'id' => $model->id, 'type' => $model->type], ['class' => 'btn btn-primary']) ?>
+            <?= Html::a('<i class="bi bi-arrow-right"></i> ' . Yii::t('app', 'Back'), Yii::$app->request->referrer ?: $indexRoute, ['class' => 'btn btn-outline-secondary']) ?>
+            <?= Html::a('<i class="bi bi-trash"></i> ' . Yii::t('app', 'Delete'), ['delete', 'id' => $model->id], [
+                'class' => 'btn btn-outline-danger',
+                'data' => [
+                    'confirm' => Yii::t('app', 'Are you sure you want to delete this item?'),
+                    'method' => 'post',
+                ],
+            ]) ?>
+        </div>
+    </div>
 
-    <p>
-        <?= Html::a('<i class="fa fa-fw fa-edit"></i>' . ' ' . Yii::t('app', 'Update'), ['update', 'id' => $model->id, 'type' => $model->type], ['class' => 'btn btn-primary']) ?>
+    <div class="row g-3">
+        <div class="col-lg-4">
+            <div class="card h-100 border-<?= $isSale ? 'success' : 'warning' ?>-subtle">
+                <div class="card-body">
+                    <span class="badge <?= $kind[1] ?> mb-2"><i class="bi <?= $kind[2] ?>"></i> <?= Html::encode($kind[0]) ?></span>
+                    <div class="small text-body-secondary"><?= Html::encode($model->getAttributeLabel('value')) ?></div>
+                    <div class="fs-2 fw-bold lh-1"><?= Html::encode((string) $model->value) ?></div>
+                    <div class="text-body-secondary mt-1"><?= Html::encode((string) $model->currancy0?->name) ?></div>
+                </div>
+            </div>
+        </div>
 
-        <?= Html::a(Yii::t('app', 'Delete'), ['delete', 'id' => $model->id], [
-            'class' => 'btn btn-danger',
-            'data' => [
-                'confirm' => Yii::t('app', 'Are you sure you want to delete this item?'),
-                'method' => 'post',
-            ],
-        ]) ?>
-        <?= Html::a('<i class="fa fa-fw fa-window-close"></i>' . ' ' . Yii::t('app', 'Back'), Yii::$app->request->referrer, ['class' => 'btn btn-danger']) ?>
-
-    </p>
-    <br>
-    <?= DetailView::widget([
-        'model' => $model,
-        'attributes' => [
-            [
-                'label' => Yii::t('app', 'Client Name'),
-                'format' => 'raw',
-                'value' => function ($data) {
-                    return $data->client0->name;
-                }
-            ],
-            'at',
-            'value',
-            [
-                'label' => Yii::t('app', 'Currancy'),
-                'format' => 'raw',
-                'value' => function ($data) {
-                    return $data->currancy0->name;
-                }
-            ],
-            [
-                'label' => Yii::t('app', 'Branch'),
-                'format' => 'raw',
-                'value' => function ($data) {
-                    return $data->branch0->name;
-                }
-            ],
-            [
-                'label' => Yii::t('app', 'Notes'),
-                'format' => 'raw',
-                'value' => function ($data) {
-                    return $data->notes;
-                }
-            ],
-
-            [
-                'label' => Yii::t('app', 'User Insert'),
-                'format' => 'raw',
-                'value' => function ($data) {
-                    return $data->createdBy->username;
-                }
-            ],
-            'created_at',
-        ],
-    ]) ?>
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <?= $row(Yii::t('app', 'Client Name'), Html::encode($clientName) ?: $dash) ?>
+                        <?= $row($model->getAttributeLabel('at'), Html::encode((string) $model->at) ?: $dash) ?>
+                        <?= $row(Yii::t('app', 'Currancy'), Html::encode((string) $model->currancy0?->name) ?: $dash) ?>
+                        <?= $row(Yii::t('app', 'Branch'), Html::encode((string) $model->branch0?->name) ?: $dash) ?>
+                        <?= $row(Yii::t('app', 'User Insert'), Html::encode((string) $model->createdBy?->username) ?: $dash) ?>
+                        <?= $row($model->getAttributeLabel('created_at'), Html::encode((string) $model->created_at) ?: $dash) ?>
+                        <div class="col-12">
+                            <div class="small text-body-secondary"><?= Html::encode(Yii::t('app', 'Notes')) ?></div>
+                            <div><?= $notes !== '' ? nl2br(Html::encode($notes)) : $dash ?></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </div>

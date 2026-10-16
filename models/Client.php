@@ -27,6 +27,7 @@ use Yii;
  * @property Receipt[] $receipts
  * @property Sales[] $sales
  * @property int $post_paid
+ * @property float|null $debt
  */
 class Client extends \yii\db\ActiveRecord
 {
@@ -50,8 +51,8 @@ class Client extends \yii\db\ActiveRecord
             [['created_at', 'update_at', 'indebtedness'], 'safe'],
             [['debt', 'post_paid'], 'number'],
             [['name', 'phone', 'mobile', 'address', 'email', 'balance'], 'string', 'max' => 255],
-            [['user_insert'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['user_insert' => 'id']],
-            [['user_update'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['user_update' => 'id']],
+            [['user_insert'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_insert' => 'id']],
+            [['user_update'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_update' => 'id']],
         ];
     }
 
@@ -87,7 +88,7 @@ class Client extends \yii\db\ActiveRecord
      */
     public function getUserInsert()
     {
-        return $this->hasOne(User::className(), ['id' => 'user_insert']);
+        return $this->hasOne(User::class, ['id' => 'user_insert']);
     }
 
     /**
@@ -97,7 +98,7 @@ class Client extends \yii\db\ActiveRecord
      */
     public function getUserUpdate()
     {
-        return $this->hasOne(User::className(), ['id' => 'user_update']);
+        return $this->hasOne(User::class, ['id' => 'user_update']);
     }
 
     /**
@@ -107,7 +108,7 @@ class Client extends \yii\db\ActiveRecord
      */
     public function getPurchases()
     {
-        return $this->hasMany(Purchases::className(), ['clinet' => 'id']);
+        return $this->hasMany(Purchases::class, ['clinet' => 'id']);
     }
 
     /**
@@ -117,17 +118,17 @@ class Client extends \yii\db\ActiveRecord
      */
     public function getReceipts()
     {
-        return $this->hasMany(Receipt::className(), ['clinet' => 'id']);
+        return $this->hasMany(Receipt::class, ['clinet' => 'id']);
     }
     public function getDebit()
     {
-        return $this->hasMany(Receipt::className(), ['clinet' => 'id'])
+        return $this->hasMany(Receipt::class, ['clinet' => 'id'])
             ->andwhere(['type' => 2])
         ;
     }
     public function getCredit()
     {
-        return $this->hasMany(Receipt::className(), ['clinet' => 'id'])
+        return $this->hasMany(Receipt::class, ['clinet' => 'id'])
             ->andwhere(['type' => 1])
         ;
     }
@@ -139,14 +140,14 @@ class Client extends \yii\db\ActiveRecord
      */
     public function getSales()
     {
-        return $this->hasMany(Sales::className(), ['clinet' => 'id'])
+        return $this->hasMany(Sales::class, ['clinet' => 'id'])
             ->andwhere(['type' => 1])
         ;
     }
 
     public function getInitsales()
     {
-        return $this->hasMany(Sales::className(), ['clinet' => 'id'])
+        return $this->hasMany(Sales::class, ['clinet' => 'id'])
             ->andwhere(['type' => 3])
         ;
     }

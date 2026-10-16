@@ -1,261 +1,247 @@
 <?php
 
 use yii\helpers\Html;
-use yii\widgets\DetailView;
 use yii\helpers\Url;
 
-/**   @var $this yii\web\View **/
-/** @var $model app\models\Purchases **/
+/** @var yii\web\View $this */
+/** @var app\models\Purchases $model */
+/** @var yii\data\ActiveDataProvider $dataProvider */
 
 $this->title = $model->billId;
+$this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Purchases'), 'url' => ['index']];
+$this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
+
+$identity = Yii::$app->user->identity;
+$canSeeCost = $identity->seeCostPrice == 1;
+$canPrint = $identity->printPurtchaseInvoice == 1;
+
+// ---- الحسابات (نفس معادلات الملف الأصلي دون تغيير) ----
+$items = $dataProvider->getModels();
+$itemsCount = $dataProvider->getCount();
+
+$qtyTotal = 0;
+foreach ($items as $row) {
+    $qtyTotal = $row->quantity + $qtyTotal;
+}
+
+$cost = 0;
+$total = 0;
+$profit = 0;
+foreach ($items as $row) {
+    $cost += ($row->quantity * $row->totalCost);
+    $lineSale = $row->quantity * $row->salePrice;
+    $total = $total + $lineSale;
+    $profit = $profit + ($lineSale - ($row->quantity * $row->totalCost));
+}
+
+$fmt = fn($v) => number_format((float) $v, 3);
+
+// ---- نصوص وحالات ----
+$types = [
+    1 => ['مشتريات', 'text-bg-success'],
+    2 => ['مسترجع مشتريات', 'text-bg-danger'],
+    3 => ['مشتريات معلقة', 'text-bg-warning'],
+];
+[$typeText, $typeClass] = $types[(int) $model->type] ?? ['—', 'text-bg-secondary'];
+
+$payWays = ['0' => 'نقدا', '1' => 'آجل', '2' => 'دفعة على الحساب'];
+$payWayText = $payWays[(string) $model->payWay] ?? '—';
+
+$net = (float) $model->total - (float) $model->paid;
+
+$none = '<span class="text-body-secondary">—</span>';
+$clientName = $model->c?->name;
+$currancyName = $model->currancy0?->name;
+$branchName = $model->br?->name;
+$userName = $model->userInsert?->username;
+
+/** صف في قائمة التفاصيل */
+$row = function (string $label, $value, bool $raw = false) use ($none) {
+    $v = ($value === null || $value === '') ? $none : ($raw ? $value : Html::encode((string) $value));
+    return '<div class="d-flex justify-content-between align-items-center py-2 border-bottom">'
+        . '<span class="text-body-secondary">' . Html::encode($label) . '</span>'
+        . '<span class="fw-semibold text-end">' . $v . '</span></div>';
+};
 ?>
 
 <div class="purchases-view">
-<div class="row">
-        <div class="col-md-3 col-sm-6 col-xs-12">
-            <div class="info-box">
-                <span class="info-box-icon bg-aqua"><i class="fa fa-fw fa-dollar"></i></span>
 
+    <!-- رأس الصفحة -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h3 class="mb-1">
+                <i class="bi bi-receipt"></i>
+                <?= Html::encode($this->title) ?>
+            </h3>
+            <span class="badge <?= $typeClass ?>"><?= Html::encode($typeText) ?></span>
+            <span class="badge text-bg-light border"><i class="bi bi-wallet2"></i> <?= Html::encode($payWayText) ?></span>
+            <span class="text-body-secondary small ms-2"><i class="bi bi-calendar3"></i> <?= Html::encode((string) $model->at) ?></span>
+        </div>
+        <?= Html::a(
+            '<i class="bi bi-arrow-right-circle"></i> ' . Yii::t('app', 'Back'),
+            Yii::$app->request->referrer ?: ['index'],
+            ['class' => 'btn btn-outline-secondary']
+        ) ?>
+    </div>
+
+    <!-- البطاقات الإحصائية -->
+    <div class="row g-3 mb-3">
+        <div class="col-xl-3 col-md-6">
+            <div class="info-box mb-0">
+                <span class="info-box-icon text-bg-primary shadow-sm"><i class="bi bi-box-seam"></i></span>
                 <div class="info-box-content">
                     <span class="info-box-text"><?= Yii::t('app', 'Items Count') ?></span>
-                    <span class="info-box-number"><?php echo $dataProvider->getCount() ?><small></small></span>
+                    <span class="info-box-number"><?= (int) $itemsCount ?></span>
                 </div>
-                <!-- /.info-box-content -->
             </div>
-            <!-- /.info-box -->
         </div>
 
-        <?php $count = 0;
-        foreach ($dataProvider->getModels() as $dataP) {
-            $count = $dataP->quantity + $count;
-        }
-        ?>
-
-        <div class="col-md-3 col-sm-6 col-xs-12">
-            <div class="info-box">
-                <span class="info-box-icon bg-green"><i class="fa fa-fw fa-dollar"></i></span>
-
+        <div class="col-xl-3 col-md-6">
+            <div class="info-box mb-0">
+                <span class="info-box-icon text-bg-success shadow-sm"><i class="bi bi-stack"></i></span>
                 <div class="info-box-content">
                     <span class="info-box-text"><?= Yii::t('app', 'اجمالي الكمية') ?></span>
-                    <span class="info-box-number"><?= $count ?><small></small></span>
+                    <span class="info-box-number"><?= Html::encode((string) $qtyTotal) ?></span>
                 </div>
             </div>
         </div>
 
-        <?php if (Yii::$app->user->identity->seeCostPrice == 1) { ?>
-            <?php
-            $cost = 0;
-            foreach ($dataProvider->getModels() as $sum) {
-                $cost += ($sum->quantity * $sum->totalCost);
-            }
-            ?>
-            <div class="col-md-3 col-sm-6 col-xs-12">
-                <div class="info-box">
-                    <span class="info-box-icon bg-yellow"><i class="fa fa-fw fa-dollar"></i></span>
-
+        <?php if ($canSeeCost): ?>
+            <div class="col-xl-3 col-md-6">
+                <div class="info-box mb-0">
+                    <span class="info-box-icon text-bg-warning shadow-sm"><i class="bi bi-cash-stack"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text"><?= Yii::t('app', 'اجمالي التكلفة بالمصاريف') ?></span>
-                        <span class="info-box-number"><?= @number_format($cost, 3) ?>
-                        </span>
+                        <span class="info-box-number"><?= $fmt($cost) ?></span>
                     </div>
-                    <!-- /.info-box-content -->
                 </div>
-                <!-- /.info-box -->
             </div>
 
-            <?php $count = 0;
-            $total = 0;
-            $profit = 0;
-            foreach ($dataProvider->getModels() as $sum) {
-
-                $count = $sum->quantity * $sum->salePrice;
-                $countProfit = ($sum->quantity * $sum->salePrice) - ($sum->quantity * $sum->totalCost);
-                $total = $total + $count;
-                $profit = $profit + $countProfit;
-            }
-            ?>
-            <div class="col-md-3 col-sm-6 col-xs-12">
-                <div class="info-box">
-                    <span class="info-box-icon bg-yellow"><i class="fa fa-fw fa-dollar"></i></span>
-
+            <div class="col-xl-3 col-md-6">
+                <div class="info-box mb-0">
+                    <span class="info-box-icon text-bg-info shadow-sm"><i class="bi bi-graph-up-arrow"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text"><?= Yii::t('app', 'اجمالي البيع') ?></span>
-                        <span class="info-box-number"><?= @number_format($total, 3) ?>
-                            <br>
-                            <small>هامش الربح: <?= @number_format($profit, 3) ?></small>
+                        <span class="info-box-number"><?= $fmt($total) ?></span>
+                        <span class="progress-description small <?= $profit >= 0 ? 'text-success' : 'text-danger' ?>">
+                            هامش الربح: <?= $fmt($profit) ?>
                         </span>
                     </div>
-                    <!-- /.info-box-content -->
                 </div>
-                <!-- /.info-box -->
             </div>
-            <hr>
-            <?php }?>
+        <?php endif; ?>
     </div>
 
-    <br>
-    <h1><?= Html::encode($this->title) ?></h1>
-    <hr><br>
-    <p>
-    <div class="btn-group">
-        <?php
-        if ($model->type == 1 || $model->type == 3) {
-            echo Html::a(
-                '<i class="fa fa-fw fa-edit"></i>' . ' ' . Yii::t('app', 'Update'),
+    <!-- شريط الإجراءات -->
+    <div class="card mb-3">
+        <div class="card-body d-flex flex-wrap gap-2 align-items-center">
+
+            <?= Html::a(
+                '<i class="bi bi-pencil-square"></i> ' . Yii::t('app', 'Update'),
                 ['update', 'id' => $model->id],
-                ['class' => 'btn btn-primary btn-sm']
-            );
-        } else {
-            echo  Html::a(
-                '<i class="fa fa-fw fa-edit"></i>' . ' ' . Yii::t('app', 'Update'),
-                ['update', 'id' => $model->id],
-                ['class' => 'btn btn-primary btn-sm']
-            );
-        }
+                ['class' => 'btn btn-primary']
+            ) ?>
 
-        ?>
+            <?= Html::a(
+                '<i class="bi bi-tags"></i> ' . Yii::t('app', 'Update Sales Prices'),
+                ['purchases-details', 'id' => $model->id],
+                ['class' => 'btn btn-outline-primary']
+            ) ?>
 
-        <?php
-        if (Yii::$app->user->identity->printPurtchaseInvoice == 1) {
-            echo Html::a('<i class="fa fa-fw fa-print"></i>' . ' ' . Yii::t('app', 'Print Bill'), ['print-bill', 'id' => $model->id], ['class' => 'btn btn-success btn-sm']);
-            echo Html::a('<i class="fa fa-fw fa-print"></i>' . ' ' . Yii::t('app', 'Print Bill Dirham'), ['print-d-bill', 'id' => $model->id], ['class' => 'btn btn-success btn-sm']);
-        }
-        ?>
+            <!-- قائمة الطباعة -->
+            <div class="btn-group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-printer"></i> <?= Yii::t('app', 'Print') ?>
+                </button>
+                <ul class="dropdown-menu">
+                    <?php if ($canPrint): ?>
+                        <li><?= Html::a('<i class="bi bi-printer me-2"></i>' . Yii::t('app', 'Print Bill'), ['print-bill', 'id' => $model->id], ['class' => 'dropdown-item']) ?></li>
+                        <li><?= Html::a('<i class="bi bi-printer me-2"></i>' . Yii::t('app', 'Print Bill Dirham'), ['print-d-bill', 'id' => $model->id], ['class' => 'dropdown-item']) ?></li>
+                        <li><hr class="dropdown-divider"></li>
+                    <?php endif; ?>
+                    <li><?= Html::a('<i class="bi bi-printer me-2"></i>' . Yii::t('app', 'Print With Hang OUt Q'), ['noprice', 'id' => $model->id], ['class' => 'dropdown-item']) ?></li>
+                    <li><?= Html::a('<i class="bi bi-printer me-2"></i>' . Yii::t('app', 'Print Bill With Prices'), ['print-bill-with-out-price', 'id' => $model->id], ['class' => 'dropdown-item']) ?></li>
+                    <li><?= Html::a('<i class="bi bi-geo-alt me-2"></i>' . Yii::t('app', 'Print Bill With Place'), ['print-bill-with-place', 'id' => $model->id], ['class' => 'dropdown-item']) ?></li>
+                </ul>
+            </div>
 
-        <?= Html::a('<i class="fa fa-fw fa-print"></i>' . ' ' . Yii::t('app', 'Print With Hang OUt Q'), ['noprice', 'id' => $model->id], ['class' => 'btn btn-secondary']) ?>
+            <!-- إجراءات إضافية (تبقى بالفئة popup لتعمل مع السكربت الحالي) -->
+            <?= Html::button(
+                '<i class="bi bi-files"></i> ' . Yii::t('app', 'SaveAsNew'),
+                ['value' => Url::to(['purchases/save-as-new', 'oldId' => $model->id]), 'class' => 'btn btn-outline-secondary popup']
+            ) ?>
 
+            <?= Html::button(
+                '<i class="bi bi-arrow-left-right"></i> ' . Yii::t('app', 'نقل الاصناف بين الفروع'),
+                ['value' => Url::to(['add-to-transfer-items', 'id' => $model->id]), 'class' => 'btn btn-outline-info popup']
+            ) ?>
 
-        <?= Html::a('<i class="fa fa-fw fa-print"></i>' . ' ' . Yii::t('app', 'Print Bill With Prices'), ['print-bill-with-out-price', 'id' => $model->id], ['class' => 'btn btn-info btn-sm']) ?>
-
-        <?= Html::a('<i class="fa fa-fw fa-print"></i>' . ' ' . Yii::t('app', 'Print Bill With Place'), ['print-bill-with-place', 'id' => $model->id], ['class' => 'btn btn-defualt btn-sm']) ?>
-
-        <?= Html::button('<i class="fa fa-fw fa-copy"></i>' . ' ' . Yii::t('app', 'SaveAsNew'), ['value' => Url::to(['purchases/save-as-new', 'oldId' => $model->id]), 'class' => 'btn btn-success btn-sm popup']); ?>
-
-        <?= Html::a(
-            '<i class="fa fa-fw fa-edit"></i>' . ' ' . Yii::t('app', 'Update Sales Prices'),
-            ['purchases-details', 'id' => $model->id],
-            ['class' => 'btn btn-primary btn-sm']
-        );
-        ?>
-
-        <?php echo Html::button('<i class="fa fa-fw fa-fast"></i>' . ' ' . Yii::t('app', 'نقل الاصناف بين الفروع'), ['value' => Url::to(['add-to-transfer-items', 'id' => $model->id]), 'class' => 'btn btn-info btn-sm popup']); ?>
-
-
-        <?=
-        Html::a('<i class="fa fa-fw fa-trash"></i>' . ' ' . Yii::t('app', 'Delete'), ['delete', 'id' => $model->id], [
-            'class' => 'btn btn-warning btn-sm',
-            'data' => [
-                'confirm' => Yii::t('app', 'Are you sure you want to delete this item?'),
-                'method' => 'post',
-            ],
-        ])
-        ?>
-
-        <?= Html::a('<i class="fa fa-fw fa-window-close"></i>' . ' ' . Yii::t('app', 'Back'), Yii::$app->request->referrer, ['class' => 'btn btn-danger btn-sm']) ?>
-
+            <!-- زر الحذف في آخر الشريط -->
+            <?= Html::a(
+                '<i class="bi bi-trash"></i> ' . Yii::t('app', 'Delete'),
+                ['delete', 'id' => $model->id],
+                [
+                    'class' => 'btn btn-outline-danger ms-auto',
+                    'data' => [
+                        'confirm' => Yii::t('app', 'Are you sure you want to delete this item?'),
+                        'method' => 'post',
+                    ],
+                ]
+            ) ?>
+        </div>
     </div>
-    </p>
-    <br>
-    <?= DetailView::widget([
-        'model' => $model,
-        'attributes' => [
-            'billId',
-            [
-                'label' => Yii::t('app', 'Client Name'),
-                'format' => 'raw',
-                'value' => function ($data) {
-                    return $data->c->name;
-                }
-            ],
-            'clientBill',
-            'at',
-            [
-                'label' => Yii::t('app', 'Total'),
-                'attribute' => 'total',
-                'format' => ['decimal', 3],
-                'hAlign' => 'right',
-                'pageSummary' => true,
-            ],
 
-            [
-                'label' => Yii::t('app', 'Total Cost'),
-                'attribute' => 'totalCost',
-                'format' => ['decimal', 3],
-                'hAlign' => 'right',
-                'pageSummary' => true,
-            ],
-            [
-                'label' => Yii::t('app', 'Paid'),
-                'attribute' => 'paid',
-                'format' => ['decimal', 3],
-                'hAlign' => 'right',
-                'pageSummary' => true,
-            ],
+    <!-- تفاصيل الفاتورة -->
+    <div class="row g-3">
 
-            [
-                'label' => Yii::t('app', 'Net'),
-                'format' => ['decimal', 3],
-                'value' => function ($data) {
-                    return $data->total - $data->paid;
-                }
-            ],
+        <!-- بيانات الفاتورة -->
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header fw-semibold"><i class="bi bi-info-circle"></i> بيانات الفاتورة</div>
+                <div class="card-body pt-2">
+                    <?= $row($model->getAttributeLabel('billId'), $model->billId) ?>
+                    <?= $row(Yii::t('app', 'Client Name'), $clientName) ?>
+                    <?= $row($model->getAttributeLabel('clientBill'), $model->clientBill) ?>
+                    <?= $row($model->getAttributeLabel('at'), $model->at) ?>
+                    <?= $row(Yii::t('app', 'Type'), '<span class="badge ' . $typeClass . '">' . Html::encode($typeText) . '</span>', true) ?>
+                    <?= $row(Yii::t('app', 'Br ID'), $branchName) ?>
+                </div>
+            </div>
+        </div>
 
-            [
-                'label' => Yii::t('app', 'Pay Way'),
-                'format' => 'raw',
-                'value' => function ($model) {
+        <!-- المبالغ -->
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header fw-semibold"><i class="bi bi-calculator"></i> المبالغ</div>
+                <div class="card-body pt-2">
+                    <?= $row(Yii::t('app', 'Total'), $fmt($model->total)) ?>
+                    <?php if ($canSeeCost): ?>
+                        <?= $row(Yii::t('app', 'Total Cost'), $fmt($model->totalCost)) ?>
+                    <?php endif; ?>
+                    <?= $row(Yii::t('app', 'Paid'), $fmt($model->paid)) ?>
+                    <?= $row(Yii::t('app', 'Pay Way'), $payWayText) ?>
+                    <?= $row(Yii::t('app', 'Currancy'), $currancyName) ?>
+                    <?= $row($model->getAttributeLabel('total_currancy'), $model->total_currancy) ?>
 
-                    if ($model->payWay == '0') {
-                        return 'نقدا';
-                    } elseif ($model->payWay == '1') {
-                        return 'آجل';
-                    } elseif ($model->payWay == '2') {
-                        return 'دفعة على الحساب';
-                    }
-                }
-            ],
-            [
-                'label' => Yii::t('app', 'Currancy'),
-                'format' => ['raw'],
-                'value' => function ($data) {
-                    return $data->currancy0->name;
-                }
-            ],
-            'total_currancy',
+                    <div class="d-flex justify-content-between align-items-center mt-3 p-3 rounded <?= $net > 0 ? 'bg-danger-subtle' : 'bg-success-subtle' ?>">
+                        <span class="fw-semibold"><?= Yii::t('app', 'Net') ?></span>
+                        <span class="fs-5 fw-bold"><?= $fmt($net) ?></span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-            [
-                'label' => Yii::t('app', 'Type'),
-                'format' => 'raw',
-                'value' => function ($model) {
-
-                    if ($model->type == 1) {
-                        return 'مشتريات';
-                    } elseif ($model->type == 2) {
-                        return 'مسترجع مشتريات';
-                    } elseif ($model->type == 3) {
-                        return 'مشتريات معلقة';
-                    }
-                }
-            ],
-
-            [
-                'label' => Yii::t('app', 'Br ID'),
-                'format' => 'raw',
-                'value' => function ($data) {
-                    return $data->br->name;
-                }
-            ],
-
-            [
-                'label' => Yii::t('app', 'User Insert'),
-                'format' => 'raw',
-                'value' => function ($data) {
-                    return $data->userInsert->username;
-                }
-            ],
-            'created_at',
-        ],
-    ]) ?>
+        <!-- بيانات النظام -->
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header fw-semibold"><i class="bi bi-person-gear"></i> بيانات الإدخال</div>
+                <div class="card-body pt-2">
+                    <?= $row(Yii::t('app', 'User Insert'), $userName) ?>
+                    <?= $row($model->getAttributeLabel('created_at'), $model->created_at) ?>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </div>

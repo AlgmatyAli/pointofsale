@@ -10,16 +10,12 @@ $this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Sales'), 'url' => ['
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="sales-create">
-<div class="row">
-      <div class="col-md-4"></div>
-      <div class="col-md-4">
-    <h1><?= Html::encode($this->title) ?></h1><hr>
+    <div class="row">
 
-    <?= $this->render('_ftran', [
-        'model' => $model,
-    ]) ?>
+        <h1><?= Html::encode($this->title) ?></h1>
+        <hr>
 
+        <?= $this->render('_ftran', [
+            'model' => $model,
+        ]) ?>
     </div>
-</div>  
-
-</div>

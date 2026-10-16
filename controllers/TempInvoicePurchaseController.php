@@ -15,6 +15,8 @@ use app\models\Totalinventory;
 use Exception;
 use yii\web\Response;
 use yii\web\UploadedFile;
+use yii\helpers\FileHelper;
+use app\models\Category;
 
 /**
  * TempInvoicePurchaseController implements the CRUD actions for TempInvoicePurchase model.
@@ -25,13 +27,13 @@ class TempInvoicePurchaseController extends Controller
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['post'],
                 ],
             ],
             'access' => [
-                'class' => AccessControl::className(),
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
@@ -110,26 +112,29 @@ class TempInvoicePurchaseController extends Controller
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
         if (yii::$app->request->post('hasEditable')) {
-            $id = Yii::$app->request->post('editableKey');
-            $result = TempInvoicePurchase::findOne($id);
-            $out = Json::encode(['output' => '', 'message' => '']);
-            $post = [];
-            $posted = current($_POST['TempInvoicePurchase']);
-            $post['TempInvoicePurchase'] = $posted;
-            if ($result->load($post)) {
-                $result->save(false);
-                if (isset($posted['quantity'])) {
-                    $outMessage = $result->quantity;
-                } else {
-                    $outMessage = $result->salePrice;
-                }
-
-                $output = $outMessage;
-
-                $out = Json::encode(['output' => $output]);
-
-                return $out;
+            // تعديل داخل الجدول: أسطر المستخدم نفسه فقط، وحقول محددة فقط، وبقيم رقمية صحيحة
+            $key = Yii::$app->request->post('editableKey');
+            $result = TempInvoicePurchase::findOne(['id' => $key, 'created_by' => Yii::$app->user->id, 'state' => 0]);
+            if ($result === null) {
+                return Json::encode(['output' => '', 'message' => 'السطر غير موجود']);
             }
+
+            $posted = current((array)Yii::$app->request->post('TempInvoicePurchase', []));
+            $posted = array_intersect_key((array)$posted, array_flip(['costPrice', 'quantity', 'costTotal', 'salePrice', 'salePrice_']));
+            if (!$posted) {
+                return Json::encode(['output' => '', 'message' => 'حقل غير مسموح بتعديله']);
+            }
+            foreach ($posted as $attr => $val) {
+                if (!is_numeric($val) || $val < 0 || ($attr === 'quantity' && $val <= 0)) {
+                    return Json::encode(['output' => '', 'message' => 'الرجاء إدخال قيمة رقمية صحيحة']);
+                }
+            }
+
+            $result->load(['TempInvoicePurchase' => $posted]);
+            $result->save(false);
+            $attr = key($posted);
+
+            return Json::encode(['output' => $result->$attr]);
         }
 
         //        if ($model->loadAll(Yii::$app->request->post()) ) {
@@ -138,9 +143,18 @@ class TempInvoicePurchaseController extends Controller
                 Yii::$app->session->setFlash('error', Yii::t('app', "Sorry You Can not Add Empty Model"));
                 return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
             }
+            if ($model->quantity <= 0 || $model->costPrice < 0 || $model->salePrice < 0) {
+                $msg = 'الكمية يجب أن تكون أكبر من صفر، والأسعار لا تكون سالبة';
+                if (Yii::$app->request->isAjax) {
+                    Yii::$app->response->format = Response::FORMAT_JSON;
+                    return ['success' => false, 'message' => $msg];
+                }
+                Yii::$app->session->setFlash('error', $msg);
+                return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
+            }
 
-            $id = TempInvoicePurchase::find()->max('id') + 1;
-            $model->id = $id;
+            // الحالة والمستخدم يحدّدهما الخادم (كانا يُقبلان من المتصفح)
+            $model->state = 0;
 
             if ($model->rate != 0) {
                 $model->costTotal = ($model->costPrice * $model->rate);
@@ -154,21 +168,25 @@ class TempInvoicePurchaseController extends Controller
                 $model->costPrice = ($model->costPrice / $model->derhamRate);
             }
 
-            $model->saveAll();
-            Yii::$app->response->format = Response::FORMAT_JSON;
-            return ['success' => true, 'message' => Yii::t('app', "تمت اضافة الصنف")];
-            // $totalInvoice = $model->totalInvoice;
-            // $totalCost = $model->totalCost;
-            // $rate = $model->rate;
-            // $derhamRate = $model->derhamRate;
+            // الرقم يُحسب يدوياً (max + 1) فيلزم قفل قصير كي لا يأخذ مستخدمان الرقم نفسه
+            $lockName = 'temp_invoice_purchase_id';
+            $db = Yii::$app->db;
+            if ((int)$db->createCommand('SELECT GET_LOCK(:n, 10)', [':n' => $lockName])->queryScalar() !== 1) {
+                Yii::$app->response->format = Response::FORMAT_JSON;
+                return ['success' => false, 'message' => 'النظام مشغول حالياً، أعد المحاولة'];
+            }
+            try {
+                $model->id = (int)TempInvoicePurchase::find()->max('id') + 1;
+                $saved = $model->saveAll();
+            } finally {
+                $db->createCommand('SELECT RELEASE_LOCK(:n)', [':n' => $lockName])->execute();
+            }
 
-            // return $this->redirect(['create',
-            // 'id' => 1,
-            // 'totalCost' => $totalCost,
-            // 'totalInvoice' => $totalInvoice,
-            // 'rate' => $rate,
-            // 'derhamRate' => $derhamRate
-            // ]);
+            Yii::$app->response->format = Response::FORMAT_JSON;
+            if (!$saved) {
+                return ['success' => false, 'message' => implode(' ', $model->getErrorSummary(true))];
+            }
+            return ['success' => true, 'message' => Yii::t('app', "تمت اضافة الصنف")];
 
         } else {
             return $this->render('create', [
@@ -244,7 +262,8 @@ class TempInvoicePurchaseController extends Controller
      */
     protected function findModel($id)
     {
-        if (($model = TempInvoicePurchase::findOne($id)) !== null) {
+        // أسطر المستخدم الحالي فقط (كان يمكن عرض أو تعديل أو حذف أسطر أي مستخدم آخر)
+        if (($model = TempInvoicePurchase::findOne(['id' => $id, 'created_by' => Yii::$app->user->id])) !== null) {
             return $model;
         } else {
             throw new NotFoundHttpException(Yii::t('app', 'The requested page does not exist.'));
@@ -267,7 +286,7 @@ class TempInvoicePurchaseController extends Controller
             ->andwhere(['stocks.category' => $category])
             ->andwhere(['=', 'stocks.type', 1])
             ->asArray()->one();
-        Yii::$app->response->format = Yii\web\Response::FORMAT_JSON;
+        Yii::$app->response->format = Response::FORMAT_JSON;
         return $data;
         //    echo json::encode($data);
     }
@@ -278,59 +297,105 @@ class TempInvoicePurchaseController extends Controller
 
         if ($model->load(Yii::$app->request->post())) {
 
-            if (!is_dir("img/upload")) {
-                mkdir("img/upload");
-                $path = "img/upload";
-            } else {
-                $path = "img/upload";
+            $file = UploadedFile::getInstance($model, 'file');
+            if ($file === null || !in_array(strtolower($file->extension), ['xls', 'xlsx'], true)) {
+                Yii::$app->session->setFlash('error', 'الرجاء اختيار ملف Excel بصيغة xls أو xlsx');
+                return $this->render('upload', ['model' => $model]);
             }
 
-            $model->file = UploadedFile::getInstance($model, 'file');
-            $ext = substr(strrchr($model->file, '.'), 1);
-            if ($ext != null) {
-                $uniqid = uniqid();
-                $model->file->saveAs($path . '/' . $uniqid . '.' . $model->file->extension);
-                $model->path = $path . '/' . $uniqid . '.' . $model->file->extension;
-            }
-            //=========
-            $inputFile = $path . '/' . $uniqid . '.' . $model->file->extension;
-            //die(var_dump( $inputFile));     
+            // الملف يُحفظ خارج المجلد العام (لا يمكن فتحه من المتصفح) باسم عشوائي وامتداد مسموح فقط، ويُحذف بعد الاستيراد
+            $dir = Yii::getAlias('@runtime/uploads');
+            FileHelper::createDirectory($dir);
+            $inputFile = $dir . '/' . Yii::$app->security->generateRandomString(16) . '.' . strtolower($file->extension);
+            $file->saveAs($inputFile, false);
+
+            $lockName = 'temp_invoice_purchase_id';
+            $db = Yii::$app->db;
+            $locked = false;
             try {
                 $inputFileType = \PHPExcel_IOFactory::identify($inputFile);
                 $objReader = \PHPExcel_IOFactory::createReader($inputFileType);
                 $objPHPExcel = $objReader->load($inputFile);
-            } catch (Exception $e) {
-                die('Erorr');
-            }
-            $sheet = $objPHPExcel->getSheet(0);
-            $highestRow = $sheet->getHighestRow();
-            $highestColumn = $sheet->getHighestColumn();
+                $sheet = $objPHPExcel->getSheet(0);
+                $highestRow = $sheet->getHighestRow();
+                $highestColumn = $sheet->getHighestColumn();
 
-            for ($row = 1; $row <= $highestRow; $row++) {
-
-                $rowData = $sheet->rangeToArray('A' . $row . ':' . $highestColumn . $row, NULL, TRUE, FALSE);
-                if ($row == 1) {
-                    continue;
+                // قراءة الصفوف والتحقق منها كلها قبل حفظ أي شيء
+                $rows = [];
+                $errors = [];
+                for ($row = 2; $row <= $highestRow; $row++) {
+                    $rowData = $sheet->rangeToArray('A' . $row . ':' . $highestColumn . $row, NULL, TRUE, FALSE);
+                    $category = $rowData[0][1] ?? null;
+                    $quantity = $rowData[0][5] ?? null;
+                    $cost     = $rowData[0][6] ?? null;
+                    if ($category === null && $quantity === null && $cost === null) {
+                        continue;   // صف فارغ
+                    }
+                    if (!is_numeric($category) || !is_numeric($quantity) || $quantity <= 0 || !is_numeric($cost) || $cost < 0) {
+                        $errors[] = "السطر $row: بيانات غير صالحة";
+                        continue;
+                    }
+                    $rows[$row] = [(int)$category, $quantity, $cost];
+                }
+                if ($rows) {
+                    $existing = Category::find()->select('id')->where(['id' => array_unique(array_column($rows, 0))])->column();
+                    foreach ($rows as $row => $r) {
+                        if (!in_array($r[0], array_map('intval', $existing), true)) {
+                            $errors[] = "السطر $row: الصنف رقم {$r[0]} غير موجود";
+                        }
+                    }
+                }
+                if ($errors) {
+                    Yii::$app->session->setFlash('error', 'لم يُستورد شيء. ' . implode(' | ', array_slice($errors, 0, 10)));
+                    return $this->render('upload', ['model' => $model]);
+                }
+                if (!$rows) {
+                    Yii::$app->session->setFlash('error', 'الملف لا يحتوي أصنافاً');
+                    return $this->render('upload', ['model' => $model]);
                 }
 
-                $id = TempInvoicePurchase::find()->max('id') + 1;
-                $workSheet =   new  TempInvoicePurchase();
-                $workSheet->id = $id;
-                $workSheet->category = $rowData[0][1];
-                $workSheet->quantity = $rowData[0][5];
-                $workSheet->costPrice = $rowData[0][6];
-                $workSheet->costTotal = $rowData[0][6];
-                $workSheet->salePrice = 0;
-                $workSheet->salePrice_ = 0;
-                $workSheet->box = 1;
+                $locked = (int)$db->createCommand('SELECT GET_LOCK(:n, 10)', [':n' => $lockName])->queryScalar() === 1;
+                if (!$locked) {
+                    Yii::$app->session->setFlash('error', 'النظام مشغول حالياً، أعد المحاولة');
+                    return $this->render('upload', ['model' => $model]);
+                }
 
-                $workSheet->created_by = Yii::$app->user->identity->id;
-                $workSheet->created_at = date('Y-m-d H:i:s');
-                $workSheet->updated_by = Yii::$app->user->identity->id;;
-                $workSheet->updated_at = date('Y-m-d H:i:s');
-                $workSheet->state = 0;
+                $transaction = $db->beginTransaction();
+                try {
+                    $id = (int)TempInvoicePurchase::find()->max('id');
+                    foreach ($rows as $r) {
+                        $workSheet = new TempInvoicePurchase();
+                        $workSheet->id = ++$id;
+                        $workSheet->category = $r[0];
+                        $workSheet->quantity = $r[1];
+                        $workSheet->costPrice = $r[2];
+                        $workSheet->costTotal = $r[2];
+                        $workSheet->salePrice = 0;
+                        $workSheet->salePrice_ = 0;
+                        $workSheet->box = 1;
 
-                $workSheet->save(false);
+                        $workSheet->created_by = Yii::$app->user->identity->id;
+                        $workSheet->created_at = date('Y-m-d H:i:s');
+                        $workSheet->updated_by = Yii::$app->user->identity->id;
+                        $workSheet->updated_at = date('Y-m-d H:i:s');
+                        $workSheet->state = 0;
+
+                        $workSheet->save(false);
+                    }
+                    $transaction->commit();
+                } catch (\Throwable $e) {
+                    $transaction->rollBack();
+                    throw $e;
+                }
+            } catch (\Throwable $e) {
+                Yii::error($e->getMessage(), __METHOD__);
+                Yii::$app->session->setFlash('error', 'تعذّر قراءة الملف أو استيراده، ولم يُضف شيء: ' . $e->getMessage());
+                return $this->render('upload', ['model' => $model]);
+            } finally {
+                if ($locked) {
+                    $db->createCommand('SELECT RELEASE_LOCK(:n)', [':n' => $lockName])->execute();
+                }
+                @unlink($inputFile);
             }
 
             return $this->redirect([
@@ -341,12 +406,11 @@ class TempInvoicePurchaseController extends Controller
                 'rate' => null,
                 'derhamRate' => null
             ]);
-
-            //return $this->redirect(['create', 'id' => $model->id]);
         }
 
         return $this->render('upload', [
             'model' => $model,
         ]);
     }
+
 }

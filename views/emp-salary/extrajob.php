@@ -1,112 +1,125 @@
 <?php
 
 use app\models\Currancy;
-use yii\helpers\Html;
-use yii\widgets\ActiveForm;
-use kartik\select2\Select2;
-use yii\helpers\ArrayHelper;
-use kartik\date\DatePicker;
 use app\models\Employee;
+use kartik\date\DatePicker;
+use kartik\select2\Select2;
+use yii\bootstrap5\ActiveForm;
+use yii\helpers\ArrayHelper;
+use yii\helpers\Html;
 
-/* @var $this yii\web\View */
-/* @var $model app\models\EmpSalary */
-/* @var $form yii\widgets\ActiveForm */
+/** @var app\models\EmpSalary $model */
+
+// السنوات من 2020 حتى السنة الحالية
+$years = range(2020, (int) date('Y'));
+$years = array_combine($years, $years);
+
+$months = [
+    '1' => '1 - يناير',
+    '2' => '2 - فبراير',
+    '3' => '3 - مارس',
+    '4' => '4 - أبريل',
+    '5' => '5 - مايو',
+    '6' => '6 - يونيو',
+    '7' => '7 - يوليو',
+    '8' => '8 - أغسطس',
+    '9' => '9 - سبتمبر',
+    '10' => '10 - أكتوبر',
+    '11' => '11 - نوفمبر',
+    '12' => '12 - ديسمبر',
+];
+
+// للسجل الجديد: السنة والشهر الحاليان كقيمة افتراضية (كان على المستخدم اختيارهما في كل مرة)
+if ($model->isNewRecord) {
+    $model->year = $model->year ?: (int) date('Y');
+    $model->month = $model->month ?: (int) date('n');
+}
+
+$employees = ArrayHelper::map(Employee::find()->where(['=', 'state', 0])->all(), 'id', 'name');
+$currencies = ArrayHelper::map(Currancy::find()->all(), 'id', 'name');
+
+$section = function (string $icon, string $title, string $color) {
+    return '<div class="d-flex align-items-center gap-2 mb-2 mt-3 text-' . $color . '">'
+        . '<i class="bi ' . $icon . '"></i><span class="fw-bold">' . Html::encode($title) . '</span>'
+        . '<hr class="flex-grow-1 my-0 opacity-25"></div>';
+};
+
+$datePicker = [
+    'language' => 'ar',
+    'options' => ['placeholder' => 'yyyy-mm-dd', 'autocomplete' => 'off'],
+    'pluginOptions' => [
+        'autoclose' => true,
+        'format' => 'yyyy-mm-dd',
+        'todayHighlight' => true,
+        'todayBtn' => true,
+    ],
+];
+
+$this->registerCss(<<<'CSS'
+.emp-salary-form .form-label { font-size: .85rem; margin-bottom: .2rem; }
+.emp-salary-form .es-amount input { font-size: 1.3rem; font-weight: 700; text-align: center; }
+.emp-salary-form .es-summary { background: var(--bs-tertiary-bg); border: 1px solid var(--bs-border-color); border-radius: .6rem; }
+.emp-salary-form .es-summary input { font-weight: 600; text-align: center; }
+.emp-salary-form .es-summary .mb-3 { margin-bottom: 0 !important; }
+CSS);
 ?>
 
 <div class="emp-salary-form">
 
-    <?php $form = ActiveForm::begin(); ?>
+    <?php $form = ActiveForm::begin(['id' => 'emp-salary-form']); ?>
 
-    <div class="row">
-        <div class="col-md-2"></div>
-        <div class="col-md-8">
+    <?= $form->errorSummary($model, ['class' => 'alert alert-danger py-2 small']) ?>
 
-            <?= $form->field($model, 'employee')->widget(Select2::class, [
-                'data' => ArrayHelper::map(Employee::find()->where(['=', 'state', 0])
-                    ->all(), 'id', 'name'),
-                'language' => 'ar',
-                'options' => [
-                    //'onchange' => 'getSalary( $(this) )',
-                    'placeholder' => 'الرجاء اختيار اسم الموظف ...',
-                ],
-                'pluginOptions' => [
-                    'allowClear' => true,
-                    'multiple' => false,
-                ],
-            ]); ?>
-
-            <?php //echo $form->field($model, 'salary')->textInput() 
-            ?>
-
-            <?php
-            echo $form->field($model, 'at')->widget(
-                DatePicker::class,
-                [
-                    'language' => 'ar',
-                    'pluginOptions' => [
-                        'autoclose' => true,
-                        'format' => 'yyyy-mm-dd',
-                        'todayHighlight' => true,
-                        'todayBtn' => true,
-                    ]
-                ]
-            );
-            ?>
-            <?= $form->field($model, 'month')->dropDownList(
-                [
-                    '0' => 'اختيار الشهر',
-                    '1' => '1',
-                    '2' => '2',
-                    '3' => '3',
-                    '4' => '4',
-                    '5' => '5',
-                    '6' => '6',
-                    '7' => '7',
-                    '8' => '8',
-                    '9' => '9',
-                    '10' => '10',
-                    '11' => '11',
-                    '12' => '12',
-                ],
-                [
-                    'prompt' => 'الرجاء اختيار الشهر...',
-                    //'onchange' => 'getDrawing( $(this) )'
-                ]
-            ) ?>
-
-            <?php
-            $years = range(2020, date('Y'));
-            $years = array_combine($years, $years);
-            echo $form->field($model, 'year')->dropDownList(
-                $years,
-                ['prompt' => 'الرجاء اختيار السنـة...']
-            ) ?>
-
-            <?php // $form->field($model, 'drawing')->textInput() 
-            ?>
-
-            <?= $form->field($model, 'value')->textInput() ?>
-
-            <?php
-            echo $form->field($model, 'currancy')->widget(Select2::class, [
-                'data' => ArrayHelper::map(Currancy::find()->all(), 'id', 'name'),
-                'language' => 'ar',
-                'pluginOptions' => [
-                    'allowClear' => true,
-                    'multiple' => false,
-                ],
-            ]);
-            ?>
-
-            <?= $form->field($model, 'why')->textarea(['rows' => 6]) ?>
-
-            <div class="form-group">
-                <?= Html::submitButton('<i class="fa fa-fw fa-save"></i>' . ' ' . Yii::t('app', 'Save'), ['class' => 'btn btn-success  ']) ?>
-                <?= Html::a('<i class="fa fa-fw fa-window-close"></i>' . ' ' . Yii::t('app', 'Clear'), ['/emp-salary/create'], ['class' => 'btn btn-danger  ']) ?>
-            </div>
-
+    <div class="alert alert-danger d-flex align-items-center gap-2 py-2">
+        <i class="bi bi-plus-circle fs-4"></i>
+        <div>
+            <div class="fw-bold">عمل إضافي</div>
+            <div class="small">يُسجَّل المبلغ كإضافي للموظف عن الشهر المحدد.</div>
         </div>
-
-        <?php ActiveForm::end(); ?>
-
     </div>
+
+    <?= $section('bi-person-badge', 'الموظف', 'danger') ?>
+    <?= $form->field($model, 'employee')->widget(Select2::class, [
+        'data' => $employees,
+        'language' => 'ar',
+        'options' => ['placeholder' => 'الرجاء اختيار اسم الموظف ...'],
+        'pluginOptions' => ['allowClear' => true, 'multiple' => false],
+    ]) ?>
+
+    <?= $section('bi-calendar3', 'الفترة', 'danger') ?>
+    <div class="row g-3">
+        <div class="col-md-5">
+            <?= $form->field($model, 'at')->widget(DatePicker::class, $datePicker) ?>
+        </div>
+        <div class="col-6 col-md-4">
+            <?= $form->field($model, 'month')->dropDownList($months, ['prompt' => 'الرجاء اختيار الشهر...']) ?>
+        </div>
+        <div class="col-6 col-md-3">
+            <?= $form->field($model, 'year')->dropDownList($years, ['prompt' => 'الرجاء اختيار السنـة...']) ?>
+        </div>
+    </div>
+
+    <?= $section('bi-cash-coin', 'المبلغ', 'danger') ?>
+    <div class="row g-3">
+        <div class="col-md-6 es-amount">
+            <?= $form->field($model, 'value')->textInput(['inputmode' => 'decimal', 'autocomplete' => 'off', 'placeholder' => '0.000']) ?>
+        </div>
+        <div class="col-md-6">
+            <?= $form->field($model, 'currancy')->widget(Select2::class, [
+                'data' => $currencies,
+                'language' => 'ar',
+                'pluginOptions' => ['allowClear' => true, 'multiple' => false],
+            ]) ?>
+        </div>
+    </div>
+
+    <?= $form->field($model, 'why')->textarea(['rows' => 4, 'placeholder' => 'السبب / ملاحظات (اختياري)']) ?>
+
+    <div class="d-flex gap-2 mt-3">
+        <?= Html::submitButton('<i class="bi bi-check2-circle"></i> ' . Yii::t('app', 'Save'), ['class' => 'btn btn-danger btn-lg flex-grow-1']) ?>
+        <?= Html::a('<i class="bi bi-arrow-counterclockwise"></i> ' . Yii::t('app', 'Clear'), ['/emp-salary/create'], ['class' => 'btn btn-lg btn-outline-secondary']) ?>
+    </div>
+
+    <?php ActiveForm::end(); ?>
+
+</div>

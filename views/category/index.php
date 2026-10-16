@@ -19,10 +19,6 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <?php echo $this->render('_search', ['model' => $searchModel]); ?>
     <?php Pjax::begin(); ?>
-    <?php
-    yii\bootstrap\Modal::begin(['id' => 'modal']);
-    yii\bootstrap\Modal::end();
-    ?>
 
     <?php
     $gridColumn = [
@@ -139,10 +135,10 @@ $this->params['breadcrumbs'][] = $this->title;
             'template' => '<div class="btn-group btn-group-sm" role="group" aria-label="...">{view}{update}</div>',
             'buttons' => [
                 'view' => function ($url, $searchModel, $key) {
-                    return Html::a('<i class="fa fa-eye"></i>', ['category/view', 'id' => $searchModel->category], ['class' => 'btn btn-default']);
+                    return Html::a('<i class="bi bi-eye"></i>', ['category/view', 'id' => $searchModel->category], ['class' => 'btn btn-default']);
                 },
                 'update' => function ($url, $searchModel, $key) {
-                    return Html::a('<i class="fa fa-edit"></i>', ['category/update', 'id' => $searchModel->category], ['class' => 'btn btn-default']);
+                    return Html::a('<i class="bi bi-pencil"></i>', ['category/update', 'id' => $searchModel->category], ['class' => 'btn btn-default']);
                 },
             ]
         ]
@@ -159,60 +155,7 @@ $this->params['breadcrumbs'][] = $this->title;
             'type' => GridView::TYPE_DEFAULT,
             'heading' => '<span class="glyphicon glyphicon-book"></span>  ' . Html::encode($this->title . ' ' . date('Y-m-d')),
         ],
-        // your toolbar can include the additional full export menu
-
     ]);
-    ?>
-
-    <?php
-    // echo GridView::widget([
-    //     'dataProvider' => $dataProvider,
-    //     'id' => 'grid-id',
-    //     //'filterModel' => $searchModel,
-    //     'summary' => '',
-    //     // 'rowOptions' => function ($searchModel) {
-    //     //     if ($searchModel->status == '1') {
-    //     //         return ['class' => 'danger'];
-    //     //     }
-    //     // },
-    //     'columns' => [
-    //         ['class' => 'yii\grid\SerialColumn'],
-
-    //         'name',
-    //         'serialNo',
-    //         'commCode',
-    //         'class',
-    //         'company',
-    //         'place',
-    //         'quantity',
-    //         'branch',
-    //         [
-    //             'class' => 'yii\grid\ActionColumn',
-    //             'options' => ['style' => 'width:120px;'],
-    //             'template' => '<div class="btn-group btn-group-sm" role="group" aria-label="...">{view}{update}</div>',
-    //             'buttons' => [
-    //                 'view' => function ($url, $searchModel, $key) {
-    //                     return Html::a('<i class="fa fa-eye"></i>', $url, ['class' => 'btn btn-default']);
-    //                 },
-    //                 'update' => function ($url, $searchModel, $key) {
-    //                     return Html::a('<i class="fa fa-edit"></i>', $url, ['class' => 'btn btn-default']);
-    //                 },
-
-
-    //             ]
-    //         ],
-    //         //     [
-    //         //         'attribute' => 'category',
-    //         //         'headerOptions' => ['style' => 'width:40%'],
-    //         //         'value' => function ($model) {
-    //         //             return Html::a(Yii::t('app', ' {modelClass}', [
-    //         //                 'modelClass' => 'open',
-    //         //             ]), ['category/update', 'id' => $model->id], ['class' => 'btn btn-default popupModal']);
-    //         //         },
-    //         //         'format' => 'raw',
-    //         //     ],
-    //     ],
-    // ]);
     ?>
 
     <?php Pjax::end(); ?>

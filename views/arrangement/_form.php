@@ -3,17 +3,18 @@
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use kartik\date\DatePicker;
-/* @var $this yii\web\View */
-/* @var $model app\models\Arrangement */
-/* @var $form yii\widgets\ActiveForm */
+
+/** @var yii\web\View $this */
+/** @var app\models\Arrangement $model */
+/** @var yii\widgets\ActiveForm $form */
 ?>
 
 <div class="arrangement-form">
 
     <?php $form = ActiveForm::begin(); ?>
 
-     <?php 
-       echo $form->field($model, 'at')->widget(
+    <?php
+    echo $form->field($model, 'at')->widget(
         DatePicker::class,
         [
             'language' => 'ar',
@@ -23,13 +24,13 @@ use kartik\date\DatePicker;
                 'todayHighlight' => true,
             ]
         ]
-        );
+    );
     ?>
-
+    <br>
     <div class="form-group">
         <?= Html::submitButton(Yii::t('app', 'Save'), ['class' => 'btn btn-success']) ?>
     </div>
-
+    <br>
     <?php ActiveForm::end(); ?>
 
 </div>

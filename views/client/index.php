@@ -15,10 +15,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1><?= Html::encode($this->title) ?></h1>
     <hr>
 
-
     <?php Pjax::begin(); ?>
-    <?php // echo $this->render('_search', ['model' => $searchModel]); 
-    ?>
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
@@ -40,10 +37,10 @@ $this->params['breadcrumbs'][] = $this->title;
                 'template' => '<div class="btn-group btn-group-sm" role="group" aria-label="...">{view}{update}</div>',
                 'buttons' => [
                     'view' => function ($url, $searchModel, $key) {
-                        return Html::a('<i class="fa fa-eye"></i>', $url, ['class' => 'btn btn-default']);
+                        return Html::a('<i class="bi bi-eye"></i>', $url, ['class' => 'btn btn-default']);
                     },
                     'update' => function ($url, $searchModel, $key) {
-                        return Html::a('<i class="fa fa-edit"></i>', $url, ['class' => 'btn btn-default']);
+                        return Html::a('<i class="bi bi-pencil"></i>', $url, ['class' => 'btn btn-default']);
                     },
 
 

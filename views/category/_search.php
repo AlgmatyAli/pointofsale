@@ -166,6 +166,7 @@ JS;
             </div>
         </div>
     </div>
+    <br>
     <?php ActiveForm::end(); ?>
 
 

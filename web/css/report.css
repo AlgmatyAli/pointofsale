@@ -1,0 +1,283 @@
+/*
+ * أنماط التقارير (شاشة + طباعة). لا تعتمد على Bootstrap،
+ * لأن الطباعة تتم داخل إطار معزول يحمّل هذا الملف وحده (انظر printReport في layouts/report.php).
+ * الأصناف كلها تبدأ بـ report- أو rp- حتى لا تتعارض مع أنماط الموقع.
+ */
+
+.report {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 8px 4px;
+  font-family: Tahoma, "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #212529;
+  direction: rtl;
+}
+
+.report *,
+.report *::before,
+.report *::after {
+  box-sizing: border-box;
+}
+
+/* ---------- ترويسة التقرير ---------- */
+.report-header {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 3px double #343a40;
+}
+
+.report-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.report-logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  border: 1px solid #dee2e6;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.report-company {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.report-heading {
+  text-align: center;
+}
+
+.report-title {
+  margin: 0 0 4px;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.report-period {
+  font-size: 14px;
+  color: #495057;
+}
+
+.report-meta {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #6c757d;
+  text-align: left;
+}
+
+/* ---------- بطاقة اسم الصنف ---------- */
+.report-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 8px 12px;
+  font-size: 16px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+}
+
+.report-item .rp-label {
+  font-size: 13px;
+  color: #6c757d;
+}
+
+/* ---------- جدول الحركة ---------- */
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.report-table th,
+.report-table td {
+  padding: 5px 8px;
+  text-align: right;
+  vertical-align: middle;
+  border: 1px solid #adb5bd;
+}
+
+.report-table thead th {
+  font-weight: 700;
+  white-space: nowrap;
+  background: #e9ecef;
+}
+
+.report-table thead th.rp-cr {
+  color: #146c43;
+}
+.report-table thead th.rp-dr {
+  color: #b02a37;
+}
+.report-table thead th.rp-bal {
+  color: #0a58ca;
+}
+
+.report-table tbody tr:nth-child(even) {
+  background: #f8f9fa;
+}
+
+.report-table tbody tr.rp-open td {
+  font-weight: 700;
+  background: #fff3cd;
+}
+
+.report-table tfoot td {
+  font-weight: 800;
+  background: #e9ecef;
+  border-top: 2px solid #343a40;
+}
+
+.rp-idx {
+  width: 36px;
+  text-align: center !important;
+}
+
+/* الأرقام: محاذاة ثابتة ومنازل متراصة */
+.rp-num {
+  direction: ltr;
+  text-align: right !important;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.rp-cr {
+  color: #146c43;
+}
+.rp-dr {
+  color: #b02a37;
+}
+.rp-bal {
+  color: #0a58ca;
+  font-weight: 700;
+}
+.rp-zero {
+  color: #adb5bd;
+}
+
+.rp-undelivered {
+  display: inline-block;
+  padding: 1px 8px;
+  font-size: 11px;
+  color: #b02a37;
+  border: 1px solid #b02a37;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.rp-actions {
+  width: 56px;
+  text-align: center !important;
+}
+
+/* ---------- ملخص الحركات ---------- */
+.report-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.report-stat {
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #adb5bd;
+  border-radius: 6px;
+}
+
+.report-stat .rp-k {
+  font-size: 12px;
+  color: #495057;
+}
+
+.report-stat .rp-v {
+  font-size: 18px;
+  font-weight: 800;
+  direction: ltr;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- شاشة صغيرة ---------- */
+@media (max-width: 767.98px) {
+  .report-header {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .report-brand {
+    justify-content: center;
+  }
+  .report-meta {
+    text-align: center;
+  }
+  .report-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ---------- الطباعة ---------- */
+@page {
+  margin: 12mm;
+}
+
+/* ترقيم الصفحات (يعمل في المتصفحات الحديثة، ويُتجاهل في غيرها) */
+@page {
+  @bottom-center {
+    content: "صفحة " counter(page) " من " counter(pages);
+    font-family: Tahoma, Arial, sans-serif;
+    font-size: 9pt;
+    color: #6c757d;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .report {
+    max-width: none;
+    padding: 0;
+    font-size: 12px;
+  }
+
+  .report-table {
+    font-size: 11px;
+  }
+
+  .report-table th,
+  .report-table td {
+    padding: 3px 6px;
+  }
+
+  /* رأس الجدول يتكرر في كل صفحة، والمجاميع تظهر مرة واحدة في النهاية */
+  .report-table thead {
+    display: table-header-group;
+  }
+  .report-table tfoot {
+    display: table-row-group;
+  }
+
+  .report-table tr,
+  .report-stat,
+  .report-item {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

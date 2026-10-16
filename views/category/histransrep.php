@@ -1,280 +1,216 @@
 <?php
 
-use yii\helpers\Html;
 use app\models\CompanyInfo;
+use yii\helpers\Html;
 
-/* @var $this yii\web\View */
-/* @var $model app\models\Salaryroll */
-?>
-<?php
-foreach ($models as $model) {
-  $name = $model["name"];
-  $id = $model["id"];
+/** @var yii\web\View $this */
+/** @var array $models */
+/** @var array $lastBalance */
+/** @var string $min_date */
+/** @var string $max_date */
+
+// تقرير بتخطيط مستقل بلا الشريط الجانبي والعلوي، ويُطبع داخل إطار معزول (printReport في layouts/report.php)
+$this->context->layout = 'report';
+$this->title = $this->title ?: 'كشف حساب صنف';
+
+// بيانات الشركة والشعار (المسار النسبي يُنسب إلى مجلد web)
+$company = CompanyInfo::find()->select(['*'])->asArray()->one() ?: [];
+$logo = (string) ($company['path'] ?? '');
+if ($logo !== '' && !preg_match('~^(https?:)?//|^/~', $logo)) {
+    $logo = Yii::getAlias('@web/') . ltrim($logo, '/');
 }
+
+// اسم الصنف ورقمه: من آخر صف كما في الكود الأصلي
+$name = '';
+$id = '';
+foreach ($models as $row) {
+    $name = $row['name'];
+    $id = $row['id'];
+}
+
+// الرصيد السابق: من آخر صف في $lastBalance كما في الكود الأصلي
+$openingBalance = 0;
+foreach ($lastBalance as $row) {
+    $openingBalance = (float) $row['quantity'];
+}
+$sumQuantity = $openingBalance;   // الرصيد المتحرك أثناء المرور على الحركات
+
+// مجاميع الحركات (كانت تُستخدم بلا تهيئة، فصارت تبدأ من صفر. النتيجة نفسها)
+$sumwared = 0;
+$sumsader = 0;
+$sumPurchase = 0;
+$sumBackPurchase = 0;
+$sumSales = 0;
+$sumBackSales = 0;
+
+$fmt = static fn ($value): string => number_format((float) $value, 3);
+
+// رابط عرض المستند حسب نوع الحركة. النصوص مطابقة حرفياً لما يرجعه الاستعلام (بما فيها المسافات الأخيرة)
+$viewLinks = [
+    'فاتورة مشتريات رقم' => ['purchases/view', 'btn-warning'],
+    'فاتورة مسترجع مشتريات رقم ' => ['purchases/view', 'btn-warning'],
+    'فاتورة مبيعات رقم ' => ['sales/print', 'btn-info'],
+    'فاتورة مسترجع مبيعات رقم' => ['sales/print', 'btn-info'],
+    'نقل إلى الفرع' => ['transfer-items/view', 'btn-primary'],
+    'نقل من الفرع' => ['transfer-items/view', 'btn-primary'],
+    'تسوية جرد' => ['arrangement/view', 'btn-danger'],
+];
 ?>
-<div class="row">
 
-  <div class="col-md-1">
-  </div>
+<!-- شريط الأزرار: لا يُطبع -->
+<div class="no-print d-print-none mb-3 d-flex flex-wrap justify-content-between gap-2">
+    <button type="button" class="btn btn-primary" onclick="printReport()">
+        <i class="bi bi-printer"></i> <?= Yii::t('app', 'Print') ?>
+    </button>
 
-  <div class="col-md-10">
-    <br><br>
-    <p>
-      <button class='btn btn-info' onClick="window.print()"><?= Yii::t('app', 'Print') ?></button>`
-      <?= Html::a(Yii::t('app', 'Cancel'), Yii::$app->request->referrer, ['class' => 'btn btn-danger btnx']) ?>
-      <br>
-      <br>
-    </p>
+    <?= Html::a(
+        Yii::t('app', 'Cancel'),
+        Yii::$app->request->referrer ?: ['index'],
+        ['class' => 'btn btn-danger']
+    ) ?>
+</div>
 
-    <?php
-    $sumQuantity = 0;
-    foreach ($lastBalance as $model) :
-      $sumQuantity = (float) $model["quantity"];
-    ?>
-    <?php endforeach; ?>
+<div id="report" class="report">
 
-    <?php $title = CompanyInfo::find()->select(['*'])->asArray()->one(); ?>
+    <header class="report-header">
+        <div class="report-brand">
+            <?php if ($logo !== ''): ?>
+                <img src="<?= Html::encode($logo) ?>" class="report-logo" alt="<?= Html::encode($company['name'] ?? '') ?>">
+            <?php endif; ?>
+            <div class="report-company"><?= Html::encode($company['name'] ?? '') ?></div>
+        </div>
 
-    <img src=<?php echo $title["path"] ?> class="img-circle logo" alt="Cinque Terre">
-    <br><br>
-    <h4>
-      <?php
-      echo  $title['name'];
-      echo '<br><br><br><br><br>';
-      ?>
-    </h4>
+        <div class="report-heading">
+            <h1 class="report-title">كشف حساب صنف</h1>
+            <div class="report-period">
+                من الفترة: <b><?= Html::encode((string) $min_date) ?></b>
+                حتى تاريخ: <b><?= Html::encode((string) $max_date) ?></b>
+            </div>
+        </div>
 
-    <center>
-      <div>
-        <h3>كشف حساب صنف من الفترة : <b><?= $min_date ?></b> حتى تاريخ <b><?= $max_date ?></b></h3>
-      </div>
-    </center>
-    <br>
-    <div>
-      <h3>اسـم الصنف: <b><?= $id ?></b> - <b><?= $name ?></b></h3>
-    </div>
-    <br><br>
+        <div class="report-meta">
+            تاريخ الطباعة: <?= date('Y-m-d H:i') ?><br>
+            أعدّه: <?= Html::encode((string) Yii::$app->user->identity?->username) ?>
+        </div>
+    </header>
 
-    <table class="kv-grid-table table table-bordered table-striped kv-table-wrap">
-      <thead class="kv-table-header w0">
-        <tr>
-          <th></th>
-          <th>
-            <h5> </h5>
-          </th>
-          <th>
-            <h5> </h5>
-          </th>
-          <th>
-            <h5> </h5>
-          </th>
-          <th>
-            <h5> </h5>
-          </th>
-          <th>
-            <h5> </h5>
-          </th>
-          <th>
-            <h4> رصيد سابق : <?php echo number_format($sumQuantity, 3) . "\n"; ?></h4>
-          </th>
-        </tr>
-        <tr>
-          <th>#</th>
-          <th>
-            <h5> تاريخ الحركة</h5>
-          </th>
-          <th>
-            <h5> الفــــــرع</h5>
-          </th>
-          <th>
-            <h5> البيــــــان</h5>
-          </th>
-          <th>
-            <h5 style="color:green;"> دائــــــــن</h5>
-          </th>
-          <th>
-            <h5 style="color:red;"> مديــــــــن</h5>
-          </th>
-          <th>
-            <h5 style="color:blue;"> الرصيــــــد</h5>
-          </th>
-          <th>
-            <h5></h5>
-          </th>
-        </tr>
-      </thead>
+    <section class="report-item">
+        <span class="rp-label">اسـم الصنف:</span>
+        <b><?= Html::encode((string) $id) ?></b> - <b><?= Html::encode((string) $name) ?></b>
+    </section>
 
-      <?php
-      $sum = 0;
-      $coun = 1;
-      foreach ($models as $model) :
-        if ($model["quantity"] > 0) {
-          $sumwared = $sumwared + $model["quantity"];
-        }
-
-        if ($model["quantity"] < 0) {
-          $sumsader = $sumsader + ($model["quantity"] * -1);
-        }
-        $count = $count + 1;
-
-        if ($model["kind_id"] == 2) {
-          $sumPurchase = $sumPurchase + $model["quantity"];
-        }
-        if ($model["kind_id"] == 3) {
-          $sumBackPurchase = $sumBackPurchase + $model["quantity"];
-        }
-        if ($model["kind_id"] == 4) {
-          $sumSales = $sumSales + $model["quantity"];
-        }
-        if ($model["kind_id"] == 5) {
-          $sumBackSales = $sumBackSales + $model["quantity"];
-        }
-      ?>
-        <tbody>
-          <tr>
-            <td><?= $coun++ ?></td>
-            <td><?= $model["trandate"] ?></td>
-            <td><?= $model["branch"] ?></td>
-            <td><?= $model["kind"] . ' - ' . $model["billId"] . ' - ' . $model["client"] ?></td>
-            <td><?php
-                if ($model["quantity"] >= 0) {
-                  echo number_format($model["quantity"], 3) . "\n";
-                } else {
-                  echo number_format(0, 3) . "\n";
-                }
-                ?></td>
-            <td><?php
-                if ($model["quantity"] <= 0) {
-                  echo number_format($model["quantity"] * -1, 3) . "\n";
-                } else {
-                  echo number_format(0, 3) . "\n";
-                }
-                ?></td>
-            <td style="color:blue;"><?php
-                                    $sumQuantity = $sumQuantity + $model["quantity"];
-                                    echo number_format($sumQuantity, 3) . "\n";
-
-                                    ?></td>
-            <td>
-              <?php
-              if ($model["kind"] == 'فاتورة مشتريات رقم' || $model["kind"] == 'فاتورة مسترجع مشتريات رقم ') {
-                echo Html::a('<i class="fa fa-folder-open"></i>', ['purchases/view', 'id' => $model["printId"]], [
-                  'title' => Yii::t('yii', 'View'),
-                  'class' => 'btn btn-warning'
-                ]);
-              }
-
-              if ($model["kind"] == 'فاتورة مبيعات رقم ' || $model["kind"] == 'فاتورة مسترجع مبيعات رقم') {
-                echo Html::a('<i class="fa fa-folder-open"></i>', ['sales/print', 'id' => $model["printId"]], [
-                  'title' => Yii::t('yii', 'View'),
-                  'class' => 'btn btn-info'
-                ]);
-              }
-
-              if ($model["kind"] == 'نقل إلى الفرع' || $model["kind"] == 'نقل من الفرع') {
-                echo Html::a('<i class="fa fa-folder-open"></i>', ['transfer-items/view', 'id' => $model["printId"]], [
-                  'title' => Yii::t('yii', 'View'),
-                  'class' => 'btn btn-primary'
-                ]);
-              }
-
-              if ($model["kind"] == 'تسوية جرد') {
-                echo Html::a('<i class="fa fa-folder-open"></i>', ['arrangement/view', 'id' => $model["printId"]], [
-                  'title' => Yii::t('yii', 'View'),
-                  'class' => 'btn btn-danger'
-                ]);
-              }
-
-              ?>
-            </td>
-            <td>
-              <?php
-              if ($model["deleviried"] == 0) {
-                echo Html::a('<i class="fa fa-circle opacity2"></i>', ['#'], [
-                  'title' => Yii::t('yii', 'View'),
-                  'class' => ''
-                ]);
-              }
-              ?>
-            </td>
-          </tr>
-        </tbody>
-      <?php endforeach; ?>
-
-      <tr>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td><?php echo number_format($sumwared, 3) . "\n"; ?> </td>
-        <td><?php echo number_format($sumsader, 3) . "\n"; ?> </td>
-        <td>الرصيـد : <?php echo number_format($sumQuantity, 3) . "\n"; ?></td>
-        <td></td>
-        <td></td>
-      </tr>
-    </table>
-  </div>
-
-  <div class='row'>
-    <div class='col-md-1'></div>
-    <div class='col-md-10'>
-      <table class="kv-grid-table table table-bordered table-striped kv-table-wrap">
-        <thead class="kv-table-header w0">
-          <tr>
-            <th></th>
-            <th>
-              <h5> </h5>
-            </th>
-            <th>
-              <h5> </h5>
-            </th>
-            <th>
-              <h5> </h5>
-            </th>
-            <th>
-              <h5> </h5>
-            </th>
-            <th>
-              <h5> </h5>
-            </th>
-            <th>
-            </th>
-          </tr>
-          <tr>
-            <th>
-              <h5> اجمالي المبيعات</h5>
-            </th>
-            <th>
-              <h5> اجمالي مسترجع المبيعات</h5>
-            </th>
-            <th>
-              <h5> اجمالي المشتريات</h5>
-            </th>
-            <th>
-              <h5> اجمالي مسترجع المشتريات</h5>
-            </th>
-            <th>
-              <h5> اجمالي تسوية رصيد الجرد اضافة</h5>
-            </th>
-            <th>
-              <h5> اجمالي تسوية رصيد الجرد انقاص</h5>
-            </th>
-          </tr>
+    <table class="report-table">
+        <thead>
+            <tr>
+                <th class="rp-idx">#</th>
+                <th>تاريخ الحركة</th>
+                <th>الفــرع</th>
+                <th>البيـــان</th>
+                <th class="rp-cr">دائــن</th>
+                <th class="rp-dr">مديــن</th>
+                <th class="rp-bal">الرصيــد</th>
+                <th class="rp-actions no-print"></th>
+            </tr>
         </thead>
+
         <tbody>
-          <tr>
-            <td style="color:red;"><?php echo number_format(($sumSales * -1), 3) . "\n"; ?></td>
-            <td style="color:red;"><?php echo number_format($sumBackSales, 3) . "\n"; ?></td>
-            <td style="color:red;"><?php echo number_format($sumPurchase, 3) . "\n"; ?></td>
-            <td style="color:red;"><?php echo number_format($sumBackPurchase, 3) . "\n"; ?></td>
-            <td style="color:red;"><?php echo number_format(0, 3) . "\n"; ?></td>
-            <td style="color:red;"><?php echo number_format(0, 3) . "\n"; ?></td>
-          </tr>
+            <!-- الرصيد السابق -->
+            <tr class="rp-open">
+                <td colspan="6">رصيد سابق</td>
+                <td class="rp-num rp-bal"><?= $fmt($openingBalance) ?></td>
+                <td class="rp-actions no-print"></td>
+            </tr>
+
+            <?php $i = 1; foreach ($models as $row):
+                $q = $row['quantity'];
+
+                if ($q > 0) {
+                    $sumwared = $sumwared + $q;
+                }
+                if ($q < 0) {
+                    $sumsader = $sumsader + ($q * -1);
+                }
+                if ($row['kind_id'] == 2) {
+                    $sumPurchase = $sumPurchase + $q;
+                }
+                if ($row['kind_id'] == 3) {
+                    $sumBackPurchase = $sumBackPurchase + $q;
+                }
+                if ($row['kind_id'] == 4) {
+                    $sumSales = $sumSales + $q;
+                }
+                if ($row['kind_id'] == 5) {
+                    $sumBackSales = $sumBackSales + $q;
+                }
+
+                $sumQuantity = $sumQuantity + $q;                 // الرصيد بعد هذه الحركة
+                $credit = $q >= 0 ? $q : 0;                       // دائن
+                $debit = $q <= 0 ? $q * -1 : 0;                   // مدين
+                $link = $viewLinks[$row['kind']] ?? null;
+            ?>
+                <tr>
+                    <td class="rp-idx"><?= $i++ ?></td>
+                    <td><?= Html::encode((string) $row['trandate']) ?></td>
+                    <td><?= Html::encode((string) $row['branch']) ?></td>
+                    <td>
+                        <?= Html::encode($row['kind'] . ' - ' . $row['billId'] . ' - ' . $row['client']) ?>
+                        <?php if ($row['deleviried'] == 0): ?>
+                            <span class="rp-undelivered">غير مسلّمة</span>
+                        <?php endif; ?>
+                    </td>
+                    <td class="rp-num rp-cr<?= $credit == 0 ? ' rp-zero' : '' ?>"><?= $fmt($credit) ?></td>
+                    <td class="rp-num rp-dr<?= $debit == 0 ? ' rp-zero' : '' ?>"><?= $fmt($debit) ?></td>
+                    <td class="rp-num rp-bal"><?= $fmt($sumQuantity) ?></td>
+                    <td class="rp-actions no-print">
+                        <?php if ($link !== null): ?>
+                            <?= Html::a(
+                                '<i class="bi bi-folder2-open"></i>',
+                                [$link[0], 'id' => $row['printId']],
+                                ['title' => Yii::t('yii', 'View'), 'class' => 'btn btn-sm ' . $link[1]]
+                            ) ?>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
         </tbody>
-      </table>
-    </div>
-  </div>
 
+        <tfoot>
+            <tr>
+                <td colspan="4">الإجمالي</td>
+                <td class="rp-num rp-cr"><?= $fmt($sumwared) ?></td>
+                <td class="rp-num rp-dr"><?= $fmt($sumsader) ?></td>
+                <td class="rp-num rp-bal">الرصيـد : <?= $fmt($sumQuantity) ?></td>
+                <td class="rp-actions no-print"></td>
+            </tr>
+        </tfoot>
+    </table>
 
+    <!-- ملخص الحركات -->
+    <section class="report-summary">
+        <div class="report-stat">
+            <div class="rp-k">اجمالي المبيعات</div>
+            <div class="rp-v"><?= $fmt($sumSales * -1) ?></div>
+        </div>
+        <div class="report-stat">
+            <div class="rp-k">اجمالي مسترجع المبيعات</div>
+            <div class="rp-v"><?= $fmt($sumBackSales) ?></div>
+        </div>
+        <div class="report-stat">
+            <div class="rp-k">اجمالي المشتريات</div>
+            <div class="rp-v"><?= $fmt($sumPurchase) ?></div>
+        </div>
+        <div class="report-stat">
+            <div class="rp-k">اجمالي مسترجع المشتريات</div>
+            <div class="rp-v"><?= $fmt($sumBackPurchase) ?></div>
+        </div>
+        <div class="report-stat">
+            <div class="rp-k">اجمالي تسوية رصيد الجرد اضافة</div>
+            <div class="rp-v"><?= $fmt(0) ?></div>
+        </div>
+        <div class="report-stat">
+            <div class="rp-k">اجمالي تسوية رصيد الجرد انقاص</div>
+            <div class="rp-v"><?= $fmt(0) ?></div>
+        </div>
+    </section>
 
 </div>

@@ -14,16 +14,13 @@
             return [
                 [['oldpass','newpass','repeatnewpass'],'required'],
                 ['oldpass','findPasswords'],
-                // ['repeatnewpass','compare','compareAttribute'=>'newpass'],
+                ['repeatnewpass','compare','compareAttribute'=>'newpass','message'=>'تأكيد كلمة السر غير مطابق'],
             ];
         }
         
         public function findPasswords($attribute){
-            $user = User::find()->where([
-                'username'=>Yii::$app->user->identity->username
-            ])->one();
-            $password = $user->password;
-            if($password!=md5($this->oldpass))
+            $user = User::findOne(Yii::$app->user->id);
+            if(!$user || !$user->validatePassword($this->oldpass))
                 $this->addError($attribute,'كلمة السر القديمة غير صحيحة');
         }
         

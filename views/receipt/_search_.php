@@ -57,14 +57,14 @@ use yii\helpers\Url;
                 ]
             ]);
 
-            ?><br>
+            ?>
 
             <br>
             <div class="form-group">
                 <?= Html::submitButton('<i class="fa fa-fw fa-search"></i>' . ' ' . Yii::t('app', 'Search'), ['class' => 'btn btn-primary btn-lg']) ?>
                 <?= Html::a('<i class="fa fa-fw fa-eraser"></i>' . ' ' . Yii::t('app', "Erase"), Url::toRoute(['index']), ['class' => 'btn btn-danger btn-lg']) ?>
             </div>
-
+            <br>
         </div>
         <div class="col-lg-6">
             <?= $form->field($model, 'value') ?>

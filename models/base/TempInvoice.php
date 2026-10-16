@@ -104,7 +104,7 @@ class TempInvoice extends \yii\db\ActiveRecord
      */
     public function getCreatedBy()
     {
-        return $this->hasOne(\app\models\User::className(), ['id' => 'created_by']);
+        return $this->hasOne(\app\models\User::class, ['id' => 'created_by']);
     }
 
     /**
@@ -112,7 +112,7 @@ class TempInvoice extends \yii\db\ActiveRecord
      */
     public function getUpdatedBy()
     {
-        return $this->hasOne(\app\models\User::className(), ['id' => 'updated_by']);
+        return $this->hasOne(\app\models\User::class, ['id' => 'updated_by']);
     }
 
     /**
@@ -120,17 +120,17 @@ class TempInvoice extends \yii\db\ActiveRecord
      */
     public function getCategory0()
     {
-        return $this->hasOne(\app\models\Category::className(), ['id' => 'category']);
+        return $this->hasOne(\app\models\Category::class, ['id' => 'category']);
     }
 
     public function getPrice()
     {
-        return $this->hasOne(\app\models\Prices::className(), ['category' => 'category']);
+        return $this->hasOne(\app\models\Prices::class, ['category' => 'category']);
     }
 
     // public function getInventory()
     // {
-    //     return $this->hasMany(\app\models\Inventory::className(), ['id' => 'category'])->sum('quantity') ;
+    //     return $this->hasMany(\app\models\Inventory::class, ['id' => 'category'])->sum('quantity') ;
     // }
 
 
@@ -142,13 +142,13 @@ class TempInvoice extends \yii\db\ActiveRecord
     {
         return [
             'timestamp' => [
-                'class' => TimestampBehavior::className(),
+                'class' => TimestampBehavior::class,
                 'createdAtAttribute' => 'created_at',
                 'updatedAtAttribute' => 'updated_at',
                 'value' => new \yii\db\Expression('NOW()'),
             ],
             'blameable' => [
-                'class' => BlameableBehavior::className(),
+                'class' => BlameableBehavior::class,
                 'createdByAttribute' => 'created_by',
                 'updatedByAttribute' => 'updated_by',
             ],

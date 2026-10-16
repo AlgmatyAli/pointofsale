@@ -16,7 +16,8 @@ $config = [
     'sourceLanguage' => 'en-US',
     'modules' => [
         'gridview' => [
-            'class' => '\kartik\grid\Module'
+            'class' => '\kartik\grid\Module',
+            'bsVersion' => '5.x',
         ]
     ],
     'components' => [
@@ -85,6 +86,14 @@ $config = [
             'decimalSeparator' => '.',
             'locale' => 'id',
             'thousandSeparator' => ',',
+        ],
+
+        'assetManager' => [
+            'bundles' => [
+                'yii\bootstrap\BootstrapAsset'       => ['css' => []],
+                'yii\bootstrap\BootstrapPluginAsset' => ['js'  => []],
+                'yii\bootstrap5\BootstrapAsset'      => ['css' => []],
+            ],
         ],
 
     ],

@@ -12,29 +12,26 @@ use yii\web\AssetBundle;
 
 /**
  * Main application asset bundle.
- *
- * @author Qiang Xue <qiang.xue@gmail.com>
- * @since 2.0
  */
 class AppAsset extends AssetBundle
 {
     public $basePath = '@webroot';
     public $baseUrl = '@web';
+
     public $css = [
         'css/site.css',
         'css/style.css',
-        'css/util.css',
-        'css/main.css',
         'css/sweet-alert.css',
     ];
+
     public $js = [
         'js/ajax-modal-popup.js',
         'js/sweet-alert.js',
         // 'js/loadSalesGrid.js',
         'js/tafqeet.js',
     ];
+
     public $depends = [
-        'yii\web\YiiAsset',
-        'yii\bootstrap\BootstrapAsset',
+        AdminLteAsset::class,
     ];
 }

@@ -26,8 +26,11 @@ use Yii;
  * @property string $created_at
  * @property int|null $user_update
  * @property string|null $update_at
- * @property string|null $currancy
- * @property string|null $total_currancy
+ * @property int|null $currancy
+ * @property float|null $total_currancy
+ * @property int|null $shippingType
+ * @property string|null $dateOfArrival
+ * @property int $payment_type
  * @property Branches $br
  * @property Client $c
  * @property User $userInsert
@@ -64,7 +67,6 @@ class Purchases extends \yii\db\ActiveRecord
                 'type',
                 'user_insert',
                 'created_at',
-                'total',
                 'paid',
                 'payment_type'
             ], 'required'],
@@ -81,9 +83,9 @@ class Purchases extends \yii\db\ActiveRecord
                 'shippingType',
                 'payment_type'
             ], 'integer'],
-            [['at', 'created_at', 'update_at', 'dateOfArrival', 'changeSalePrice'], 'safe'],
+            [['at', 'created_at', 'update_at', 'dateOfArrival', 'changeSalePrice', 'standBy'], 'safe'],
             [['total', 'paid', 'total_currancy',], 'number'],
-            [['clientBill', 'notes', 'path', 'totalCost', 'standBy'], 'string', 'max' => 255],
+            [['clientBill', 'notes', 'path', 'totalCost'], 'string', 'max' => 255],
             [['branch'], 'exist', 'skipOnError' => true, 'targetClass' =>
             Branches::class, 'targetAttribute' => ['branch' => 'id']],
             [['clinet'], 'exist', 'skipOnError' => true, 'targetClass' =>
@@ -93,7 +95,7 @@ class Purchases extends \yii\db\ActiveRecord
             [['user_update'], 'exist', 'skipOnError' => true, 'targetClass' =>
             User::class, 'targetAttribute' => ['user_update' => 'id']],
             [['shippingType'], 'exist', 'skipOnError' => true, 'targetClass' =>
-            ShippingType::class, 'targetAttribute' => ['dateOfArrival' => 'id']],
+            ShippingType::class, 'targetAttribute' => ['shippingType' => 'id']],
         ];
     }
 

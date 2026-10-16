@@ -2,17 +2,14 @@
 
 use yii\helpers\Html;
 
-/* @var $this yii\web\View */
-/* @var $model app\models\Purchases */
+/** @var yii\web\View $this */
+/** @var app\models\PurchasesSearch $searchModel */
+/** @var yii\widgets\ActiveForm $form */
+/** @var app\models\Purchases $model */
 
-$this->title = Yii::t('app', 'Update Purchases:').' ' .$model->c->name ;
-$this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Purchases'), 'url' => ['index']];
-$this->params['breadcrumbs'][] = ['label' => $model->id, 'url' => ['view', 'id' => $model->id]];
-$this->params['breadcrumbs'][] = Yii::t('app', 'Update');
+$this->title = Yii::t('app', 'Update Purchases:') . ' ' . $model->c->name;
 ?>
 <div class="purchases-update">
-
-    <h1><?= Html::encode($this->title) ?></h1><hr>
 
     <?= $this->render('_form_update', [
         'model' => $model,

@@ -1,127 +1,141 @@
 <?php
 
 use yii\helpers\Html;
-use yii\widgets\DetailView;
 use app\models\CompanyInfo;
+
 /* @var $this yii\web\View */
-/* @var $model app\models\Purchases */
+/* @var $models array */
+/* @var $infos array */
+
+// تخطيط مستقل بلا الشريط الجانبي والعلوي، وزر Print يستدعي printInvoice() (طباعة داخل إطار معزول)
+$this->context->layout = 'invoice';
+$this->registerCssFile('@web/css/template.css');
+
+// نفس منطق الملف الأصلي: آخر عنصر في $models
+$model = [];
+foreach ($models as $value) {
+    $model = $value;
+}
+
+$company = CompanyInfo::find()->asArray()->one() ?: [];
+
+$logo = (string) ($company['path'] ?? '');
+if ($logo !== '' && !preg_match('~^(https?:)?//|^/~', $logo)) {
+    $logo = Yii::getAlias('@web/') . ltrim($logo, '/');
+}
+
+$invoiceTitle = '';
+if (($model['type'] ?? null) == '1') {
+    $invoiceTitle = 'فاتورة مشتريات';
+} elseif (($model['type'] ?? null) == '2') {
+    $invoiceTitle = 'فاتورة مسترجع مشتريات';
+}
+
+$payWayText = ['0' => 'نقدا', '1' => 'آجل', '2' => 'دفعة على الحساب'][(string) ($model['payWay'] ?? '')] ?? '';
 ?>
 
-<div class="sales-view">
-     <p>
-          <button class='btn btn-info' onClick="window.print()"><?= Yii::t('app', 'Print')?></button>`
-          <?= Html::a(Yii::t('app', 'Cancel'), Yii::$app->request->referrer , ['class'=> 'btn btn-danger btnx']) ?>
-     </p>
-    <?php
-    foreach ($models as $value) {
-      $model = $value;
-    }
-   // die(var_dump($model));
-    ?>
-     <?php $title = CompanyInfo::find()->select(['*'])->asArray()->one();?>
-     <img src=<?php echo $title["path"]?> class="img-circle logo" alt="Cinque Terre">
-     <h3><?php
-      echo  $title['name'];
-      echo '<br><br>';
-      ?> </h3>
-    <center>
-     <h3><?php if ($model["type"] == '1') {
-        echo 'فاتورة مشتريات';
-     }elseif($model["type"] == '2'){
-         echo 'فاتورة مسترجع مشتريات';
-     }
-     ?> </h3>
-    </center>
-     <br>
-    <div class="row">
-        <div class = "col-sm-6">
-             <table class="table table-bordered table-dark">
-               <thead>
-                 <tr>
-                   <th>رقم الفاتورة </th>
-                   <th>اسم المورد </th>
-                   <th>تاريخ الفاتورة</th>
-                   <th>طريقة الدفع</th>
-                 </tr>
-               </thead>                
-
-                 <tbody>
-                    <tr>
-                     <td><?=$model["billId"]?></td>
-                     <td><?=$model["client"]?></td>
-                     <td><?=$model["at"]?></td>
-                     <td><?php
-                        if ($model["payWay"] == '0') {
-                           echo 'نقدا';
-                        }elseif($model["payWay"] == '1'){
-                            echo 'آجل';
-                        }
-                        elseif($model["payWay"] == '2'){
-                            echo 'دفعة على الحساب';
-                        }
-                     ?></td>
-                     <td></td>
-                    </tr>
-                 </tbody>
-             </table>
-        </div>
-     </div>
-     <br>
-<!-- ======= -->
-    <table class="table table-bordered tbl">
-      <thead>
-       <tr>
-        <th>#</th>
-        <th><h5>البيـــــان</h5></th>
-        <th><h5>رقم القطعة</h5></th>
-        <th><h5>الكمية</h5></th>
-        <th><h5>الشركة المصنعة</h5></th>
-        <th><h5>الكمية المتبقية</h5></th>
-        <th><h5>الكمية المحجوزة</h5></th>
-       </tr>
-      </thead>
-       
-       <?php 
-         $coun=1;
-         $sumquantity=0;
-         foreach ($infos as $data):
-         $id = $data["id"];
-       ?>
-       <tbody>
-          <tr>
-           <td><?= $coun++?></td>
-           <td><?= $data["category"] ?></td>
-           <td><?= $data["serialNo"] ?></td> 
-           <td><?= $data["quantity"] ?></td>
-           <td><?= $data["company"] ?></td>
-           <td><?= $data["Qtotalinventory"] ?></td>
-           <td><?= $data["reservation"] ?></td>
-           <?php $sumquantity++ ?>
-          </tr>
-       </tbody>
-       <?php endforeach; ?>
- </table>
- <br>
-<!-- ======= -->
-<div class="row">
-    <div class = "col-md-6">
-      <table class="table">
-      <thead>
-       <tr>
-        <th>ملاحظـــات:</th>
-       </tr>
-      </thead>
-         <tbody>
-          <tr>
-            <td>  <?php echo $model["notes"]?></td>
-          </tr>
-         </tbody>
-      </table> 
-    </div>
-    </div>
-    <!-- ======= -->
+<!-- شريط الأزرار: لا يُطبع -->
+<div class="no-print d-print-none mb-3 d-flex flex-wrap justify-content-between gap-2">
+    <button type="button" class="btn btn-primary" onclick="printInvoice()">
+        <i class="bi bi-printer"></i> <?= Yii::t('app', 'Print') ?>
+    </button>
+    <?= Html::a(
+        Yii::t('app', 'Cancel'),
+        Yii::$app->request->referrer ?: ['index'],
+        ['class' => 'btn btn-warning']
+    ) ?>
 </div>
-  
-<!-- <script type="text/javascript">
-      window.onload = function() { window.print(); }
- </script> -->
+
+<div id="div1">
+    <div id="container">
+
+        <div class="invoice-top">
+
+            <section id="memo" class="text-center">
+                <div style="float:left">
+                    <?php if ($logo !== ''): ?>
+                        <img src="<?= Html::encode($logo) ?>" class="logo" alt="<?= Html::encode($company['name'] ?? '') ?>">
+                    <?php endif; ?>
+                </div>
+                <br><br>
+                <div class="company-info">
+                    <span class="company-name"><?= Html::encode($company['name'] ?? '') ?> </span>
+                    <span class="spacer"></span>
+                    <span class="company-name1"><?= Html::encode($company['work'] ?? '') ?> </span>
+                    <span class="spacer"></span>
+                    <div></div>
+                    <div><?= Html::encode($company['address'] ?? '') ?> </div>
+                    <span class="clearfix"></span>
+                    <div><?= Html::encode($company['phone1'] ?? '') ?> |</div>
+                    <div><?= Html::encode($company['phone2'] ?? '') ?> </div>
+                </div>
+            </section>
+
+            <h2 class="text-center white"><?= Html::encode($invoiceTitle) ?></h2>
+
+            <section id="invoice-info">
+                <div>
+                    <span><?= Html::encode((string) ($model['billId'] ?? '')) ?></span>
+                    <span><?= Html::encode((string) ($model['at'] ?? '')) ?></span>
+                    <span><?= Html::encode($payWayText) ?></span>
+                    <span></span>
+                </div>
+                <div>
+                    <span>رقـم الفاتورة:</span>
+                    <span>تاريخ الفاتورة:</span>
+                    <span>طريقة الدفع:</span>
+                    <span></span>
+                </div>
+            </section>
+
+            <section id="client-info">
+                <span>اسم المورد</span>
+                <div><span class="bold"><?= Html::encode((string) ($model['client'] ?? '')) ?></span></div>
+            </section>
+        </div>
+
+        <div class="invoice-body">
+
+            <section id="items">
+                <table class="table table-bordered" style="font-size:12px;">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th style="width:35%">البيـــــان</th>
+                            <th>رقم القطعة</th>
+                            <th>الكمية</th>
+                            <th>الشركة المصنعة</th>
+                            <th>الكمية المتبقية</th>
+                            <th>الكمية المحجوزة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php $coun = 1; foreach ($infos as $data): ?>
+                            <tr>
+                                <td><?= $coun++ ?></td>
+                                <td><?= Html::encode((string) $data['category']) ?></td>
+                                <td><?= Html::encode((string) $data['serialNo']) ?></td>
+                                <td><?= Html::encode((string) $data['quantity']) ?></td>
+                                <td><?= Html::encode((string) $data['company']) ?></td>
+                                <td><?= Html::encode((string) $data['Qtotalinventory']) ?></td>
+                                <td><?= Html::encode((string) $data['reservation']) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </section>
+
+            <div class="clearfix"></div>
+
+            <section id="terms">
+                <div class="row">
+                    <div class="col-md-12">
+                        <span>ملاحظـــات:</span>
+                        <?= Html::encode((string) ($model['notes'] ?? '')) ?>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+</div>

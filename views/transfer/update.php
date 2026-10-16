@@ -13,15 +13,9 @@ $this->params['breadcrumbs'][] = ['label' => $model->id, 'url' => ['view', 'id' 
 $this->params['breadcrumbs'][] = Yii::t('app', 'Update');
 ?>
 <div class="transfer-update">
-<div class="row">
-    <div class="col-lg-3"></div>
-    <div class="col-lg-6">
-    <h1><?= Html::encode($this->title) ?></h1>
 
     <?= $this->render('_form', [
         'model' => $model,
     ]) ?>
-    </div>
-    </div>
 
 </div>

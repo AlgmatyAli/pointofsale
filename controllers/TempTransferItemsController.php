@@ -3,18 +3,19 @@
 namespace app\controllers;
 
 use Yii;
+use app\models\Category;
 use app\models\TempTransferItemsSearch;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use app\models\base\TempTransferItems;
-use app\models\Stocks;
+use yii\db\Query;
 use yii\filters\AccessControl;
-use yii\helpers\Json;
 use yii\web\Response;
 
 /**
  * TempTransferItemsController implements the CRUD actions for TempTransferItems model.
+ * (قائمة النقل المؤقتة لكل مستخدم قبل الضغط على «حفظ»؛ لا تحرّك المخزون.)
  */
 class TempTransferItemsController extends Controller
 {
@@ -25,6 +26,7 @@ class TempTransferItemsController extends Controller
                 'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
+                    'delete-all' => ['POST'],   // الواجهة ترسله POST أصلاً
                 ],
             ],
 
@@ -43,35 +45,15 @@ class TempTransferItemsController extends Controller
 
     /**
      * Lists all TempTransferItems models.
+     * (الإجراء غير مسموح في قواعد الوصول أعلاه؛ أُزيل منه كود التعديل المباشر الميت الذي كان ينتهي بـ die.)
      * @return mixed
      */
     public function actionIndex()
     {
         $searchModel = new TempTransferItemsSearch();
+        $searchModel->created_by = Yii::$app->user->identity->id;
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
-        if (Yii::$app->request->post('hasEditable')) {
-            $model = new TempTransferItems();
-            $bookId = Yii::$app->request->post('editableKey');
-            $model = TempTransferItems::findOne($bookId);
-
-            $post = [];
-            $posted = current($_POST['TempTransferItems']);
-            $post['TempTransferItems'] = $posted;
-            // Load model like any single model validation
-            if ($model->load($post)) {
-                // When doing $result = $model->save(); I get a return value of false
-                if ($model->save()) {
-                    if (isset($posted['quantity'])) {
-                        $output = $model->quantity;
-                    }
-                    $out = Json::encode(['output' => $output, 'message' => '']);
-                }
-            }
-            // Return AJAX JSON encoded response and exit
-            echo $out;
-            die; // write die instead of fo return and check it.
-        }
         return $this->render('index', [
 
             'searchModel' => $searchModel,
@@ -86,7 +68,6 @@ class TempTransferItemsController extends Controller
      */
     public function actionView($id)
     {
-        $model = $this->findModel($id);
         return $this->render('view', [
             'model' => $this->findModel($id),
         ]);
@@ -101,140 +82,69 @@ class TempTransferItemsController extends Controller
     {
         $model = new TempTransferItems();
         $searchModel = new TempTransferItemsSearch();
+        $userId = (int) Yii::$app->user->identity->id;
 
-        if (Yii::$app->user->can('saleOnHoldItems')) {
-            $type = [1, 2, 3];
-        } else {
-            $type = [1, 2, 3];
-        }
-
-        $searchModel->created_by = Yii::$app->user->identity->id;
+        $searchModel->created_by = $userId;
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
-        if (yii::$app->request->post('hasEditable')) {
-            $id = Yii::$app->request->post('editableKey');
-            $result = TempTransferItems::findOne($id);
-            $out = Json::encode(['output' => '', 'message' => '']);
-            $post = [];
-            $posted = current($_POST['TempTransferItems']);
-            $post['TempTransferItems'] = $posted;
-            if ($result->load($post)) {
-
-                // if (Yii::$app->user->identity->seeOtherBranchQ == '0') {
-                //     $branch = Yii::$app->user->identity->branch;
-                // } else {
-                //     $branch = [1, 2, 3];
-                // }
-
-                $data = Stocks::find()
-                    ->select([
-                        'max(stocks.category) as category',
-                        'sum(stocks.quantity) as quantity',
-                        'max(prices.costPrice) as costPrice',
-                        'max(prices.minPrice) as minPrice',
-                        'max(prices.maxPrice) as maxPrice'
-                    ])
-                    ->leftJoin('prices', 'stocks.category = prices.category')
-                    ->Where(['stocks.branch' => $model->branch])
-                    ->andwhere(['stocks.category' => $result->category])
-                    ->andwhere(['in', 'stocks.type', $type])
-                    ->one();
-
-                $sumQnty = TempTransferItems::find()
-                    ->where(['category' => $result->category, 'created_by' => Yii::$app->user->identity->id,])
-                    ->andWhere(['!=', 'id', $result->id])
-                    ->sum('quantity');
-
-                if ($sumQnty != null) {
-                    $balance = abs($data->quantity) - abs($sumQnty);
-                } else {
-                    if ($data != null) {
-                        $balance = abs($data->quantity);
-                    } else {
-                        $balance = 1;
-                    }
-                }
-
-                if ($posted['quantity'] >= $balance) {
-                    $remaining = $balance;
-                } else {
-                    $remaining = $posted['quantity'];
-                }
-
-                if (isset($posted['quantity'])) {
-                    $result->quantity = $remaining;
-                    $outMessage = $result->quantity;
-                    $result->save(false);
-                }
-
-                $output = $outMessage;
-
-                $out = Json::encode(['output' => $output]);
-
-                return $out;
-            }
+        if (Yii::$app->request->post('hasEditable')) {
+            return $this->inlineEdit($userId);
         }
 
         if ($model->loadAll(Yii::$app->request->post())) {
-            if ($model->category == null) {
+            $category = (int) $model->category;
+            $branch = (int) $model->branch;
+            $quantity = abs((float) $model->quantity);
+
+            if ($category <= 0 || !Category::find()->where(['id' => $category])->exists()) {
                 Yii::$app->session->setFlash('error', Yii::t('app', "Sorry You Can not Add Empty Model"));
-                return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
+                return $this->redirect(['create']);
+            }
+            if ($branch <= 0 || !(new Query())->from('branches')->where(['id' => $branch])->exists()) {
+                Yii::$app->session->setFlash('error', 'الفرع المسحوب منه غير صحيح. اختر الصنف من القائمة من جديد.');
+                return $this->redirect(['create']);
+            }
+            if ($quantity <= 0) {
+                Yii::$app->session->setFlash('error', 'الكمية يجب أن تكون أكبر من صفر.');
+                return $this->redirect(['create']);
             }
 
-            // if (Yii::$app->user->identity->seeOtherBranchQ == 0) {
-            //     $branch = Yii::$app->user->identity->branch;
-            // } else {
-            //     $branch = [1, 2, 3];
-            // }
+            $stockQty = $this->stockQty($category, $branch);
+            if ($stockQty <= 0) {
+                Yii::$app->session->setFlash('error', Yii::t('app', "عفوا كمية هذا الصنف صفر لايمكنك الاستمرار"));
+                return $this->redirect(['create']);
+            }
 
-            $item = Stocks::find()
-                ->select([
-                    'max(stocks.category) as category',
-                    'sum(stocks.quantity) as quantity',
-                    'max(prices.costPrice) as costPrice',
-                    'max(prices.minPrice) as minPrice',
-                    'max(prices.maxPrice) as maxPrice'
-                ])
-                ->leftJoin('prices', 'stocks.category = prices.category')
-                ->Where(['stocks.branch' => $model->branch])
-                ->andwhere(['stocks.category' => $model->category])
-                ->andwhere(['in', 'stocks.type', 1])
-                ->one();
-
-            $sumQnty = TempTransferItems::find()
-                ->where(['category' => $model->category, 'created_by' => Yii::$app->user->identity->id,])
+            // ما أُضيف سابقاً لنفس الصنف والفرع في قائمة هذا المستخدم
+            $sumQnty = (float) TempTransferItems::find()
+                ->where(['category' => $category, 'created_by' => $userId])
                 ->sum('quantity');
 
-            if ($sumQnty != null) {
-                $balance = abs($item->quantity) - abs($sumQnty);
-            } else {
-                if ($item != null) {
-                    $balance = abs($item->quantity);
-                } else {
-                    $balance = 1;
-                }
+            $balance = $stockQty - $sumQnty;
+            if ($balance <= 0) {
+                Yii::$app->session->setFlash('error', "عفوا لقد تجاوزت الكمية الموجودة لايمكنك الاستمرار");
+                return $this->redirect(['create']);
             }
-            if (abs($model->quantity) > abs($balance)) {
-                $remaining = abs($balance);
-            } else {
-                $remaining = abs($model->quantity);
-            }
-            $model->quantity = $remaining;
-            if ($item != null) {
-                if ($sumQnty >= $item->quantity) {
-                    Yii::$app->response->format = Response::FORMAT_JSON;
-                    // return ['error' => true, 'message' => Yii::t('app', "عفوا لقد تجاوزت الكمية الموجودة لايمكنك الاستمرار")];
-                    return "عفوا لقد تجاوزت الكمية الموجودة لايمكنك الاستمرار";
-                }
-            } else {
-                Yii::$app->response->format = Response::FORMAT_JSON;
-                return ['error' => true, 'message' => Yii::t('app', "عفوا كمية هذا الصنف صفر لايمكنك الاستمرار")];
-            }
-            $id = TempTransferItems::find()->max('id') + 1;
-            $model->id = $id;
-            $model->created_by = Yii::$app->user->identity->id;
+
+            $model->category = $category;
+            $model->branch = $branch;
+            $model->quantity = ($quantity > $balance) ? $balance : $quantity;
+            $model->created_by = $userId;
             $model->created_at = date('Y-m-d');
-            $model->save(false);
+
+            // رقم السجل يدوي (max+1): القفل يمنع تكراره عند الإضافة المتزامنة
+            $db = Yii::$app->db;
+            $gotLock = (int) $db->createCommand('SELECT GET_LOCK(:n, 5)', [':n' => 'pos_temp_transfer_id'])->queryScalar() === 1;
+            if (!$gotLock) {
+                Yii::$app->session->setFlash('error', 'النظام مشغول. أعد المحاولة.');
+                return $this->redirect(['create']);
+            }
+            try {
+                $model->id = (int) TempTransferItems::find()->max('id') + 1;
+                $model->save(false);
+            } finally {
+                $db->createCommand('SELECT RELEASE_LOCK(:n)', [':n' => 'pos_temp_transfer_id'])->queryScalar();
+            }
 
             return $this->redirect(['create']);
         } else {
@@ -248,7 +158,6 @@ class TempTransferItemsController extends Controller
 
     /**
      * Updates an existing TempTransferItems model.
-     * If update is successful, the browser will be redirected to the 'view' page.
      * @param integer $id
      * @return mixed
      */
@@ -267,7 +176,6 @@ class TempTransferItemsController extends Controller
 
     /**
      * Deletes an existing TempTransferItems model.
-     * If deletion is successful, the browser will be redirected to the 'index' page.
      * @param integer $id
      * @return mixed
      */
@@ -281,23 +189,78 @@ class TempTransferItemsController extends Controller
 
     /**
      * Finds the TempTransferItems model based on its primary key value.
-     * If the model is not found, a 404 HTTP exception will be thrown.
+     * يُقيَّد بسجلات المستخدم الحالي فقط (كان أي مستخدم يستطيع فتح أو حذف سجلات غيره بالرقم).
      * @param integer $id
      * @return TempTransferItems the loaded model
      * @throws NotFoundHttpException if the model cannot be found
      */
     protected function findModel($id)
     {
-        if (($model = TempTransferItems::findOne($id)) !== null) {
+        $model = TempTransferItems::findOne(['id' => (int) $id, 'created_by' => Yii::$app->user->identity->id]);
+        if ($model !== null) {
             return $model;
-        } else {
-            throw new NotFoundHttpException(Yii::t('app', 'The requested page does not exist.'));
         }
+        throw new NotFoundHttpException(Yii::t('app', 'The requested page does not exist.'));
     }
 
     public function actionDeleteAll()
     {
         TempTransferItems::deleteAll(['created_by' => Yii::$app->user->identity->id]);
         return $this->redirect(['create']);
+    }
+
+    // =====================================================================
+    // أدوات داخلية
+    // =====================================================================
+
+    /**
+     * التعديل المباشر لكمية سطر في القائمة المؤقتة.
+     * الكمية يجب أن تكون أكبر من صفر ولا تتجاوز الرصيد المتاح (بعد خصم بقية أسطر نفس الصنف والفرع).
+     */
+    private function inlineEdit($userId)
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+
+        $key = (int) Yii::$app->request->post('editableKey');
+        $all = Yii::$app->request->post('TempTransferItems');
+        $posted = is_array($all) ? current($all) : null;
+
+        $result = TempTransferItems::findOne(['id' => $key, 'created_by' => $userId]);
+        if ($result === null || !is_array($posted)) {
+            return ['output' => '', 'message' => 'السطر غير موجود.'];
+        }
+        if (isset($posted['category']) || isset($posted['branch'])) {
+            return ['output' => '', 'message' => 'لا يمكن تغيير الصنف أو الفرع. احذف السطر وأضف من جديد.'];
+        }
+        if (!isset($posted['quantity']) || !is_numeric($posted['quantity']) || (float) $posted['quantity'] <= 0) {
+            return ['output' => '', 'message' => 'الكمية يجب أن تكون رقماً أكبر من صفر.'];
+        }
+
+        // الفرع هنا فرع السطر نفسه (كان الكود يقرأ فرع كائن جديد فارغ فيفشل الفحص)
+        $stockQty = $this->stockQty($result->category, Yii::$app->user->identity->branch);
+
+        $others = (float) TempTransferItems::find()
+            ->where(['category' => $result->category, 'created_by' => $userId])
+            ->andWhere(['!=', 'id', $result->id])
+            ->sum('quantity');
+
+        $balance = $stockQty - $others;
+        if ($balance <= 0) {
+            return ['output' => '', 'message' => 'لا يوجد رصيد متاح لهذا الصنف.'];
+        }
+
+        $result->quantity = min((float) $posted['quantity'], $balance);
+        $result->save(false);
+
+        return ['output' => $result->quantity, 'message' => ''];
+    }
+
+    /** رصيد الصنف في الفرع (النوع 1 فقط، وهو الذي يتحرك فعلياً عند حفظ النقل) */
+    private function stockQty($category, $branch)
+    {
+        return (float) Yii::$app->db->createCommand(
+            'SELECT COALESCE(SUM(quantity), 0) FROM stocks WHERE category = :c AND branch = :b AND type = 1',
+            [':c' => $category, ':b' => $branch]
+        )->queryScalar();
     }
 }

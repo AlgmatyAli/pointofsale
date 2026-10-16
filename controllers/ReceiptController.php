@@ -15,6 +15,8 @@ use app\models\Dept;
 use app\models\DeptSupp;
 use app\models\CompanyInfo;
 use app\models\Safe;
+use yii\web\ForbiddenHttpException;
+use yii\web\Response;
 
 /**
  * ReceiptController implements the CRUD actions for Receipt model.
@@ -120,14 +122,20 @@ class ReceiptController extends Controller
      */
     public function actionCreate()
     {
-
         $model = new Receipt();
+        $model->scenario = Receipt::SCENARIO_SAVE;
 
-        if ($_GET['type'] == 2 && !Yii::$app->user->can('canCreateVendorReceipt')) {
-            throw new \yii\web\ForbiddenHttpException(Yii::t('app', 'You are not allowed to access this page'));
+        // كان الكود يقرأ $_GET['type'] مباشرة (خطأ إن غاب)؛ والفحص الحقيقي أدناه على النوع المُرسَل فعلاً
+        if (Yii::$app->request->get('type') == 2) {
+            $this->requireVendorReceiptPermission();
         }
 
         if ($model->load(Yii::$app->request->post())) {
+            // النوع المُرسَل في النموذج هو الذي يُحفظ، لذلك عليه تُبنى الصلاحية (لا على رابط الصفحة)
+            if ($model->type == 2) {
+                $this->requireVendorReceiptPermission();
+            }
+
             $exist = Receipt::find()->where(['=', 'value', $model->value])
                 ->andWhere(['=', 'at', $model->at])
                 ->andWhere(['=', 'clinet', $model->clinet])
@@ -137,15 +145,31 @@ class ReceiptController extends Controller
                 Yii::$app->session->setFlash('error', Yii::t('app', "Sorry, this customer recorded the value today"));
             }
 
-            $model->rId = Receipt::find()->where(['=', 'type', $model->type])->max('rId') + 1;
-            $model->created_at    = date('Y-m-d H:i:s');
+            $model->created_at  = date('Y-m-d H:i:s');
             $model->user_insert = Yii::$app->user->id;
-            $model->branch = Yii::$app->user->identity->branch;
-            if ($model->value > Yii::$app->user->identity->maxReceipt && $model->type  == 2) {
+            $model->branch      = Yii::$app->user->identity->branch;
+
+            if ($model->type == 2 && (float)$model->value > (float)Yii::$app->user->identity->maxReceipt) {
                 Yii::$app->session->setFlash('error', Yii::t('app', "Sorry You Do Not Have Permession To Discount This Value"));
             } else {
-                $model->save();
-                return $this->redirect(['view', 'id' => $model->id]);
+                // رقم السند التالي: قفل قصير كي لا يأخذ مستخدمان الرقم نفسه في اللحظة نفسها
+                $db = Yii::$app->db;
+                $lockName = 'receipt_rid_' . (int)$model->type;
+                $gotLock = (int)$db->createCommand('SELECT GET_LOCK(:n, 5)', [':n' => $lockName])->queryScalar() === 1;
+                if (!$gotLock) {
+                    Yii::$app->session->setFlash('error', 'النظام مشغول حالياً، الرجاء إعادة المحاولة');
+                } else {
+                    try {
+                        $model->rId = (int)Receipt::find()->where(['=', 'type', $model->type])->max('rId') + 1;
+                        $saved = $model->save();
+                    } finally {
+                        $db->createCommand('SELECT RELEASE_LOCK(:n)', [':n' => $lockName])->execute();
+                    }
+                    if ($saved) {
+                        return $this->redirect(['view', 'id' => $model->id]);
+                    }
+                    // فشل التحقق: يعاد عرض النموذج وفيه رسائل الأخطاء (كان يُحوَّل إلى view بمعرّف فارغ)
+                }
             }
         }
 
@@ -164,14 +188,25 @@ class ReceiptController extends Controller
     public function actionUpdate($id)
     {
         $model = $this->findModel($id);
+        $model->scenario = Receipt::SCENARIO_SAVE;
+        $this->guardVendorReceipt($model);
+        $originalType = $model->type;
 
         if ($model->load(Yii::$app->request->post())) {
+            // لا يُسمح بتحويل سند قبض إلى صرف أو العكس عبر التعديل
+            $model->type = $originalType;
+
             $model->update_at = date('Y-m-d H:i:s');
             $model->user_update = Yii::$app->user->id;
             $model->branch = Yii::$app->user->identity->branch;
-            $model->save();
 
-            return $this->redirect(['view', 'id' => $model->id]);
+            // حد سند الصرف كان يُفحص عند الإنشاء فقط
+            if ($model->type == 2 && $model->isAttributeChanged('value', false)
+                && (float)$model->value > (float)Yii::$app->user->identity->maxReceipt) {
+                Yii::$app->session->setFlash('error', Yii::t('app', "Sorry You Do Not Have Permession To Discount This Value"));
+            } elseif ($model->save()) {
+                return $this->redirect(['view', 'id' => $model->id]);
+            }
         }
 
         return $this->render('update', [
@@ -188,9 +223,26 @@ class ReceiptController extends Controller
      */
     public function actionDelete($id)
     {
-        $this->findModel($id)->delete();
+        $model = $this->findModel($id);
+        $this->guardVendorReceipt($model);
+        $model->delete();
 
         return $this->redirect(['index']);
+    }
+
+    /** سندات الصرف للموردين تتطلب صلاحية canCreateVendorReceipt */
+    private function requireVendorReceiptPermission()
+    {
+        if (!Yii::$app->user->can('canCreateVendorReceipt')) {
+            throw new ForbiddenHttpException(Yii::t('app', 'You are not allowed to access this page'));
+        }
+    }
+
+    private function guardVendorReceipt(Receipt $model)
+    {
+        if ((int)$model->type === 2) {
+            $this->requireVendorReceiptPermission();
+        }
     }
 
     /**
@@ -211,47 +263,47 @@ class ReceiptController extends Controller
 
     public function actionPrintReciept($id)
     {
-        $client = $this->findModel($id);
-
-        if ($client->c->type == 0 || $client->c->type == 2) {
-            $balance = Dept::find()->where(['id' => $client->clinet])->sum('credt');
-        } else {
-            $balance = DeptSupp::find()->where(['id' => $client->clinet])->sum('credt');
-        }
+        $model = $this->findModel($id);
 
         return $this->render('printRecipt', [
-            'model' => $this->findModel($id),
-            'balance' => $balance,
+            'model' => $model,
+            'balance' => $this->clientBalance($model),
         ]);
     }
 
     public function actionPrintRecieptReciver($id)
     {
-        $client = $this->findModel($id);
-
-        if ($client->c->type == 0 || $client->c->type == 2) {
-            $balance = Dept::find()->where(['id' => $client->clinet])->sum('credt');
-        } else {
-            $balance = DeptSupp::find()->where(['id' => $client->clinet])->sum('credt');
-        }
-
+        $model = $this->findModel($id);
 
         return $this->render('printReciptReciver', [
-            'model' => $this->findModel($id),
-            'balance' => $balance,
+            'model' => $model,
+            'balance' => $this->clientBalance($model),
         ]);
+    }
+
+    private function clientBalance(Receipt $model)
+    {
+        $type = $model->c->type ?? null;
+        if ($type == 0 || $type == 2) {
+            return Dept::find()->where(['id' => $model->clinet])->sum('credt');
+        }
+        return DeptSupp::find()->where(['id' => $model->clinet])->sum('credt');
     }
 
     public function actionGetBalance($client, $currancy)
     {
         $clientType = Client::find()->where(['=', 'id', $client])->one();
+        if ($clientType === null) {
+            Yii::$app->response->format = Response::FORMAT_JSON;
+            return 0;
+        }
 
         if ($clientType['type'] == 0 || $clientType['type'] == 2) {
             $balance = Dept::find()->where(['id' => $client])->andWhere(['in', 'currency', ['0', $currancy]])->sum('credt');
         } else {
             $balance = DeptSupp::find()->where(['id' => $client])->andWhere(['in', 'currency', ['0', $currancy]])->sum('credt');
         }
-        Yii::$app->response->format = Yii\web\Response::FORMAT_JSON;
+        Yii::$app->response->format = Response::FORMAT_JSON;
         return $balance;
     }
 
@@ -260,7 +312,12 @@ class ReceiptController extends Controller
         $model = new Safe();
 
         if ($model->load(Yii::$app->request->post())) {
-            $data = Receipt::find()->where(['=', 'id', $receiptId])->one();
+            $data = $this->findModel($receiptId);
+            $this->guardVendorReceipt($data);
+            if (!$model->validate(['safeNo']) || empty($model->safeNo)) {
+                Yii::$app->session->setFlash('error', 'الرجاء اختيار الخزينة');
+                return $this->redirect(['view', 'id' => $data->id]);
+            }
             if ($data->type == 1) {
                 $type = 2;
             } else {
