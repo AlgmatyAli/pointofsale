@@ -190,7 +190,6 @@ $gridColumns = [
     [                                                            // 3
         'attribute' => 'category',
         'headerOptions' => ['style' => 'width:20%'],
-        'width' => '30%',
         'format' => 'html',
         'value' => function ($model) {
             $category = $model->category0;
@@ -216,7 +215,6 @@ $gridColumns = [
 
     [                                                            // 6
         'class' => 'kartik\grid\EditableColumn',
-        'width' => '10%',
         'attribute' => 'totalCost',
         'label' => Yii::t('app', 'Cost Total'),
         'editableOptions' => $editable,
@@ -303,8 +301,8 @@ $gridColumns = [
                 <span class="badge text-bg-<?= $typeColor ?>"><?= Html::encode($typeText) ?></span>
             <?php endif; ?>
             <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" id="pur-head-toggle"
-                data-bs-toggle="collapse" data-bs-target="#pur-head-body"
-                aria-expanded="true" aria-controls="pur-head-body" title="إظهار/إخفاء بيانات الفاتورة">
+                    data-bs-toggle="collapse" data-bs-target="#pur-head-body"
+                    aria-expanded="true" aria-controls="pur-head-body" title="إظهار/إخفاء بيانات الفاتورة">
                 <i class="bi bi-chevron-expand"></i> <span class="d-none d-sm-inline">بيانات الفاتورة</span>
             </button>
         </div>
@@ -414,7 +412,14 @@ $gridColumns = [
                         ]) ?>
                     </div>
                     <div class="col-lg-6 d-flex align-items-center">
-                        <?= $form->field($model, 'changeSalePrice')->checkbox(['checked' => true]) ?>
+                        <?php
+                        // الحالة الابتدائية من خيار المؤسسة «تعديل أسعار البيع عند تعديل فاتورة مشتريات»؛ وبعد إرسال النموذج تُحفظ قيمة المستخدم
+                        $companyOpt = \app\models\CompanyInfo::find()->one();
+                        $defaultChange = ($companyOpt === null || !$companyOpt->hasAttribute('editSalePriceOnPurchaseUpdate') || $companyOpt->editSalePriceOnPurchaseUpdate === null)
+                            ? true : ((int) $companyOpt->editSalePriceOnPurchaseUpdate !== 0);
+                        $changeChecked = ($model->changeSalePrice === null || $model->changeSalePrice === '') ? $defaultChange : (bool) $model->changeSalePrice;
+                        ?>
+                        <?= $form->field($model, 'changeSalePrice')->checkbox(['checked' => $changeChecked]) ?>
                     </div>
                 </div>
 

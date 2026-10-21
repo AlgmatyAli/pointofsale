@@ -251,6 +251,19 @@ class PurchasesController extends Controller
      * @return mixed
      * @throws NotFoundHttpException if the model cannot be found
      */
+    /**
+     * خيار المؤسسة «احتساب متوسط سعر التكلفة»: 1 (الافتراضي) متوسط مرجّح، 0 تسجيل آخر سعر شراء.
+     * يرجع true عند غياب العمود أو القيمة الفارغة ليبقى السلوك السابق.
+     */
+    private function useAverageCost()
+    {
+        $company = CompanyInfo::find()->one();
+        if ($company === null || !$company->hasAttribute('avgCost') || $company->avgCost === null) {
+            return true;
+        }
+        return (int) $company->avgCost !== 0;
+    }
+
     public function actionUpdate($id)
     {
         $model = $this->findModel($id);
@@ -358,6 +371,10 @@ class PurchasesController extends Controller
                         } else {
                             $total_cost = (floatval($tempCostPrice) + floatval($invetCostPrice)) / (floatval($inventory->quantity + $value->quantity));
                         }
+                    }
+                    // خيار «احتساب متوسط سعر التكلفة» متوقف: تُسجَّل تكلفة هذا السطر (آخر سعر شراء) بدل المتوسط
+                    if (!$this->useAverageCost()) {
+                        $total_cost = floatval($value->totalCost);
                     }
                     // عند تأكيد فاتورة معلقة (3 → 1) تُحدَّث أسعار البيع ومتوسط التكلفة دائماً (بغض النظر عن مفتاح changeSalePrice)
                     Prices::deleteAll(['category' => $value->category]);
@@ -716,6 +733,10 @@ class PurchasesController extends Controller
                                     $total_cost = (floatval($tempCostPrice + $invetCostPrice)) / floatval($value->quantity + $inventory->quantity);
                                 }
                             }
+                            // خيار «احتساب متوسط سعر التكلفة» متوقف: آخر سعر شراء
+                            if (!$this->useAverageCost()) {
+                                $total_cost = floatval($value->costTotal);
+                            }
 
                             Prices::deleteAll(['category' => $value->category]);
                             $prices = new Prices();
@@ -860,6 +881,10 @@ class PurchasesController extends Controller
                                 $total_cost = floatval($value->totalCost);
                             } else {
                                 $total_cost = (floatval($tempCostPrice + $invetCostPrice) / $denominator);
+                            }
+                            // خيار «احتساب متوسط سعر التكلفة» متوقف: آخر سعر شراء
+                            if (!$this->useAverageCost()) {
+                                $total_cost = floatval($value->totalCost);
                             }
 
                             Prices::deleteAll(['category' => $value->category]);

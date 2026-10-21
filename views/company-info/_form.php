@@ -149,6 +149,8 @@ $switch = function ($model, string $attribute, string $hint = '') {
                     <?= $switch($model, 'invoiceState') ?>
                     <?= $switch($model, 'waitQnty') ?>
                     <?= $switch($model, 'zeroQnty') ?>
+                    <?= $switch($model, 'avgCost', 'عند إيقافه تُسجَّل تكلفة الصنف بآخر سعر شراء بدل المتوسط المرجّح (عند إنشاء فاتورة المشتريات وتعديلها)') ?>
+                    <?= $switch($model, 'editSalePriceOnPurchaseUpdate', 'يحدد الحالة الابتدائية لخيار «تعديل سعر البيع» في شاشة تعديل فاتورة المشتريات') ?>
                 </div>
             </div>
         </div>

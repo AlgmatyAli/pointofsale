@@ -59,7 +59,7 @@ class CompanyInfo extends \yii\db\ActiveRecord
             [['name', 'work', 'address', 'phone1', 'phone2', 'phone3', 'fax', 'email', 'searchById', 'repeatCategory', 'payWayCash'], 'required'],
             [['rate'], 'number'],
             [['address', 'terms'], 'string'],
-            [['currancy', 'searchById', 'repeatCategory', 'payWayCash', 'invoiceState', 'waitQnty', 'criteriaـvalue', 'zeroQnty'], 'integer'],
+            [['currancy', 'searchById', 'repeatCategory', 'payWayCash', 'invoiceState', 'waitQnty', 'criteriaـvalue', 'zeroQnty', 'avgCost', 'editSalePriceOnPurchaseUpdate'], 'integer'],
             [['name', 'work'], 'string', 'max' => 150],
             [['phone1', 'phone2', 'phone3', 'fax'], 'string', 'max' => 14],
             [['email'], 'string', 'max' => 20],
@@ -95,6 +95,8 @@ class CompanyInfo extends \yii\db\ActiveRecord
             'invoiceState' => Yii::t('app', 'Invoice State'),
             'waitQnty' => Yii::t('app', 'Wait Qnty'),
             'zeroQnty' => Yii::t('app', 'Zero Qnty'),
+            'avgCost' => Yii::t('app', 'Average Cost'),
+            'editSalePriceOnPurchaseUpdate' => Yii::t('app', 'Edit Sale Price on Purchase Update'),
         ];
     }
 

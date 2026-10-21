@@ -76,6 +76,7 @@ if ($logo !== '' && !preg_match('~^(https?:)?//|^/~', $logo)) {
         <th class="no-print d-print-none"></th>
         <th class="no-print d-print-none"></th>
         <th class="no-print d-print-none"></th>
+        <th class="no-print d-print-none"></th>
       </tr>
     </thead>
     <tbody>
@@ -112,9 +113,20 @@ if ($logo !== '' && !preg_match('~^(https?:)?//|^/~', $logo)) {
           </td>
           <td class="no-print d-print-none">
             <?= Html::a(
+              '<i class="bi bi-whatsapp"></i>',
+              ['sales/whatsapp', 'id' => $model["id"], 'reminder' => 1],
+              ['class' => 'btn btn-success btn-sm', 'title' => 'تذكير عبر واتساب', 'target' => '_blank', 'rel' => 'noopener']
+            ) ?>
+          </td>
+          <td class="no-print d-print-none">
+            <?= Html::a(
               '<i class="bi bi-slash-circle"></i>',
               ['sales/stop-credit', 'id' => $model["client"]],
-              ['class' => 'btn btn-danger btn-sm', 'title' => Yii::t('app', 'Stop Credit')]
+              [
+                'class' => 'btn btn-danger btn-sm',
+                'title' => Yii::t('app', 'Stop Credit'),
+                'data' => ['method' => 'post', 'confirm' => 'هل تريد إيقاف التعامل بالدين مع هذا العميل؟'],
+              ]
             ) ?>
           </td>
         </tr>

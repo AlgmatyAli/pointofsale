@@ -59,14 +59,20 @@ class SalesController extends Controller
                 'class' => AccessControl::class,
                 'rules' => [
                     [
+                        // رابط PDF الفاتورة للزبون: يُفتح بلا تسجيل دخول، والتحقق بتوقيع HMAC داخل الإجراء نفسه
                         'allow' => true,
-                        'actions' => ['create', 'view', 'print', 'print-with-place', 'noprice', 'itemlist', 'deserving', 'stop-credit', 'done', 'itemlistid', 'print-no-price', 'fast', 'save-pdf', 'delev', 'print-for-driver'],
+                        'actions' => ['invoice-pdf'],
+                        'roles' => ['?', '@'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['whatsapp', 'create', 'view', 'print', 'print-with-place', 'noprice', 'itemlist', 'deserving', 'stop-credit', 'done', 'itemlistid', 'print-no-price', 'fast', 'save-pdf', 'delev', 'print-for-driver'],
                         'roles' => ['createSales'],
                     ],
 
                     [
                         'allow' => true,
-                        'actions' => ['update', 'add-item', 'view', 'print', 'print-with-place', 'noprice', 'remove', 'pdf', 'itemlist', 'deserving', 'stop-credit', 'done', 'transfer-to-temp-invoice', 'itemlistid', 'print-no-price', 'save-pdf', 'delev', 'print-for-driver'],
+                        'actions' => ['whatsapp', 'update', 'add-item', 'view', 'print', 'print-with-place', 'noprice', 'remove', 'pdf', 'itemlist', 'deserving', 'stop-credit', 'done', 'transfer-to-temp-invoice', 'itemlistid', 'print-no-price', 'save-pdf', 'delev', 'print-for-driver'],
                         'roles' => ['updateSales'],
                     ],
 
@@ -901,6 +907,91 @@ class SalesController extends Controller
             Yii::$app->getSession()->setFlash('success', Yii::t('app', 'Successfully Sent The Invoice To Customer'));
         }
         return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
+    }
+
+    /**
+     * يفتح محادثة واتساب مع العميل برسالة جاهزة فيها رابط PDF الفاتورة الموقَّع.
+     * reminder=1: رسالة تذكير بموعد الاستحقاق والمتبقي (من شاشة الفواتير المستحقة).
+     */
+    public function actionWhatsapp($id, $reminder = 0)
+    {
+        $model = $this->findModel($id);
+        $back = Yii::$app->request->referrer ?: ['print', 'id' => $model->id];
+        $client = $model->c;
+
+        $phone = \app\components\WhatsappHelper::normalizePhone($client ? ($client->mobile ?: $client->phone) : '');
+        if ($phone === null) {
+            Yii::$app->session->setFlash('error', 'رقم هاتف العميل غير موجود أو غير صالح. أدخل رقماً ليبياً مثل 0912345678 في بيانات العميل.');
+            return $this->redirect($back);
+        }
+
+        $company = CompanyInfo::find()->one();
+        $net = (float) $model->total - (float) $model->disscount;
+        $remaining = $net - (float) $model->paid;
+        $m = function ($v) {
+            return \app\components\WhatsappHelper::money($v);
+        };
+        $link = \app\components\WhatsappHelper::invoiceUrl($model->id);
+
+        $lines = ['السلام عليكم ' . ($client ? $client->name : '') . '،'];
+        if ((int) $reminder === 1) {
+            $balance = (float) Dept::find()->where(['id' => $model->clinet])->sum('credt');
+            $lines[] = 'نود تذكيركم بقرب موعد استحقاق الفاتورة رقم ' . $model->billId
+                . ($model->deserving ? ' بتاريخ ' . $model->deserving : '') . '.';
+            $lines[] = 'المتبقي من الفاتورة: ' . $m($remaining);
+            $lines[] = 'إجمالي رصيدكم: ' . $m($balance);
+        } else {
+            $lines[] = 'فاتورة رقم ' . $model->billId . ' بتاريخ ' . $model->at . '.';
+            $lines[] = 'الصافي: ' . $m($net);
+            if ((int) $model->payWay === 1) {
+                $lines[] = 'المتبقي من الفاتورة: ' . $m($remaining);
+            }
+        }
+        $lines[] = 'للاطلاع على الفاتورة (PDF): ' . $link;
+        $lines[] = 'شكراً لتعاملكم مع ' . $company->name;
+
+        return $this->redirect(\app\components\WhatsappHelper::waUrl($phone, implode("\n", $lines)));
+    }
+
+    /** ملف PDF الفاتورة للزبون عبر رابط موقَّع ينتهي بعد 30 يوماً. بلا تسجيل دخول وبلا أي سعر تكلفة */
+    public function actionInvoicePdf($id, $exp, $sig)
+    {
+        if (!\app\components\WhatsappHelper::verify($id, $exp, $sig)) {
+            throw new NotFoundHttpException('الرابط غير صالح أو انتهت صلاحيته.');
+        }
+        $model = Sales::findOne((int) $id);
+        if ($model === null) {
+            throw new NotFoundHttpException('الفاتورة غير موجودة.');
+        }
+
+        $lines = (new Query())
+            ->select(['c.name', 'd.quantity', 'd.salePrice'])
+            ->from(['d' => 'salesDetails'])
+            ->innerJoin(['c' => 'category'], 'c.id = d.category')
+            ->where(['d.salesId' => $model->id])->orderBy('d.id')->all();
+
+        $content = $this->renderPartial('pdfPublic', [
+            'model' => $model,
+            'lines' => $lines,
+            'company' => CompanyInfo::find()->one(),
+            'client' => Client::findOne($model->clinet),
+            'balance' => ((int) $model->payWay === 1) ? (float) Dept::find()->where(['id' => $model->clinet])->sum('credt') : null,
+        ]);
+
+        Yii::$app->response->format = Response::FORMAT_RAW;
+        Yii::$app->response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+
+        $pdf = new Pdf([
+            'mode' => Pdf::MODE_UTF8,
+            'format' => Pdf::FORMAT_A4,
+            'orientation' => Pdf::ORIENT_PORTRAIT,
+            'destination' => Pdf::DEST_BROWSER,
+            'filename' => 'invoice-' . (int) $model->billId . '.pdf',
+            'content' => $content,
+            'defaultFont' => 'Sans-serif',
+            'options' => ['title' => 'فاتورة رقم ' . (int) $model->billId, 'autoScriptToLang' => true, 'autoLangToFont' => true],
+        ]);
+        return $pdf->render();
     }
 
     public function actionDeserving()

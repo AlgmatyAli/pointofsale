@@ -86,6 +86,14 @@ if (in_array($model->type, [1, 3, 4])) {
             ['class' => 'btn btn-info']
         ) ?>
 
+        <?php
+        // Html::a(
+        //     '<i class="bi bi-whatsapp"></i> إرسال واتساب',
+        //     ['whatsapp', 'id' => $model->id],
+        //     ['class' => 'btn btn-success', 'target' => '_blank', 'rel' => 'noopener']
+        // ) 
+        ?>
+
         <?= Html::a(
             '<i class="bi bi-file-earmark-pdf"></i> ' . Yii::t('app', 'Save AS PDF'),
             ['save-pdf', 'id' => $model->id],
