@@ -106,6 +106,8 @@ $config = [
         ],
 
         'assetManager' => [
+            // يضيف ?v=وقت التعديل لروابط css/js حتى يعمل كاش المتصفح دون أن تبقى نسخة قديمة بعد أي تعديل
+            'appendTimestamp' => true,
             'bundles' => [
                 'yii\bootstrap\BootstrapAsset'       => ['css' => []],
                 'yii\bootstrap\BootstrapPluginAsset' => ['js'  => []],
