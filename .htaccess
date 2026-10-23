@@ -1,0 +1,16 @@
+# حماية مجلد المشروع: لا يُسمح من المتصفح إلا بمجلد web/ وملف index.php الذي يحوّل إليه.
+# بدون هذا الملف يمكن لأي جهاز على الشبكة تنزيل .env و .git وسجلات runtime وملفات الإعدادات.
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(index\.php)?$ - [L]
+    RewriteRule ^web(/|$) - [L]
+    RewriteRule ^ - [F]
+</IfModule>
+
+<IfModule !mod_rewrite.c>
+    <FilesMatch "^\.|\.(env|log|json|lock|yml|md|MD|zip|bat|sql|data|ser)$|^(yii|error_log)$">
+        Require all denied
+    </FilesMatch>
+</IfModule>

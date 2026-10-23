@@ -135,7 +135,7 @@ if (in_array($model->type, [1, 3, 4])) {
 
     <?= Html::a(
         Yii::t('app', 'Cancel'),
-        Yii::$app->request->referrer ?: ['index'],
+        ['/site/index'], // الخروج من الطباعة يرجع للرئيسية دائماً
         ['class' => 'btn btn-warning']
     ) ?>
 </div>
@@ -297,7 +297,7 @@ if (in_array($model->type, [1, 3, 4])) {
                         <span>الشروط والأحكام:</span>
                         <?php // الشروط تُخزَّن كنص منسّق من إعدادات الشركة (يحررها المدير فقط) فتُطبع كما هي 
                         ?>
-                        <?= $company->terms ?>
+                        <?= \yii\helpers\HtmlPurifier::process((string) $company->terms) ?>
                     </div>
                 </div>
             </section>

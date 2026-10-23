@@ -33,12 +33,12 @@ use yii\helpers\Html;
        <tbody>
           <tr>
            <td><?=$count++?></td>
-           <td><?= $user->id ?></td>
-           <td><?= $user->username?></td>
-           <td><?= $user->phone?></td>
-           <td><?= $user->email?></td>
-           <td><?= $user->createedDate?></td>
-           <td><?= $user->isActive?></td>
+           <td><?= \yii\helpers\Html::encode($user->id) ?></td>
+           <td><?= \yii\helpers\Html::encode($user->username)?></td>
+           <td><?= \yii\helpers\Html::encode($user->phone)?></td>
+           <td><?= \yii\helpers\Html::encode($user->email)?></td>
+           <td><?= \yii\helpers\Html::encode($user->createedDate)?></td>
+           <td><?= \yii\helpers\Html::encode($user->isActive)?></td>
           </tr>
        </tbody>
        <?php endforeach; ?>

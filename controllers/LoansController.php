@@ -178,11 +178,11 @@ class LoansController extends Controller
     {
         $sql = "SELECT loanValue, kestValue 
         FROM `loans` 
-        where loans.status = 0 and loans.employee = " . $employee . "
+        where loans.status = 0 and loans.employee = :p1
         ORDER BY `loans`.`id` DESC LIMIT 1";
 
         $connection = Yii::$app->db;
-        $data = $connection->createCommand($sql);
+        $data = $connection->createCommand($sql, [':p1' => $employee]);
         $info = $data->queryAll();
         if ($info == null) {
             die("Sorry no thing to preview");

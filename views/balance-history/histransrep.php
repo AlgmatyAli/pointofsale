@@ -35,9 +35,9 @@ foreach ($models as $model) {
 
     <?php $title = CompanyInfo::find()->select(['*'])->asArray()->one(); ?>
 
-    <img src=<?php echo $title["path"] ?> class="img-circle logo" alt="Cinque Terre">
+    <img src=<?php echo \yii\helpers\Html::encode($title["path"]) ?> class="img-circle logo" alt="Cinque Terre">
     <h4><br><?php
-            echo  $title['name'];
+            echo  \yii\helpers\Html::encode($title['name']);
             echo '<br><br><br>';
             ?> </h4>
 
@@ -113,7 +113,7 @@ foreach ($models as $model) {
                     <tbody>
                       <tr>
                         <td><?= $coun++ ?></td>
-                        <td><?= $model["trandate"] ?></td>
+                        <td><?= \yii\helpers\Html::encode($model["trandate"]) ?></td>
                         <td><?= $model["kind"] . ' ' . $model["BillId"] ?></td>
                         <td>
                           <?php echo number_format($model["sader"], 3) . "\n"; ?>

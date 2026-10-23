@@ -40,7 +40,7 @@ $this->title = Yii::t('app', 'Users');
                     'label' => Yii::t('app', 'Permission'),
                     'format' => 'raw',
                     'value' => function ($data) {
-                        return $data->auth->name;
+                        return \yii\helpers\Html::encode($data->auth->name);
                     }
                 ],
 
@@ -48,7 +48,7 @@ $this->title = Yii::t('app', 'Users');
                     'label' => Yii::t('app', 'Br ID'),
                     'format' => 'raw',
                     'value' => function ($data) {
-                        return $data->br->name;
+                        return \yii\helpers\Html::encode($data->br->name);
                     }
                 ],
 

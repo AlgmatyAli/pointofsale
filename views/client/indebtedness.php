@@ -54,7 +54,7 @@ $kindId = Html::getInputId($model, 'indebtedness');
                         <?= Html::radio($model->formName() . '[indebtedness]', $now === (string) $val, [
                             'value' => $val, 'id' => $kindId . '-' . $val, 'class' => 'btn-check', 'autocomplete' => 'off', 'label' => null,
                         ]) ?>
-                        <label class="btn <?= $k[2] ?>" for="<?= $kindId . '-' . $val ?>"><i class="bi <?= $k[1] ?>"></i> <?= Html::encode($k[0]) ?></label>
+                        <label class="btn <?= \yii\helpers\Html::encode($k[2]) ?>" for="<?= $kindId . '-' . $val ?>"><i class="bi <?= \yii\helpers\Html::encode($k[1]) ?>"></i> <?= Html::encode($k[0]) ?></label>
                     <?php endforeach; ?>
                 </div>
                 <?= Html::error($model, 'indebtedness', $errCfg) ?>

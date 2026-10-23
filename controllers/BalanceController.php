@@ -29,7 +29,7 @@ class BalanceController extends Controller
                     [
                         'allow' => true,
                         'actions' => ['index', 'view', 'create', 'update', 'delete'],
-                        'roles' => ['@']
+                        'roles' => ['clientDepts']
                     ],
                     [
                         'allow' => false

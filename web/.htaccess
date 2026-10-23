@@ -2,3 +2,9 @@ RewriteEngine on
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule . index.php [L]
+
+# لا عرض لقوائم الملفات، ولا وصول لملفات السجلات أو الملفات المخفية
+Options -Indexes
+<FilesMatch "^\.|^error_log$|\.log$">
+    Require all denied
+</FilesMatch>

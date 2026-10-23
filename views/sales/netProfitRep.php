@@ -20,9 +20,9 @@ use app\models\CompanyInfo;
    
    <?php $title = CompanyInfo::find()->select(['*'])->asArray()->one();?>
 
-    <img src=<?php echo $title["path"]?> class="img-circle logo" alt="Cinque Terre">
+    <img src=<?php echo \yii\helpers\Html::encode($title["path"])?> class="img-circle logo" alt="Cinque Terre">
     <h4><?php
-     echo  $title['name'];
+     echo  \yii\helpers\Html::encode($title['name']);
      echo '<br>';
     ?> </h4>
    <br>
@@ -56,7 +56,7 @@ use app\models\CompanyInfo;
        <tbody>
           <tr>
            <td><?= $coun++?></td>
-           <td><?= $model["DESCRIBTION"]?></td>
+           <td><?= \yii\helpers\Html::encode($model["DESCRIBTION"])?></td>
            <td><?= number_format($model["total"], 3)."\n";?></td>
           </tr>
        </tbody>

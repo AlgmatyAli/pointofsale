@@ -75,8 +75,8 @@ CSS);
                                     'autocomplete' => 'off',
                                     'label' => null,
                                 ]) ?>
-                                <label class="btn <?= $t['btn'] ?>" for="<?= $typeId . '-' . $val ?>">
-                                    <i class="bi <?= $t['icon'] ?>"></i> <?= Html::encode($t['label']) ?>
+                                <label class="btn <?= \yii\helpers\Html::encode($t['btn']) ?>" for="<?= $typeId . '-' . $val ?>">
+                                    <i class="bi <?= \yii\helpers\Html::encode($t['icon']) ?>"></i> <?= Html::encode($t['label']) ?>
                                 </label>
                             <?php endforeach; ?>
                         </div>

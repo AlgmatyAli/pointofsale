@@ -342,19 +342,19 @@ JS;
 
                                 $total = $total + $data->salePrice;
                             ?>
-                                <tr id=<?= $data->id ?>>
+                                <tr id=<?= \yii\helpers\Html::encode($data->id) ?>>
                                     
-                                <td><?= $data->id ?></td>
+                                <td><?= \yii\helpers\Html::encode($data->id) ?></td>
 
-                                    <td data-field='name' data-footer-formatter='nameFormatter'><?= $data->category0->name ?></td>
+                                    <td data-field='name' data-footer-formatter='nameFormatter'><?= \yii\helpers\Html::encode($data->category0->name) ?></td>
                                    
-                                    <td><?= $data->category0->serialNo ?></td>
+                                    <td><?= \yii\helpers\Html::encode($data->category0->serialNo) ?></td>
                                    
-                                    <td ><input id='qyt-<?=$data->id?>'  class='form-control' type='number'  min='1' max='100' name='qyt' value=<?=$data->quantity?> onfocusout='updateQyt(this)' /></td>
+                                    <td ><input id='qyt-<?=\yii\helpers\Html::encode($data->id)?>'  class='form-control' type='number'  min='1' max='100' name='qyt' value=<?=\yii\helpers\Html::encode($data->quantity)?> onfocusout='updateQyt(this)' /></td>
                                    
-                                    <td id='saleP-<?=$data->id?>' ><?= $data->salePrice ?></td>
+                                    <td id='saleP-<?=\yii\helpers\Html::encode($data->id)?>' ><?= \yii\helpers\Html::encode($data->salePrice) ?></td>
                                    
-                                    <td id='salePrice-<?=$data->id?>' class='salePrice<?=$data->id?> salePrice' data-field='total' data-footer-formatter='totalFormatter'><?= $data->salePrice  * $data->quantity ?></td>
+                                    <td id='salePrice-<?=\yii\helpers\Html::encode($data->id)?>' class='salePrice<?=\yii\helpers\Html::encode($data->id)?> salePrice' data-field='total' data-footer-formatter='totalFormatter'><?= $data->salePrice  * $data->quantity ?></td>
                                    
                                     <td><button type='button' class='btn btn-danger' onclick='deleteRow(this)'><i class='fa fa-trash' aria-hidden='true'></i></button></td>
 

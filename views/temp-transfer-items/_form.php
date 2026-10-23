@@ -79,7 +79,7 @@ $gridColumns = [
         'label' => Yii::t('app', 'ID'),
         'headerOptions' => ['style' => 'width:10%'],
         'value' => function ($data) {
-            return $data->category;
+            return \yii\helpers\Html::encode($data->category);
         },
     ],
 

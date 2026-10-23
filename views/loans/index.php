@@ -30,7 +30,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => Yii::t('app', 'تاريخ المنح'),
                 'format' => 'raw',
                    'value'=>function($searchModel) { 
-                        return $searchModel->at;
+                        return \yii\helpers\Html::encode($searchModel->at);
                 }
             ],
             [

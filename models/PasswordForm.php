@@ -14,6 +14,7 @@
             return [
                 [['oldpass','newpass','repeatnewpass'],'required'],
                 ['oldpass','findPasswords'],
+                ['newpass','string','min'=>6,'tooShort'=>'كلمة السر الجديدة يجب أن تكون 6 أحرف على الأقل'],
                 ['repeatnewpass','compare','compareAttribute'=>'newpass','message'=>'تأكيد كلمة السر غير مطابق'],
             ];
         }

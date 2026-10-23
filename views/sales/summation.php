@@ -43,9 +43,9 @@ if ($logo !== '' && !preg_match('~^(https?:)?//|^/~', $logo)) {
     </section>
 
     <div class="text-center my-3">
-        <h3>تقرير صافي المبيعات من تاريخ : <b><?= $model['min_date'] ?></b> حتى تاريخ <b><?= $model['max_date'] ?></b></h3>
+        <h3>تقرير صافي المبيعات من تاريخ : <b><?= \yii\helpers\Html::encode($model['min_date']) ?></b> حتى تاريخ <b><?= \yii\helpers\Html::encode($model['max_date']) ?></b></h3>
         <br>
-        <h3>للموظف : <b><?= $model['userInsert']['username'] ?></b> </h3>
+        <h3>للموظف : <b><?= \yii\helpers\Html::encode($model['userInsert']['username']) ?></b> </h3>
     </div>
 
     <div class="clearfix"></div>
@@ -74,7 +74,7 @@ if ($logo !== '' && !preg_match('~^(https?:)?//|^/~', $logo)) {
             <tbody>
                 <tr>
                     <td><?= $coun++ ?></td>
-                    <td><?= $model["DESCRIBTION"] ?></td>
+                    <td><?= \yii\helpers\Html::encode($model["DESCRIBTION"]) ?></td>
                     <td><?= number_format($model["total"], 3) . "\n"; ?></td>
                 </tr>
             </tbody>

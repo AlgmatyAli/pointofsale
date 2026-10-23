@@ -234,3 +234,30 @@ hr {
  * حتى تُطبع الفاتورة (أو أي صفحة) كاملة وبعرض الورقة.
  * لإخفاء أي عنصر آخر عند الطباعة (مثل أزرار الطباعة) أضف له الصنف: no-print
  */
+
+/* ===== تكبير خط Select2 (الأصناف وغيرها) ===== */
+.select2-container .select2-selection,
+.select2-container .select2-selection__rendered,
+.select2-container .select2-search__field,
+.select2-results__option {
+  font-size: 18px !important;
+}
+.select2-container--krajee-bs5 .select2-selection--single {
+  height: calc(2.5rem + 2px);
+  line-height: 1.6;
+}
+.select2-results__option {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+/* ===== لون القائمة الجانبية من company_info.skin ===== */
+.app-sidebar.sidebar-custom {
+  background-color: var(--sidebar-bg) !important;
+}
+.app-sidebar.sidebar-custom .sidebar-brand {
+  background-color: rgba(0, 0, 0, 0.12);
+}
+.app-sidebar.sidebar-custom .sidebar-menu .nav-link.active {
+  background-color: rgba(var(--bs-emphasis-color-rgb), 0.15) !important;
+}

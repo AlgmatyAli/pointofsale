@@ -115,11 +115,11 @@ class InventoryController extends Controller
         where inventory.id not in (select category from arrangementDetails, arrangement 
         where arrangement.id = arrangementDetails.arrangement 
         and arrangementDetails.stockTaking = 1
-        and DATE_FORMAT(arrangement.at, '%Y') = " . $model->at . " ) 
+        and DATE_FORMAT(arrangement.at, '%Y') = :p1 ) 
         GROUP by id HAVING sum(inventory.quantity) <> 0";
 
             $connection = Yii::$app->db;
-            $data = $connection->createCommand($sql);
+            $data = $connection->createCommand($sql, [':p1' => $model->at]);
             $info = $data->queryAll();
             if ($info == null) {
                 echo '<script type="text/javascript"> 

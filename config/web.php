@@ -3,6 +3,11 @@
 $params = require __DIR__ . '/params.php';
 $db = require __DIR__ . '/db.php';
 
+// الكوكيز تُعلَّم Secure فقط عند الاتصال عبر HTTPS؛ على HTTP العادي (مثل http://192.168.x.x)
+// لو كانت Secure لما أرسلها المتصفح ولتعطّل تسجيل الدخول.
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || (($_SERVER['SERVER_PORT'] ?? null) == 443);
+
 $config = [
     'id' => 'basic',
     'name' => 'نظام نقاط البيع - Jupiter',
@@ -30,7 +35,7 @@ $config = [
             'csrfParam' => '_csrf-frontend',
             'csrfCookie' => [
                 'httpOnly' => true,
-                'secure' => !YII_ENV_DEV,
+                'secure' => $isHttps,
                 'sameSite' => yii\web\Cookie::SAME_SITE_LAX,
             ],
             'parsers' => [
@@ -52,7 +57,7 @@ $config = [
             'identityCookie' => [
                 'name' => '_identity',
                 'httpOnly' => true,
-                'secure' => !YII_ENV_DEV,
+                'secure' => $isHttps,
                 'sameSite' => yii\web\Cookie::SAME_SITE_LAX,
             ],
         ],
@@ -61,7 +66,7 @@ $config = [
             'name' => 'JUPITERSESSID',
             'cookieParams' => [
                 'httpOnly' => true,
-                'secure' => !YII_ENV_DEV,
+                'secure' => $isHttps,
                 'sameSite' => yii\web\Cookie::SAME_SITE_LAX,
             ],
         ],
@@ -99,6 +104,17 @@ $config = [
     ],
 
     'params' => $params,
+
+    // حماية عامة: أي صفحة في النظام تتطلب تسجيل الدخول، ما عدا صفحات الدخول والأخطاء
+    // ورابط الفاتورة العام الموقَّع (sales/invoice-pdf) الذي يتحقق من التوقيع بنفسه.
+    // الصلاحيات التفصيلية (RBAC) تبقى في behaviors() داخل كل Controller.
+    'as access' => [
+        'class' => \yii\filters\AccessControl::class,
+        'except' => ['site/login', 'site/error', 'site/captcha', 'sales/invoice-pdf', 'debug/*', 'gii/*'],
+        'rules' => [
+            ['allow' => true, 'roles' => ['@']],
+        ],
+    ],
 ];
 
 if (YII_ENV_DEV) {
@@ -106,15 +122,15 @@ if (YII_ENV_DEV) {
     $config['bootstrap'][] = 'debug';
     $config['modules']['debug'] = [
         'class' => 'yii\debug\Module',
-        // uncomment the following to add your IP if you are not connecting from localhost.
-        //'allowedIPs' => ['127.0.0.1', '::1'],
+        // مسموح فقط من نفس الجهاز
+        'allowedIPs' => ['127.0.0.1', '::1'],
     ];
 
     $config['bootstrap'][] = 'gii';
     $config['modules']['gii'] = [
         'class' => 'yii\gii\Module',
-        // uncomment the following to add your IP if you are not connecting from localhost.
-        //'allowedIPs' => ['127.0.0.1', '::1'],
+        // مسموح فقط من نفس الجهاز
+        'allowedIPs' => ['127.0.0.1', '::1'],
     ];
 }
 

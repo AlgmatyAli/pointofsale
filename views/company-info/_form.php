@@ -108,16 +108,16 @@ $switch = function ($model, string $attribute, string $hint = '') {
                             <?= $form->field($model, $criteriaAttr)->textInput(['maxlength' => true])->label('قيمة البحث') ?>
                         </div>
                         <div class="col-md-6">
-                            <?= $form->field($model, 'skin')->dropDownList([
-                                'skin-blue' => 'skin-blue',
-                                'skin-blue-light' => 'skin-blue-light',
-                                'skin-yellow' => 'skin-yellow',
-                                'skin-yellow-light' => 'skin-yellow-light',
-                                'skin-green' => 'skin-green',
-                                'skin-green-light' => 'skin-green-light',
-                                'skin-red' => 'skin-red',
-                                'skin-red-light' => 'skin-red-light',
-                            ], ['prompt' => 'اختيار لون الخلفية']) ?>
+                            <?= $form->field($model, 'skin')->dropDownList(
+                                array_map(fn($skin) => $skin[0], $model::SKINS),
+                                [
+                                    'prompt' => 'اللون الافتراضي',
+                                    'options' => array_map(
+                                        fn($skin) => ['style' => "background-color: {$skin[1]}; color: " . (in_array($skin[1], ['#ffc107', '#0dcaf0', '#f8f9fa']) ? '#000' : '#fff')],
+                                        $model::SKINS
+                                    ),
+                                ]
+                            )->label('لون القائمة الجانبية') ?>
                         </div>
                     </div>
                 </div>

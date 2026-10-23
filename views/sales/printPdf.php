@@ -14,9 +14,9 @@ use app\models\CompanyInfo;
      <?php $title = CompanyInfo::find()->select(['*'])->asArray()->one();?>
      <img src=<?php //echo $title["path"]?> class="img-circle logo" alt="Cinque Terre">
      <h3><?php
-      echo  $title['name'];
+      echo  \yii\helpers\Html::encode($title['name']);
       echo '<br>';
-      echo  $title['work'];
+      echo  \yii\helpers\Html::encode($title['work']);
       echo '<br>';
       ?> </h3>
     <center>
@@ -42,9 +42,9 @@ use app\models\CompanyInfo;
 
                  <tbody>
                     <tr>
-                     <td><?=$model["billId"]?></td>
-                     <td><?=$model["client"]?></td>
-                     <td><?=$model["at"]?></td>
+                     <td><?=\yii\helpers\Html::encode($model["billId"])?></td>
+                     <td><?=\yii\helpers\Html::encode($model["client"])?></td>
+                     <td><?=\yii\helpers\Html::encode($model["at"])?></td>
                      <td><?php
                         if ($model["payWay"] == '0') {
                            echo 'نقدا';
@@ -88,10 +88,10 @@ use app\models\CompanyInfo;
        <tbody> 
           <tr>
            <td><?= $coun++?></td>
-           <td><?= $data["category"] ?></td>
-           <td><?= $data["company"] ?></td>
-           <td><?= $data["quantity"] ?></td>
-           <td><?= $data["salePrice"] ?></td>
+           <td><?= \yii\helpers\Html::encode($data["category"]) ?></td>
+           <td><?= \yii\helpers\Html::encode($data["company"]) ?></td>
+           <td><?= \yii\helpers\Html::encode($data["quantity"]) ?></td>
+           <td><?= \yii\helpers\Html::encode($data["salePrice"]) ?></td>
            <td><?= number_format($data["quantity"]*$data["salePrice"], 3)."\n";  ?></td>
            <?php $sumquantity++ ?>
           </tr>
@@ -103,19 +103,19 @@ use app\models\CompanyInfo;
             <tr>
               <td style="width:70%;"></td>
               <th>الاجمـــالي</th>
-              <td><?php echo  $model['total']?></td>
+              <td><?php echo  \yii\helpers\Html::encode($model['total'])?></td>
             </tr>
             
             <tr>
               <td style="width:70%;"></td>
               <th>المدفـوع</th>
-              <td><?php echo $model['paid']; ?></td>
+              <td><?php echo \yii\helpers\Html::encode($model['paid']); ?></td>
             </tr>
             
             <tr>
             <td style="width:70%;"></td>
             <th><?= yii::t('app', 'Disscount') ?></th>
-              <td><?php echo $model['disscount'] ?> </td>
+              <td><?php echo \yii\helpers\Html::encode($model['disscount']) ?> </td>
             </tr> 
             
             <tr>

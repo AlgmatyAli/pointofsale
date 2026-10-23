@@ -6,8 +6,14 @@ use yii\helpers\Html;
 /** @var \yii\web\View $this */
 /** @var string $companyName */
 /** @var string $sidebarTheme light|dark */
+/** @var string $sidebarColor كود لون #rrggbb من عمود skin، أو فارغ للون الافتراضي */
+$sidebarColor = $sidebarColor ?? '';
 ?>
-<aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="<?= Html::encode($sidebarTheme) ?>">
+<?= Html::beginTag('aside', [
+    'class' => ['app-sidebar', 'shadow', $sidebarColor ? 'sidebar-custom' : 'bg-body-secondary'],
+    'data-bs-theme' => $sidebarTheme,
+    'style' => $sidebarColor ? ['--sidebar-bg' => $sidebarColor] : [],
+]) ?>
     <div class="sidebar-brand">
         <?= Html::a(
             '<span class="brand-text fw-light">' . Html::encode($companyName) . '</span>',

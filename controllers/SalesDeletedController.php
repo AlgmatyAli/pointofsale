@@ -23,6 +23,22 @@ class SalesDeletedController extends Controller
                     'delete' => ['post'],
                 ],
             ],
+            // كل إجراء يتطلب صلاحية محددة؛ أي إجراء غير مذكور هنا مرفوض تلقائياً
+            'access' => [
+                'class' => \yii\filters\AccessControl::class,
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index', 'view'],
+                        'roles' => ['indexSales'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create', 'update', 'delete', 'add-sales-details-deleted'],
+                        'roles' => ['deleteSales'],
+                    ],
+                ],
+            ],
         ];
     }
 

@@ -60,14 +60,14 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => Yii::t('app', 'C ID'),
                 'format' => 'raw',
                 'value' => function ($data) {
-                    return $data->c->name;
+                    return \yii\helpers\Html::encode($data->c->name);
                 }
             ],
             [
                 'label' => Yii::t('app', 'Phone No.'),
                 'format' => 'raw',
                 'value' => function ($data) {
-                    return $data->c->phone;
+                    return \yii\helpers\Html::encode($data->c->phone);
                 }
             ],
             [ 
@@ -88,7 +88,7 @@ $this->params['breadcrumbs'][] = $this->title;
             'label' => Yii::t('app', 'Br ID'),
             'format' => 'raw',
             'value' => function ($data) {
-                return $data->br->name;
+                return \yii\helpers\Html::encode($data->br->name);
             }
         ],
        

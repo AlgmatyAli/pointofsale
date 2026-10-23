@@ -56,6 +56,15 @@ $this->registerCss(<<<'CSS'
 @media (max-width: 575.98px) {
   .sx-head .btn { flex:1 1 auto; }
 }
+/* .chip-label {
+    font-weight: 700;
+    color: #111;
+}
+.text-bg-success .chip-label,
+.text-bg-danger .chip-label,
+.text-bg-info .chip-label {
+    color: inherit;
+} */
 CSS);
 
 // ---------------------------------------------------------------------------
@@ -97,35 +106,35 @@ $this->registerJs(<<<'JS'
         return w.salesCfg.round ? roundPrice(value) : value;
     }
 
-    // شارة (عنوان: قيمة) بنفس أسلوب شاشة تسوية الجرد؛ الشارات الفارغة تُتجاهل
+   // شارة (عنوان: قيمة) بنفس أسلوب شاشة تسوية الجرد؛ الشارات الفارغة تُتجاهل
     function chip(label, value, cls) {
         if (value === null || value === undefined || value === '') { return ''; }
         return '<span class="badge ' + (cls || 'text-bg-light border') + ' fw-normal">' +
             '<span class="text-body-secondary">' + esc(label) + ':</span> ' + esc(value) + '</span>';
     }
 
-    // شكل الصنف داخل القائمة المنسدلة: الاسم في سطر، وتحته الشارات بترتيب ثابت
-    w.salesFormatProduct = function (product) {
-        if (product.loading) { return esc(product.text); }
+// شكل الصنف داخل القائمة المنسدلة: الاسم في سطر، وتحته الشارات بترتيب ثابت
+w.salesFormatProduct = function (product) {
+    if (product.loading) { return esc(product.text); }
 
-        var markup =
-            '<div class="fw-semibold mb-4">' + esc(product.text) + '</div>' +
-            '<div class="d-flex flex-wrap gap-4">' +
-                chip('التسلسل', product.id) +
-                chip('رقم القطعة', product.serialNo) +
-                chip('رقم القطعة التجاري', product.commCode) +
-                chip('الكمية', product.quantity, 'text-bg-success') +
-                (w.salesCfg.seeCost ? chip('سعر التكلفة', product.costPrice) : '') +
-                chip('سعر البيع', price(product.maxPrice), 'text-bg-danger') +
-                chip('السعر الأدنى', price(product.minPrice)) +
-                chip('المكان', product.place) +
-                chip('الحالة', product.type) +
-                chip('الشركة', product.company) +
-                chip('الفرع', product.BRNAME, 'text-bg-info') +
-            '</div>';
+    var markup =
+                    '<div class="fw-semibold mb-4">' + esc(product.text) + '</div>' +
+        '<div class="d-flex flex-wrap gap-4">' +
+            chip('التسلسل', product.id) +
+            chip('رقم القطعة', product.serialNo) +
+            chip('رقم القطعة التجاري', product.commCode) +
+            chip('الكمية', product.quantity, 'text-bg-success') +
+            (w.salesCfg.seeCost ? chip('سعر التكلفة', product.costPrice) : '') +
+            chip('سعر البيع', price(product.maxPrice), 'text-bg-danger') +
+            chip('السعر الأدنى', price(product.minPrice)) +
+            chip('المكان', product.place) +
+            chip('الحالة', product.type) +
+            chip('الشركة', product.company, 'text-bg-warning') +
+            chip('الفرع', product.BRNAME, 'text-bg-info') +
+        '</div>';
 
-        return '<div style="overflow:hidden;">' + markup + '</div>';
-    };
+    return '<div style="overflow:hidden;">' + markup + '</div>';
+};
 
     w.salesFormatSelection = function (product) {
         return esc(product.name || product.text);
@@ -207,7 +216,8 @@ $select2Options = static function (string $id, string $route): array {
             ['value' => Url::to(['holded']), 'class' => 'btn btn-sm btn-outline-warning popup']
         ) ?>
 
-        <?php // التعليق يغيّر البيانات فيُرسل POST ?>
+        <?php // التعليق يغيّر البيانات فيُرسل POST 
+        ?>
         <?= Html::a(
             '<i class="bi bi-pause-circle"></i> ' . Yii::t('app', 'Hold'),
             ['hold'],
@@ -285,12 +295,14 @@ $select2Options = static function (string $id, string $route): array {
                 'options' => ['class' => 'search-form'],
             ]); ?>
 
-            <div class="row g-2">
-                <div class="<?= $searchById ? 'col-lg-7' : 'col-12' ?>">
+            <div class="row g-1">
+                <div class="<?= $searchById ? 'col-lg-12' : 'col-12' ?>">
                     <?= $form->field($model, 'kind')->widget(Select2::class, $select2Options('kind', '/sales/itemlist')) ?>
                 </div>
+            </div>
+            <div class="row g-1">
                 <?php if ($searchById): ?>
-                    <div class="col-lg-5">
+                    <div class="col-lg-12">
                         <?= $form->field($model, 'cat')->widget(Select2::class, $select2Options('cat', '/sales/itemlistid')) ?>
                     </div>
                 <?php endif; ?>

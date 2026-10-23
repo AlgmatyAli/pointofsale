@@ -21,24 +21,24 @@ use kartik\grid\GridView;
       
         <section id="memo">
           <div class="logo">
-            <img src=<?php echo $title["path"]?> class="logo" alt="Cinque Terre">
+            <img src=<?php echo \yii\helpers\Html::encode($title["path"])?> class="logo" alt="Cinque Terre">
           </div>
           <br><br>
           
           <div class="company-info">
-            <span class="company-name"><?php echo $title["name"]?> </span>
+            <span class="company-name"><?php echo \yii\helpers\Html::encode($title["name"])?> </span>
 
             <span class="spacer"></span>
-            <span class="company-name1"><?php echo $title["work"]?> </span>
+            <span class="company-name1"><?php echo \yii\helpers\Html::encode($title["work"])?> </span>
             
             <span class="spacer"></span>
             <div></div>
-            <div><?php echo $title["address"]?> </div>
+            <div><?php echo \yii\helpers\Html::encode($title["address"])?> </div>
             
             <span class="clearfix"></span>
 
-            <div><?php echo $title["phone1"]?> |</div>
-            <div><?php echo $title["phone2"]?> </div>
+            <div><?php echo \yii\helpers\Html::encode($title["phone1"])?> |</div>
+            <div><?php echo \yii\helpers\Html::encode($title["phone2"])?> </div>
           </div>
 
         </section>

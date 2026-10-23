@@ -52,7 +52,7 @@ $payWayText = ['0' => 'نقدا', '1' => 'آجل', '2' => 'دفعة على ال�
 
     <?= Html::a(
         Yii::t('app', 'Cancel'),
-        Yii::$app->request->referrer ?: ['index'],
+        ['/site/index'], // الخروج من الطباعة يرجع للرئيسية دائماً
         ['class' => 'btn btn-warning']
     ) ?>
 </div>
@@ -166,7 +166,7 @@ $payWayText = ['0' => 'نقدا', '1' => 'آجل', '2' => 'دفعة على ال�
                 <div class="row">
                     <div class="col-md-12">
                         <span>الشروط والأحكام:</span>
-                        <div><?= $company->terms ?? '' ?></div>
+                        <div><?= \yii\helpers\HtmlPurifier::process((string) ($company->terms ?? '')) ?></div>
                     </div>
                 </div>
             </section>

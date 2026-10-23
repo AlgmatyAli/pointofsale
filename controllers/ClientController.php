@@ -252,7 +252,7 @@ class ClientController extends Controller
                 $model->type = '0,2';
                 $sql = " SELECT dept.id, dept.type as type, MAX(dept.name) as name, SUM(dept.credt) as credt, 
                 MAX(dept.Phone) as phone, max(dept.deserving) as deserving, max(post_paid) as post_paid FROM dept
-                where dept.Type in(" . $model->type . ")  and dept.currency in( 0, " . $model->currency . ")
+                where dept.Type in(" . \app\components\SqlSafe::intList($model->type) . ")  and dept.currency in( 0, " . \app\components\SqlSafe::intList($model->currency) . ")
                 GROUP BY dept.id, dept.type having SUM(dept.credt)<>0";
                 $connection = Yii::$app->db;
                 $model = $connection->createCommand($sql);
@@ -273,7 +273,7 @@ class ClientController extends Controller
                 $model->type = '1';
                 $sql = " SELECT dept_supp.id, dept_supp.type as type, MAX(dept_supp.name) as name,  SUM(dept_supp.credt) as credt,
                 MAX(dept_supp.Phone) as phone, '1' as post_paid FROM dept_supp
-                where dept_supp.Type in(" . $model->type . ") and dept_supp.currency in( 0, " . $model->currency . ")
+                where dept_supp.Type in(" . \app\components\SqlSafe::intList($model->type) . ") and dept_supp.currency in( 0, " . \app\components\SqlSafe::intList($model->currency) . ")
                 GROUP BY dept_supp.id, dept_supp.type having SUM(dept_supp.credt)<>0";
                 $connection = Yii::$app->db;
                 $model = $connection->createCommand($sql);
@@ -545,7 +545,7 @@ class ClientController extends Controller
                 $model->type = '0,2';
                 $sql = " SELECT dept.id, dept.type as type, MAX(dept.name) as name, SUM(dept.credt) as credt, 
                 MAX(dept.Phone) as phone, max(dept.deserving) as deserving, max(post_paid) as post_paid FROM dept
-                where dept.Type in(" . $model->type . ")  and dept.currency in( 0, " . $model->currency . ")
+                where dept.Type in(" . \app\components\SqlSafe::intList($model->type) . ")  and dept.currency in( 0, " . \app\components\SqlSafe::intList($model->currency) . ")
                 GROUP BY dept.id, dept.type having SUM(dept.credt) > 0";
                 $connection = Yii::$app->db;
                 $model = $connection->createCommand($sql);
@@ -567,7 +567,7 @@ class ClientController extends Controller
                 $model->type = '0,2';
                 $sql = " SELECT dept.id, dept.type as type, MAX(dept.name) as name, SUM(dept.credt) as credt, 
                 MAX(dept.Phone) as phone, max(dept.deserving) as deserving, max(post_paid) as post_paid FROM dept
-                where dept.Type in(" . $model->type . ")  and dept.currency in( 0, " . $model->currency . ")
+                where dept.Type in(" . \app\components\SqlSafe::intList($model->type) . ")  and dept.currency in( 0, " . \app\components\SqlSafe::intList($model->currency) . ")
                 GROUP BY dept.id, dept.type having SUM(dept.credt) < 0";
                 $connection = Yii::$app->db;
                 $model = $connection->createCommand($sql);

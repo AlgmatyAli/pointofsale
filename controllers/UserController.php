@@ -259,8 +259,12 @@ class UserController extends Controller
     public function actionUpdate($id)
     {
         $model = $this->findModel($id);
+        $oldPassword = $model->password;
 
         if ($model->load(Yii::$app->request->post())) {
+            // كلمة المرور لا تتغير من هذه الشاشة (تتغير فقط من شاشة تغيير كلمة المرور)،
+            // حتى لا يُرسل أحد حقل password يدوياً فيضع قيمة غير مشفّرة أو md5 يعرفها.
+            $model->password = $oldPassword;
             $path = "img/users";
             if (!is_dir($path)) {
                 mkdir($path);

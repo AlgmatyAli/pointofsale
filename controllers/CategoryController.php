@@ -156,7 +156,7 @@ class CategoryController extends Controller
             $model->file = UploadedFile::getInstance($model, 'file');
             if ($model->file != null) {
                 $ext = substr(strrchr($model->file, '.'), 1);
-                if ($ext != null) {
+                if ($ext != null && \app\components\UploadGuard::isAllowed($model->file, \app\components\UploadGuard::IMAGE)) {
                     $uniqid = uniqid();
                     $model->file->saveAs($path . '/' . $uniqid . '.' . $model->file->extension);
                     $model->path = $path . '/' . $uniqid . '.' . $model->file->extension;
@@ -220,7 +220,7 @@ class CategoryController extends Controller
             $model->file = UploadedFile::getInstance($model, 'file');
             if ($model->file != null) {
                 $ext = substr(strrchr($model->file, '.'), 1);
-                if ($ext != null) {
+                if ($ext != null && \app\components\UploadGuard::isAllowed($model->file, \app\components\UploadGuard::IMAGE)) {
                     $uniqid = uniqid();
                     $model->file->saveAs($path . '/' . $uniqid . '.' . $model->file->extension);
                     $model->path = $path . '/' . $uniqid . '.' . $model->file->extension;
@@ -357,11 +357,11 @@ class CategoryController extends Controller
                 $sqlSum = " SELECT
                 sum(category_histrans.quantity) as quantity
                 FROM category_histrans
-                where category_histrans.clientId in ( " . Yii::$app->user->identity->client . " )
-                and category_histrans.id = " . $category->id . "
-                and category_histrans.tranDate < '" . $model->min_date . "'  ";
+                where category_histrans.clientId in ( " . \app\components\SqlSafe::intList(Yii::$app->user->identity->client) . " )
+                and category_histrans.id = :p2
+                and category_histrans.tranDate < :p1  ";
                 $connection = Yii::$app->db;
-                $data = $connection->createCommand($sqlSum);
+                $data = $connection->createCommand($sqlSum, [':p1' => $model->min_date, ':p2' => $category->id]);
                 $lastBalance = $data->queryAll();
 
                 $sql = " SELECT category_histrans.kind_id, category_histrans.id, category_histrans.printId,
@@ -371,13 +371,13 @@ class CategoryController extends Controller
                  category_histrans.trandate as trandate, category_histrans.billId as billId
                 , category_histrans.deleviried as deleviried
                 FROM category_histrans, branches
-                where category_histrans.branch = branches.id and category_histrans.id = " . $category->id . "
-                and category_histrans.trandate  between '" . $model->min_date . "' and '" . $model->max_date . "'
-                and category_histrans.clientId in ( " . Yii::$app->user->identity->client . ")
+                where category_histrans.branch = branches.id and category_histrans.id = :p3
+                and category_histrans.trandate  between :p1 and :p2
+                and category_histrans.clientId in ( " . \app\components\SqlSafe::intList(Yii::$app->user->identity->client) . ")
                 order by category_histrans.trandate, category_histrans.kind_id
                 ";
                 $connection = Yii::$app->db;
-                $data = $connection->createCommand($sql);
+                $data = $connection->createCommand($sql, [':p1' => $model->min_date, ':p2' => $model->max_date, ':p3' => $category->id]);
                 $info = $data->queryAll();
                 if ($info == null) {
                     echo '<script type="text/javascript">
@@ -389,10 +389,10 @@ class CategoryController extends Controller
                 $sqlSum = " SELECT
             sum(category_histrans.quantity) as quantity
             FROM category_histrans
-            where category_histrans.id = " . $category->id . "
-            and category_histrans.tranDate < '" . $model->min_date . "'  ";
+            where category_histrans.id = :p2
+            and category_histrans.tranDate < :p1  ";
                 $connection = \Yii::$app->db;
-                $data = $connection->createCommand($sqlSum);
+                $data = $connection->createCommand($sqlSum, [':p1' => $model->min_date, ':p2' => $category->id]);
                 $lastBalance = $data->queryAll();
 
                 $sql = " SELECT category_histrans.kind_id, category_histrans.id, category_histrans.printId,
@@ -402,12 +402,12 @@ class CategoryController extends Controller
              category_histrans.billId as billId
             , category_histrans.deleviried as deleviried
             FROM category_histrans, branches
-            where category_histrans.branch = branches.id and category_histrans.id = " . $category->id . "
-            and category_histrans.trandate  between '" . $model->min_date . "' and '" . $model->max_date . "'
+            where category_histrans.branch = branches.id and category_histrans.id = :p3
+            and category_histrans.trandate  between :p1 and :p2
             order by category_histrans.trandate, category_histrans.kind_id
             ";
                 $connection = Yii::$app->db;
-                $data = $connection->createCommand($sql);
+                $data = $connection->createCommand($sql, [':p1' => $model->min_date, ':p2' => $model->max_date, ':p3' => $category->id]);
                 $info = $data->queryAll();
                 if ($info == null) {
                     echo '<script type="text/javascript">
@@ -455,6 +455,10 @@ class CategoryController extends Controller
                 $path = "img/upload";
             }
             $model->file = UploadedFile::getInstance($model, 'file');
+            // يُقبل ملف Excel فقط؛ أي نوع آخر يُرفض قبل حفظه على القرص
+            if (!\app\components\UploadGuard::isAllowed($model->file, \app\components\UploadGuard::EXCEL, 10485760)) {
+                return $this->redirect(['upload']);
+            }
             $ext = substr(strrchr($model->file, '.'), 1);
             if ($ext != null) {
                 $uniqid = uniqid();
@@ -722,12 +726,12 @@ class CategoryController extends Controller
                 $sqlSum = " SELECT
                 sum(category_histrans.quantity) as quantity
                 FROM category_histrans
-                where category_histrans.clientId in ( " . Yii::$app->user->identity->client . " )
-                and category_histrans.id = " . $category->id . "
-                and category_histrans.tranDate < '" . $model->min_date . "'  
-                and category_histrans.ClientId = " . $model->client;
+                where category_histrans.clientId in ( " . \app\components\SqlSafe::intList(Yii::$app->user->identity->client) . " )
+                and category_histrans.id = :p2
+                and category_histrans.tranDate < :p1  
+                and category_histrans.ClientId = :p3";
                 $connection = Yii::$app->db;
-                $data = $connection->createCommand($sqlSum);
+                $data = $connection->createCommand($sqlSum, [':p1' => $model->min_date, ':p2' => $category->id, ':p3' => $model->client]);
                 $lastBalance = $data->queryAll();
 
                 $sql = " SELECT category_histrans.kind_id, category_histrans.id, category_histrans.printId,
@@ -737,14 +741,14 @@ class CategoryController extends Controller
                  category_histrans.trandate as trandate, category_histrans.billId as billId
                 , category_histrans.deleviried as deleviried
                 FROM category_histrans, branches
-                where category_histrans.branch = branches.id and category_histrans.id = " . $category->id . "
-                and category_histrans.trandate  between '" . $model->min_date . "' and '" . $model->max_date . "'
-                and category_histrans.tranDate.ClientId = " . $model->client . "
-                and category_histrans.clientId in ( " . Yii::$app->user->identity->client . ")
+                where category_histrans.branch = branches.id and category_histrans.id = :p3
+                and category_histrans.trandate  between :p1 and :p2
+                and category_histrans.tranDate.ClientId = :p4
+                and category_histrans.clientId in ( " . \app\components\SqlSafe::intList(Yii::$app->user->identity->client) . ")
                 order by category_histrans, category_histrans.kind_id
                 ";
                 $connection = Yii::$app->db;
-                $data = $connection->createCommand($sql);
+                $data = $connection->createCommand($sql, [':p1' => $model->min_date, ':p2' => $model->max_date, ':p3' => $category->id, ':p4' => $model->client]);
                 $info = $data->queryAll();
                 if ($info == null) {
                     echo '<script type="text/javascript">
@@ -756,11 +760,11 @@ class CategoryController extends Controller
                 $sqlSum = " SELECT
             sum(category_histrans.quantity) as quantity
             FROM category_histrans
-            where category_histrans.id = " . $category->id . "
-            and category_histrans.tranDate < '" . $model->min_date . "'  
-            and category_histrans.ClientId = " . $model->client;
+            where category_histrans.id = :p2
+            and category_histrans.tranDate < :p1  
+            and category_histrans.ClientId = :p3";
                 $connection = Yii::$app->db;
-                $data = $connection->createCommand($sqlSum);
+                $data = $connection->createCommand($sqlSum, [':p1' => $model->min_date, ':p2' => $category->id, ':p3' => $model->client]);
                 $lastBalance = $data->queryAll();
 
                 $sql = " SELECT category_histrans.kind_id, category_histrans.id, category_histrans.printId,
@@ -770,12 +774,12 @@ class CategoryController extends Controller
              category_histrans.billId as billId
             , category_histrans.deleviried as deleviried
             FROM category_histrans, branches
-            where category_histrans.branch = branches.id and category_histrans.id = " . $category->id . "
-            and category_histrans.trandate  between '" . $model->min_date . "' and '" . $model->max_date . "'
-            and category_histrans.ClientId = " . $model->client . "
+            where category_histrans.branch = branches.id and category_histrans.id = :p3
+            and category_histrans.trandate  between :p1 and :p2
+            and category_histrans.ClientId = :p4
             order by category_histrans.trandate, category_histrans.kind_id";
                 $connection = Yii::$app->db;
-                $data = $connection->createCommand($sql);
+                $data = $connection->createCommand($sql, [':p1' => $model->min_date, ':p2' => $model->max_date, ':p3' => $category->id, ':p4' => $model->client]);
                 $info = $data->queryAll();
                 if ($info == null) {
                     echo '<script type="text/javascript">

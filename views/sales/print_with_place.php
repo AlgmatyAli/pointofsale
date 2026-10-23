@@ -48,7 +48,7 @@ if (in_array($model->type, [1, 3, 4])) {
     </div>
     <?= Html::a(
         Yii::t('app', 'Cancel'),
-        Yii::$app->request->referrer ?: ['index'],
+        ['/site/index'], // الخروج من الطباعة يرجع للرئيسية دائماً
         ['class' => 'btn btn-warning']
     ) ?>
 </div>
@@ -201,7 +201,7 @@ if (in_array($model->type, [1, 3, 4])) {
                 <div class="row">
                     <div class="col-md-12">
                         <span>الشروط والأحكام:</span>
-                        <?= $company->terms ?>
+                        <?= \yii\helpers\HtmlPurifier::process((string) $company->terms) ?>
                     </div>
                 </div>
             </section>

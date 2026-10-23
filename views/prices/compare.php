@@ -24,9 +24,9 @@ use yii\helpers\Url;
    
    <?php $title = CompanyInfo::find()->select(['*'])->asArray()->one();?>
 
-    <img src=<?php echo $title["path"]?> class="img-circle logo" alt="Cinque Terre">
+    <img src=<?php echo \yii\helpers\Html::encode($title["path"])?> class="img-circle logo" alt="Cinque Terre">
     <h4><?php
-     echo  $title['name'];
+     echo  \yii\helpers\Html::encode($title['name']);
      echo '<br>';
     ?> </h4>
    
@@ -60,9 +60,9 @@ use yii\helpers\Url;
        <tbody>
           <tr>
            <td><?= $coun++?></td>
-           <td><?= $model["category"]?></td>
-           <td><?= $model["name"]?></td>
-           <td><?= $model["quantity"]?></td>
+           <td><?= \yii\helpers\Html::encode($model["category"])?></td>
+           <td><?= \yii\helpers\Html::encode($model["name"])?></td>
+           <td><?= \yii\helpers\Html::encode($model["quantity"])?></td>
            <td style="color: red;"><?= number_format($model["costPrice"], 3)."\n" ?></td>
            <td style="color: blue;"><?= number_format($model["maxPrice"], 3)."\n"?></td>
            <td><?=  Html::a('<i class="fa fa-folder-open"></i>', 

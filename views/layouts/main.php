@@ -24,8 +24,14 @@ $company = Yii::$app->cache->getOrSet(
 );
 $companyName = $company['name'] ?? Yii::$app->name;
 
-// قيم skin القديمة في AdminLTE 2 مثل skin-blue-light => شريط جانبي فاتح، وغيرها => داكن
-$sidebarTheme = str_ends_with((string) ($company['skin'] ?? ''), '-light') ? 'light' : 'dark';
+// لون القائمة الجانبية من عمود skin (يُختار من قائمة ألوان Bootstrap في بيانات الشركة)
+$sidebarColor = CompanyInfo::skinColor($company['skin'] ?? null);
+$sidebarTheme = 'dark';
+if ($sidebarColor !== '') {
+    // نص أسود على الخلفية الفاتحة وأبيض على الداكنة
+    [$r, $g, $b] = sscanf($sidebarColor, '#%02x%02x%02x');
+    $sidebarTheme = ($r * 299 + $g * 587 + $b * 114) / 1000 > 150 ? 'light' : 'dark';
+}
 ?>
 <?php $this->beginPage() ?>
 <!DOCTYPE html>
@@ -46,7 +52,11 @@ $sidebarTheme = str_ends_with((string) ($company['skin'] ?? ''), '-light') ? 'li
 
         <?= $this->render('header', ['companyName' => $companyName]) ?>
 
-        <?= $this->render('left', ['companyName' => $companyName, 'sidebarTheme' => $sidebarTheme]) ?>
+        <?= $this->render('left', [
+            'companyName' => $companyName,
+            'sidebarTheme' => $sidebarTheme,
+            'sidebarColor' => $sidebarColor,
+        ]) ?>
 
         <?= $this->render('content', ['content' => $content]) ?>
 

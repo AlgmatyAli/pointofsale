@@ -31,7 +31,7 @@ use yii\widgets\LinkPager;
 <body class="receipt">
 <section class="sheet">
 <div class="fonts">
-<?= $model->name ?>
+<?= \yii\helpers\Html::encode($model->name) ?>
 </div>
 <div id="showBarcode">
 

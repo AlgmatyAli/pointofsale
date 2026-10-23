@@ -29,6 +29,32 @@ class DisscountClientsController extends Controller
                         'delete' => ['POST'],
                     ],
                 ],
+                // كل إجراء يتطلب صلاحية محددة؛ أي إجراء غير مذكور هنا مرفوض تلقائياً
+                'access' => [
+                    'class' => \yii\filters\AccessControl::class,
+                    'rules' => [
+                        [
+                            'allow' => true,
+                            'actions' => ['index', 'index_', 'view'],
+                            'roles' => ['indexReciept'],
+                        ],
+                        [
+                            'allow' => true,
+                            'actions' => ['create-clients', 'create-suppliers', 'view'],
+                            'roles' => ['createReciept'],
+                        ],
+                        [
+                            'allow' => true,
+                            'actions' => ['update', 'view'],
+                            'roles' => ['updateReciept'],
+                        ],
+                        [
+                            'allow' => true,
+                            'actions' => ['delete'],
+                            'roles' => ['deleteReciept'],
+                        ],
+                    ],
+                ],
             ]
         );
     }

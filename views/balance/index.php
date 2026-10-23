@@ -61,21 +61,21 @@ $this->registerJs($search);
             'label' => Yii::t('app', 'الرصيد'),
             'format' => 'raw',
             'value' => function ($data) {
-                return $data->credt;
+                return \yii\helpers\Html::encode($data->credt);
             }
         ],
         [
             'label' => Yii::t('app', 'Phone'),
             'format' => 'raw',
             'value' => function ($data) {
-                return $data->phone;
+                return \yii\helpers\Html::encode($data->phone);
             }
         ],
         [
             'label' => Yii::t('app', 'Currency'),
             'format' => 'raw',
             'value' => function ($data) {
-                return $data->currancy0->name;
+                return \yii\helpers\Html::encode($data->currancy0->name);
             }
         ],
     ];

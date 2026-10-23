@@ -27,6 +27,17 @@ class CurrancyController extends Controller
                         'delete' => ['POST'],
                     ],
                 ],
+                // كل إجراء يتطلب صلاحية محددة؛ أي إجراء غير مذكور هنا مرفوض تلقائياً
+                'access' => [
+                    'class' => \yii\filters\AccessControl::class,
+                    'rules' => [
+                        [
+                            'allow' => true,
+                            'actions' => ['index', 'view', 'create', 'update', 'delete'],
+                            'roles' => ['companyInfo'],
+                        ],
+                    ],
+                ],
             ]
         );
     }

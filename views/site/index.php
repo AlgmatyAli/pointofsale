@@ -113,8 +113,8 @@ CSS);
     <div class="row">
         <?php foreach ($infoBoxes as $b): ?>
             <div class="col-md-4">
-                <div class="info-box text-bg-<?= $b['color'] ?>">
-                    <span class="info-box-icon"><i class="bi <?= $b['icon'] ?>"></i></span>
+                <div class="info-box text-bg-<?= \yii\helpers\Html::encode($b['color']) ?>">
+                    <span class="info-box-icon"><i class="bi <?= \yii\helpers\Html::encode($b['icon']) ?>"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text"><?= Html::encode($b['text']) ?></span>
                         <span class="info-box-number"><?= Html::encode((string) $b['value']) ?></span>

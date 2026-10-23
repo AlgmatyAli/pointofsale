@@ -23,11 +23,11 @@ use app\models\CompanyInfo;
    
    <?php $title = CompanyInfo::find()->select(['*'])->asArray()->one();?>
    
-    <img src=<?php echo $title["path"]?> class="img-circle logo" alt="Cinque Terre">
+    <img src=<?php echo \yii\helpers\Html::encode($title["path"])?> class="img-circle logo" alt="Cinque Terre">
     <br><br>
     <h4>
       <?php
-     echo  $title['name'];
+     echo  \yii\helpers\Html::encode($title['name']);
      echo '<br><br><br><br><br>';
     ?> 
     </h4>
@@ -66,13 +66,13 @@ use app\models\CompanyInfo;
        <tbody>
           <tr>
            <td><?= $count++?></td>
-           <td><?= $model["at"]?></td>
-           <td><?= $model["serialNo"]?></td>
-           <td><?= $model["name"]?></td>
-           <td><?= $model["company"]?></td>
-           <td><?= $model["quantity"]?></td>
-           <td><?= $model["type"]?></td>
-           <td><?= $model["year"]?></td>
+           <td><?= \yii\helpers\Html::encode($model["at"])?></td>
+           <td><?= \yii\helpers\Html::encode($model["serialNo"])?></td>
+           <td><?= \yii\helpers\Html::encode($model["name"])?></td>
+           <td><?= \yii\helpers\Html::encode($model["company"])?></td>
+           <td><?= \yii\helpers\Html::encode($model["quantity"])?></td>
+           <td><?= \yii\helpers\Html::encode($model["type"])?></td>
+           <td><?= \yii\helpers\Html::encode($model["year"])?></td>
            <td></td>
           </tr>
        </tbody>

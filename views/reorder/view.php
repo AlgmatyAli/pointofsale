@@ -39,14 +39,14 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => Yii::t('app', 'Branch'),
                 'format' => 'raw',
                 'value' => function ($data) {
-                    return $data->branch0->name;
+                    return \yii\helpers\Html::encode($data->branch0->name);
                 }
             ],
             [
                 'label' => Yii::t('app', 'User Insert'),
                 'format' => 'raw',
                 'value' => function ($data) {
-                    return $data->createdBy->username;
+                    return \yii\helpers\Html::encode($data->createdBy->username);
                 }
             ],
             'created_at',

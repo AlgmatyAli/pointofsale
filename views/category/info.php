@@ -11,7 +11,7 @@ use yii\helpers\Html;
         <div class="col-md-10">
             <br>
             <h2>
-                <?php echo $modelInfo->category0->name; ?>
+                <?php echo \yii\helpers\Html::encode($modelInfo->category0->name); ?>
             </h2>
             <hr>
         </div>

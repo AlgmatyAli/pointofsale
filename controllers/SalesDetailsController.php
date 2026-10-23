@@ -30,6 +30,32 @@ class SalesDetailsController extends Controller
                     'delete' => ['POST'],
                 ],
             ],
+            // كل إجراء يتطلب صلاحية محددة؛ أي إجراء غير مذكور هنا مرفوض تلقائياً
+            'access' => [
+                'class' => \yii\filters\AccessControl::class,
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index', 'view'],
+                        'roles' => ['indexSales'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create', 'addsale'],
+                        'roles' => ['createSales'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update', 'addsale'],
+                        'roles' => ['updateSales'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete'],
+                        'roles' => ['deleteSales'],
+                    ],
+                ],
+            ],
         ];
     }
 
@@ -135,13 +161,13 @@ class SalesDetailsController extends Controller
         
         $company = CompanyInfo::find()->one();
         if($company->criteriaـvalue != 0) {
-            $criteriaـvalue = $company->criteriaـvalue;
+            $criteriaـvalue = (float) $company->criteriaـvalue; // رقم فقط لأنه يدخل في نص SQL
         }else{
             $criteriaـvalue = 1;
         }
 
         if($company->rate != 0) {
-            $rate = ($company->rate/100) ;
+            $rate = ((float) $company->rate / 100);
             $maxPrice = 'CASE
             WHEN maxPrice >= '. $criteriaـvalue .' THEN round(maxPrice * "' . $rate . '" + maxPrice)
             ELSE maxPrice

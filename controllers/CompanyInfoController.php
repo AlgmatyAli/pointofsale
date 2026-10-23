@@ -121,7 +121,7 @@ class CompanyInfoController extends Controller
                     // $model->file = UploadedFile::getInstance($model,'file');
                     $ext = substr(strrchr($model->file, '.'), 1);
 
-                    if ($ext != null) {
+                    if ($ext != null && \app\components\UploadGuard::isAllowed($model->file, \app\components\UploadGuard::IMAGE)) {
                         $uniqid = uniqid();
                         $model->file->saveAs($path . '/' . $uniqid . '.' . $model->file->extension);
                         $model->path = $path . '/' . $uniqid . '.' . $model->file->extension;
@@ -158,7 +158,7 @@ class CompanyInfoController extends Controller
             if ($model->file != null) {
                 if ($model->file != null) {
                     $ext = substr(strrchr($model->file, '.'), 1);
-                    if ($ext != null) {
+                    if ($ext != null && \app\components\UploadGuard::isAllowed($model->file, \app\components\UploadGuard::IMAGE)) {
                         $uniqid = uniqid();
                         $model->file->saveAs($path . '/' . $uniqid . '.' . $model->file->extension);
                         $model->path = $path . '/' . $uniqid . '.' . $model->file->extension;

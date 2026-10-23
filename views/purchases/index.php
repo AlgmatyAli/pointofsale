@@ -53,28 +53,28 @@ $this->title = Yii::t('app', 'Purchases');
                 'label' => Yii::t('app', 'Bill ID'),
                 'format' => 'raw',
                 'value' => function ($data) {
-                    return $data->billId;
+                    return \yii\helpers\Html::encode($data->billId);
                 }
             ],
             [
                 'label' => Yii::t('app', 'C ID'),
                 'format' => 'raw',
                 'value' => function ($data) {
-                    return $data->c->name;
+                    return \yii\helpers\Html::encode($data->c->name);
                 }
             ],
             [
                 'label' => Yii::t('app', 'Client Bill'),
                 'format' => 'raw',
                 'value' => function ($data) {
-                    return $data->clientBill;
+                    return \yii\helpers\Html::encode($data->clientBill);
                 }
             ],
             [
                 'label' => Yii::t('app', 'At'),
                 'format' => 'raw',
                 'value' => function ($data) {
-                    return $data->at;
+                    return \yii\helpers\Html::encode($data->at);
                 }
             ],
 
@@ -96,7 +96,7 @@ $this->title = Yii::t('app', 'Purchases');
                 'label' => Yii::t('app', 'Payment Type'),
                 'format' => 'raw',
                 'value' => function ($data) {
-                    return $data->paymentType0->name;
+                    return \yii\helpers\Html::encode($data->paymentType0->name);
                 }
             ],
 
@@ -104,7 +104,7 @@ $this->title = Yii::t('app', 'Purchases');
                 'label' => Yii::t('app', 'Br ID'),
                 'format' => 'raw',
                 'value' => function ($data) {
-                    return $data->br->name;
+                    return \yii\helpers\Html::encode($data->br->name);
                 }
             ],
 

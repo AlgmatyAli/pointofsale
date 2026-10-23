@@ -36,7 +36,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => Yii::t('app', 'Custom Name'),
                 'format' => 'raw',
                 'value' => function ($data) {
-                    return $data->custom->name;
+                    return \yii\helpers\Html::encode($data->custom->name);
                 },
                 'filter' => Html::activeDropDownList(
                     $searchModel,
@@ -50,7 +50,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => Yii::t('app', 'القيـمة'),
                 'format' => 'raw',
                 'value' => function ($data) {
-                    return $data->value;
+                    return \yii\helpers\Html::encode($data->value);
                 },
             ],
 
@@ -58,7 +58,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => Yii::t('app', 'اسم العملة'),
                 'format' => 'raw',
                 'value' => function ($data) {
-                    return $data->currancy0->name;
+                    return \yii\helpers\Html::encode($data->currancy0->name);
                 },
             ],
 
@@ -66,7 +66,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => Yii::t('app', 'Custom Name'),
                 'format' => 'raw',
                 'value' => function ($data) {
-                    return $data->custom->name;
+                    return \yii\helpers\Html::encode($data->custom->name);
                 },
                 'filter' => Html::activeDropDownList(
                     $searchModel,

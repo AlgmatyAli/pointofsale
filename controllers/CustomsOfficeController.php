@@ -174,23 +174,23 @@ class CustomsOfficeController extends Controller
             $sqlSum = " SELECT 
             sum(v_customsOffice.value) as wared, sum(v_customsOffice.paid) as sader
             FROM v_customsOffice
-            where v_customsOffice.customsOffice = ".$model->customId." 
-            and v_customsOffice.at < '".$model->min_date."' 
-            and v_customsOffice.currancy = '".$model->currancy."'";
+            where v_customsOffice.customsOffice = :p3 
+            and v_customsOffice.at < :p1 
+            and v_customsOffice.currancy = :p2";
             $connection = Yii::$app->db;
-            $data = $connection->createCommand($sqlSum);
+            $data = $connection->createCommand($sqlSum, [':p1' => $model->min_date, ':p2' => $model->currancy, ':p3' => $model->customId]);
             $lastBalance = $data->queryAll();
 
             $sql = " SELECT a.id, a.customsOffice, a.paid as paid, a.value as value, a.currancy, a.notes, a.at, a.phone, a.name 
             FROM v_customsOffice a
-            where a.customsOffice = ".$model->customId." 
-            and a.at between '".$model->min_date."' and '".$model->max_date."' 
-            and a.currancy = '".$model->currancy."'
+            where a.customsOffice = :p4 
+            and a.at between :p1 and :p2 
+            and a.currancy = :p3
             order by at, id";    
         
 
             $connection = Yii::$app->db;
-            $data = $connection->createCommand($sql);
+            $data = $connection->createCommand($sql, [':p1' => $model->min_date, ':p2' => $model->max_date, ':p3' => $model->currancy, ':p4' => $model->customId]);
             $info = $data->queryAll();
             
             if (count($info) === 0) {

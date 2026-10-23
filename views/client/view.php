@@ -149,7 +149,7 @@ $initial = mb_substr(trim((string) $model->name), 0, 1) ?: '?';
                         <div class="avatar"><?= Html::encode($initial) ?></div>
                         <div>
                             <div class="fs-5 fw-bold"><?= Html::encode($model->name) ?></div>
-                            <span class="badge <?= $t[1] ?>"><i class="bi <?= $t[2] ?>"></i> <?= Html::encode($t[0]) ?></span>
+                            <span class="badge <?= \yii\helpers\Html::encode($t[1]) ?>"><i class="bi <?= \yii\helpers\Html::encode($t[2]) ?>"></i> <?= Html::encode($t[0]) ?></span>
                             <?php if ($model->post_paid): ?>
                                 <span class="badge text-bg-success"><i class="bi bi-clock-history"></i> بيع آجل</span>
                             <?php endif; ?>
@@ -206,10 +206,10 @@ $initial = mb_substr(trim((string) $model->name), 0, 1) ?: '?';
                 <ul class="nav nav-tabs card-header-tabs" role="tablist">
                     <?php foreach ($sections as $i => $s): ?>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link<?= $i === 0 ? ' active' : '' ?>" id="tab-<?= $s['id'] ?>" data-bs-toggle="tab"
-                                    data-bs-target="#pane-<?= $s['id'] ?>" type="button" role="tab"
-                                    aria-controls="pane-<?= $s['id'] ?>" aria-selected="<?= $i === 0 ? 'true' : 'false' ?>">
-                                <i class="bi <?= $s['icon'] ?>"></i> <?= Html::encode($s['title']) ?>
+                            <button class="nav-link<?= $i === 0 ? ' active' : '' ?>" id="tab-<?= \yii\helpers\Html::encode($s['id']) ?>" data-bs-toggle="tab"
+                                    data-bs-target="#pane-<?= \yii\helpers\Html::encode($s['id']) ?>" type="button" role="tab"
+                                    aria-controls="pane-<?= \yii\helpers\Html::encode($s['id']) ?>" aria-selected="<?= $i === 0 ? 'true' : 'false' ?>">
+                                <i class="bi <?= \yii\helpers\Html::encode($s['icon']) ?>"></i> <?= Html::encode($s['title']) ?>
                                 <span class="badge text-bg-secondary"><?= (int) $s['provider']->totalCount ?></span>
                             </button>
                         </li>
@@ -218,8 +218,8 @@ $initial = mb_substr(trim((string) $model->name), 0, 1) ?: '?';
             </div>
             <div class="card-body tab-content p-2 p-md-3">
                 <?php foreach ($sections as $i => $s): ?>
-                    <div class="tab-pane fade<?= $i === 0 ? ' show active' : '' ?>" id="pane-<?= $s['id'] ?>" role="tabpanel"
-                         aria-labelledby="tab-<?= $s['id'] ?>" tabindex="0">
+                    <div class="tab-pane fade<?= $i === 0 ? ' show active' : '' ?>" id="pane-<?= \yii\helpers\Html::encode($s['id']) ?>" role="tabpanel"
+                         aria-labelledby="tab-<?= \yii\helpers\Html::encode($s['id']) ?>" tabindex="0">
                         <?= GridView::widget([
                             'dataProvider' => $s['provider'],
                             'bsVersion' => '5.x',

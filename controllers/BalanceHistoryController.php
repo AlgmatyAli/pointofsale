@@ -62,23 +62,23 @@ class BalanceHistoryController extends Controller
 
             $sqlSum = " SELECT
             abs(sum(balance_history.dept)) as balance FROM balance_history
-            where balance_history.client_type in(" . $model->client_type . ")
-            and balance_history.clinet = " . $model->clinet . "
-            and currancy !=1 and balance_history.AT < '" . $model->min_date . "'  ";
+            where balance_history.client_type in(" . \app\components\SqlSafe::intList($model->client_type) . ")
+            and balance_history.clinet = :clinet
+            and currancy !=1 and balance_history.AT < :min_date  ";
             $connection = Yii::$app->db;
-            $data = $connection->createCommand($sqlSum);
+            $data = $connection->createCommand($sqlSum, [':clinet' => $model->clinet, ':min_date' => $model->min_date]);
             $lastBalance = $data->queryAll();
 
             $sql = " SELECT balance_history.clinet, balance_history.AT as trandate, balance_history.client_type,
                         balance_history.dept as sader, balance_history.credt as wared, client.name as name, balance_history.kind, balance_history.BillId, balance_history.printId, balance_history.deleviried, balance_history.currancy
         FROM balance_history, client
-        where balance_history.client_type in(" . $model->client_type . ") and balance_history.clinet = " . $model->clinet . "
-        and balance_history.AT between '" . $model->min_date . "' and '" . $model->max_date . "'
+        where balance_history.client_type in(" . \app\components\SqlSafe::intList($model->client_type) . ") and balance_history.clinet = :clinet
+        and balance_history.AT between :min_date and :max_date
         and balance_history.clinet = client.id
         and currancy !=1 
         order by  balance_history.AT, balance_history.clinet";
             $connection = Yii::$app->db;
-            $data = $connection->createCommand($sql);
+            $data = $connection->createCommand($sql, [':clinet' => $model->clinet, ':min_date' => $model->min_date, ':max_date' => $model->max_date]);
             $info = $data->queryAll();
 
             if (count($info) === 0) {

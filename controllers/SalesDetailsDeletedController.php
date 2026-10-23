@@ -28,8 +28,13 @@ class SalesDetailsDeletedController extends Controller
                 'rules' => [
                     [
                         'allow' => true,
-                        'actions' => ['index', 'view', 'create', 'update', 'delete', 'save-as-new'],
-                        'roles' => ['@']
+                        'actions' => ['index', 'view'],
+                        'roles' => ['indexSales']
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create', 'update', 'delete', 'save-as-new'],
+                        'roles' => ['deleteSales']
                     ],
                     [
                         'allow' => false

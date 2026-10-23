@@ -281,7 +281,11 @@ class PricesController extends Controller
                     $minPrice += $diff;
                 }
 
-                Yii::$app->db->createCommand("UPDATE prices SET maxPrice = round(".$maxPrice."), minPrice = round(".$minPrice.") WHERE category = $value->category")->execute();
+                Yii::$app->db->createCommand("UPDATE prices SET maxPrice = round(:maxPrice), minPrice = round(:minPrice) WHERE category = :category", [
+                    ':maxPrice' => (float) $maxPrice,
+                    ':minPrice' => (float) $minPrice,
+                    ':category' => (int) $value->category,
+                ])->execute();
             }
 
             return $this->render('index', [

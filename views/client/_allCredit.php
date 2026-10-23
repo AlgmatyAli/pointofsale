@@ -54,7 +54,7 @@ $types = [
                                 <?= Html::radio($model->formName() . '[type]', $typeNow === (string) $val, [
                                     'value' => $val, 'id' => $typeId . '-' . $val, 'class' => 'btn-check', 'autocomplete' => 'off', 'label' => null,
                                 ]) ?>
-                                <label class="btn <?= $t[2] ?>" for="<?= $typeId . '-' . $val ?>"><i class="bi <?= $t[1] ?>"></i> <?= Html::encode($t[0]) ?></label>
+                                <label class="btn <?= \yii\helpers\Html::encode($t[2]) ?>" for="<?= $typeId . '-' . $val ?>"><i class="bi <?= \yii\helpers\Html::encode($t[1]) ?>"></i> <?= Html::encode($t[0]) ?></label>
                             <?php endforeach; ?>
                         </div>
                         <?= Html::error($model, 'type', $errCfg) ?>

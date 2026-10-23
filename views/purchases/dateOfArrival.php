@@ -20,9 +20,9 @@ use app\models\CompanyInfo;
    
    <?php $title = CompanyInfo::find()->select(['*'])->asArray()->one();?>
 
-    <img src=<?php echo $title["path"]?> class="img-circle logo" alt="Cinque Terre">
+    <img src=<?php echo \yii\helpers\Html::encode($title["path"])?> class="img-circle logo" alt="Cinque Terre">
     <h4><?php
-     echo  $title['name'];
+     echo  \yii\helpers\Html::encode($title['name']);
      echo '<br>';
     ?> </h4>
    
@@ -58,13 +58,13 @@ use app\models\CompanyInfo;
        <tbody>
           <tr>
            <td><?= $coun++?></td>
-           <td><?= $model["id"]?></td>
-           <td><?= $model["clientName"]?></td>
-           <td><?= $model["billId"]?></td>
+           <td><?= \yii\helpers\Html::encode($model["id"])?></td>
+           <td><?= \yii\helpers\Html::encode($model["clientName"])?></td>
+           <td><?= \yii\helpers\Html::encode($model["billId"])?></td>
            <td style="color: red;"><?= number_format($model["total"] , 3)."\n" ?></td>
            <td style="color: blue;"><?= number_format($model["credt"], 3)."\n"?></td>
-           <td><?= $model["at"]?></td>
-           <td><?= $model["dateOfArrival"]?></td>
+           <td><?= \yii\helpers\Html::encode($model["at"])?></td>
+           <td><?= \yii\helpers\Html::encode($model["dateOfArrival"])?></td>
            <td><?=  Html::a('<i class="fa fa-folder-open"></i>', 
             ['purchases/view', 'id'=> $model["id"]], ['class' => 'btn btn-success'])?></td>
             <td>

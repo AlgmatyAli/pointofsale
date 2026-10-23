@@ -59,7 +59,7 @@ $this->registerJs($search);
             [
                 'attribute' => 'category0.commCode',
                 'value' => function($model){                   
-                    return $model->category0->commCode;                   
+                    return \yii\helpers\Html::encode($model->category0->commCode);                   
                 },
                 'format' => 'raw',
             ],

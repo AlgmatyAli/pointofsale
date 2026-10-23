@@ -20,11 +20,11 @@ use app\models\CompanyInfo;
 
     <?php $title = CompanyInfo::find()->select(['*'])->asArray()->one(); ?>
 
-    <img src=<?php echo $title["path"] ?> class="img-circle logo" alt="Cinque Terre">
+    <img src=<?php echo \yii\helpers\Html::encode($title["path"]) ?> class="img-circle logo" alt="Cinque Terre">
     <h4>
       <br>
       <?php
-      echo  $title['name'];
+      echo  \yii\helpers\Html::encode($title['name']);
       echo '<br><br><br>';
       ?>
     </h4>

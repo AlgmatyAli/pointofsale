@@ -37,6 +37,39 @@ class CompanyInfo extends \yii\db\ActiveRecord
         return 'company_info';
     }
 
+    /** ألوان Bootstrap الأساسية المتاحة للقائمة الجانبية: القيمة المحفوظة => [الاسم, اللون] */
+    const SKINS = [
+        'primary' => ['أزرق (Primary)', '#0d6efd'],
+        'secondary' => ['رمادي (Secondary)', '#6c757d'],
+        'success' => ['أخضر (Success)', '#198754'],
+        'danger' => ['أحمر (Danger)', '#dc3545'],
+        'warning' => ['أصفر (Warning)', '#ffc107'],
+        'info' => ['سماوي (Info)', '#0dcaf0'],
+        'light' => ['فاتح (Light)', '#f8f9fa'],
+        'dark' => ['داكن (Dark)', '#212529'],
+    ];
+
+    /** ألوان قيم skin القديمة (AdminLTE 2) لتبقى البيانات المحفوظة سابقاً تعمل */
+    const LEGACY_SKINS = [
+        'skin-blue' => '#1e3a5f',
+        'skin-blue-light' => '#e8f1f8',
+        'skin-yellow' => '#6b4a0a',
+        'skin-yellow-light' => '#fdf3e1',
+        'skin-green' => '#0f4d33',
+        'skin-green-light' => '#e5f6ee',
+        'skin-red' => '#6e1f17',
+        'skin-red-light' => '#fbeae8',
+    ];
+
+    /**
+     * يحوّل قيمة skin إلى كود لون #rrggbb، أو نص فارغ للون الافتراضي.
+     */
+    public static function skinColor(?string $skin): string
+    {
+        $skin = trim((string) $skin);
+        return self::SKINS[$skin][1] ?? self::LEGACY_SKINS[$skin] ?? '';
+    }
+
     public function afterSave($insert, $changedAttributes)
     {
         parent::afterSave($insert, $changedAttributes);
@@ -65,6 +98,7 @@ class CompanyInfo extends \yii\db\ActiveRecord
             [['email'], 'string', 'max' => 20],
             [['path'], 'string', 'max' => 255],
             [['skin'], 'string', 'max' => 100],
+            [['skin'], 'in', 'range' => array_keys(self::SKINS), 'message' => 'اختر لوناً من القائمة'],
             [['file'], 'file'],
             [['currancy'], 'exist', 'skipOnError' => true, 'targetClass' => Currancy::className(), 'targetAttribute' => ['currancy' => 'id']],
         ];

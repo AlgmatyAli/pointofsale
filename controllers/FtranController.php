@@ -28,7 +28,7 @@ class FtranController extends Controller
                     [
                         'allow' => true,
                         'actions' => ['index', 'view', 'create', 'update', 'delete'],
-                        'roles' => ['@']
+                        'roles' => ['ftran']
                     ],
                     [
                         'allow' => false

@@ -32,7 +32,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => Yii::t('app', 'Client Name'),
                 'format' => 'raw',
                 'value' => function ($data) {
-                    return $data->c->name;
+                    return \yii\helpers\Html::encode($data->c->name);
                 }
             ],
 

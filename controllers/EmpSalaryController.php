@@ -279,12 +279,12 @@ class EmpSalaryController extends Controller
                      emp_salary.value as wared, emp_salary.id as id, emp_salary.why as kind,
                      emp_salary.value as sader
                      FROM emp_salary, user
-                     where  emp_salary.employee = user.id and emp_salary.employee = " . $model->employee . "
-                     and emp_salary.at between '" . $model->min_date . "' and '" . $model->max_date . "'
+                     where  emp_salary.employee = user.id and emp_salary.employee = :p3
+                     and emp_salary.at between :p1 and :p2
                      order by emp_salary.at";
 
             $connection = Yii::$app->db;
-            $data = $connection->createCommand($sql);
+            $data = $connection->createCommand($sql, [':p1' => $model->min_date, ':p2' => $model->max_date, ':p3' => $model->employee]);
             $info = $data->queryAll();
             if ($info == null) {
                 die("Sorry no thing to preview");
@@ -308,16 +308,16 @@ class EmpSalaryController extends Controller
         $sql = "SELECT max(`employee`.`salary`) AS `salary`, sum(`emp_salary`.`value`) as value,
          max(`emp_salary`.`at`) as at,
 	   (select emp_salary.value from emp_salary where emp_salary.type = 1
-        and emp_salary.employee =   $employee   and month = $month and year = $year
+        and emp_salary.employee = :employee and month = :month and year = :year
         and id =(select max(id) from emp_salary where emp_salary.type = 1
-        and emp_salary.employee =   $employee   and month = $month and year = $year)
+        and emp_salary.employee = :employee and month = :month and year = :year)
         ORDER BY `emp_salary`.`id` DESC ) as lastpay
         FROM `emp_salary` LEFT JOIN `employee` ON employee.id = emp_salary.employee
-        where emp_salary.type = 1 and emp_salary.employee = $employee   and month = $month and year = $year
+        where emp_salary.type = 1 and emp_salary.employee = :employee and month = :month and year = :year
         ORDER BY `emp_salary`.`id` DESC LIMIT 1";
 
         $connection = Yii::$app->db;
-        $data = $connection->createCommand($sql);
+        $data = $connection->createCommand($sql, [':employee' => $employee, ':month' => $month, ':year' => $year]);
         $info = $data->queryAll();
 
         foreach ($info as $value) {
@@ -325,9 +325,9 @@ class EmpSalaryController extends Controller
         }
         if ($val['salary'] == null) {
 
-            $sql = "SELECT salary FROM  employee  where  id = $employee ";
+            $sql = "SELECT salary FROM  employee  where  id = :employee ";
             $connection = Yii::$app->db;
-            $data = $connection->createCommand($sql);
+            $data = $connection->createCommand($sql, [':employee' => $employee]);
             $info = $data->queryAll();
             foreach ($info as $value) {
                 $val = $value;

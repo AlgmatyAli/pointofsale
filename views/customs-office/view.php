@@ -38,7 +38,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => Yii::t('app', 'User Insert'),
                 'format' => 'raw',
                 'value' => function ($data) {
-                    return $data->userInsert->username;
+                    return \yii\helpers\Html::encode($data->userInsert->username);
                 }
             ],
             'created_at',

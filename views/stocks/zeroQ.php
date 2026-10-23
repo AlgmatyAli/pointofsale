@@ -44,7 +44,7 @@ $this->params['breadcrumbs'][] = $this->title;
             'label' => Yii::t('app', 'Serial No'),
             'headerOptions' => ['style' => 'width:15%'],
             'value' => function ($data) {
-                return $data->serialNo;
+                return \yii\helpers\Html::encode($data->serialNo);
             }
 
         ],

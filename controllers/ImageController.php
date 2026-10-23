@@ -27,6 +27,17 @@ class ImageController extends Controller
                     'delete' => ['POST'],
                 ],
             ],
+            // كل إجراء يتطلب صلاحية محددة؛ أي إجراء غير مذكور هنا مرفوض تلقائياً
+            'access' => [
+                'class' => \yii\filters\AccessControl::class,
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index', 'view', 'create', 'update', 'delete'],
+                        'roles' => ['upload'],
+                    ],
+                ],
+            ],
         ];
     }
 
@@ -72,7 +83,7 @@ class ImageController extends Controller
             $model->user_insert = Yii::$app->user->id;
             $model->update_at = date('Y-m-d H:i:s');
             $model->user_update = Yii::$app->user->id;
-            $model->claimId = $claimId;
+            $model->claimId = (int) $claimId; // رقم فقط حتى لا يُستخدم لإنشاء مجلدات خارج img/claim
             // =========
 
             if (!is_dir("img/claim/".$model->claimId)) {
@@ -86,8 +97,7 @@ class ImageController extends Controller
             $model->file = UploadedFile::getInstance($model,'file');
             $ext = substr(strrchr($model->file,'.'),1);
 
-           if($ext != null)
-            {        
+           if ($ext != null && \app\components\UploadGuard::isAllowed($model->file, \app\components\UploadGuard::IMAGE)) {        
               $uniqid= uniqid(); 
               $model->file->saveAs($path.'/'.$uniqid.'.'.$model->file->extension);   
               $model->path=$path.'/'.$uniqid.'.'.$model->file->extension;
