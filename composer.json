@@ -40,7 +40,8 @@
     "mootensai/yii2-enhanced-gii": "dev-master",
     "kartik-v/yii2-editable": "@dev",
     "picqer/php-barcode-generator": "^0.3.0",
-    "vilochane/yii2-barcode-generator": "dev-master"
+    "vilochane/yii2-barcode-generator": "dev-master",
+    "fedemotta/yii2-widget-datatables": "*"
   },
   "require-dev": {
     "yiisoft/yii2-debug": "~2.1.0",

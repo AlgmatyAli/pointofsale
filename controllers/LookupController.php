@@ -46,7 +46,7 @@ class LookupController extends Controller
             ]);
         }
 
-        return $this->page($query->orderBy(['name' => SORT_ASC]), $page);
+        return $this->page($query->orderBy(['id' => SORT_ASC]), $page);
     }
 
     /** lookup/category?q=.. (نفس طرق البحث في شاشة البيع: الاسم بالحروف الأولى، الرقم، الباركود، الشركة، التصنيف) */
