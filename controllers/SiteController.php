@@ -79,103 +79,53 @@ class SiteController extends Controller
         } else {
 
 
-            $count = 0;
-            $counter = 0;
-            $tempPurchase = 0;
-            $tempSales = 0;
-            $moreRequest = 0;
-            $deleviried = 0;
-            $amount = 0;
-            $dateOfArrival = 0;
-            $zeroQ = 0;
+            // أرقام عامة للوحة الرئيسية: تُحسب بـ COUNT في قاعدة البيانات (بدل جلب كل الصفوف وعدّها)
+            // وتُحفظ في الكاش 5 دقائق لأن هذه الصفحة تُفتح كثيراً
+            $stats = Yii::$app->cache->getOrSet('site-index-stats', function () {
+                $db = Yii::$app->db;
+                $belowMinimum = "SELECT COUNT(*) FROM (
+                    SELECT category.id FROM stocks
+                    LEFT JOIN category ON stocks.category = category.id
+                    %s
+                    GROUP BY category.id, category.minimum
+                    HAVING SUM(stocks.quantity) <= category.minimum) t";
 
-            $sql = " SELECT `category`.`id`, max(category.name) AS `name`,
-        max(category.serialNo) AS `serialNo`, max(category.minimum) AS `minimum`,
-        sum(category.quantity) AS `quantity` FROM `stocks`
-        LEFT JOIN `category`
-        ON stocks.category = category.id
-        GROUP BY `category`.`id`, `category`.`minimum`
-        HAVING sum(stocks.quantity) <= category.minimum";
+                return [
+                    'reorder' => (int) $db->createCommand(sprintf($belowMinimum, ''))->queryScalar(),
+                    'request' => (int) $db->createCommand(sprintf($belowMinimum, 'WHERE category.moreRequest = 1'))->queryScalar(),
+                    // نفس شرط deserving - CURRENT_DATE() <= 0 لكن بصيغة تستفيد من الفهرس
+                    'amount' => (int) Sales::find()->where(['<=', 'deserving', new \yii\db\Expression('CURDATE()')])->count(),
+                    'deleviried' => (int) Sales::find()->where(['deleviried' => 0])->count(),
+                    'dateOfArrival' => (int) Purchases::find()
+                        ->where(['type' => 3])
+                        ->andWhere(['<=', 'dateOfArrival', new \yii\db\Expression('CURDATE()')])
+                        ->count(),
+                    'compare' => (int) Prices::find()
+                        ->leftJoin('stocks', 'prices.category = stocks.category')
+                        ->where('maxPrice <= costPrice')
+                        ->andWhere('stocks.quantity > 0')
+                        ->count(),
+                    'zeroQ' => (int) Stocks::find()->where(['<', 'quantity', 0])->count(),
+                ];
+            }, 300);
 
-            $connection = Yii::$app->db;
-            $data = $connection->createCommand($sql);
-            $reorder = $data->queryAll();
-
-            foreach ($reorder as $value) {
-                $count += 1;
-            }
-
-            $sql = " SELECT `category`.`id`, max(category.name) AS `name`,
-        max(category.serialNo) AS `serialNo`, max(category.minimum) AS `minimum`,
-        sum(category.quantity) AS `quantity` FROM `stocks` LEFT JOIN `category`
-        ON stocks.category = category.id
-        Where category.moreRequest  = 1
-        GROUP BY `category`.`id`, `category`.`minimum`
-        HAVING sum(stocks.quantity) <= category.minimum ";
-
-            $connection = Yii::$app->db;
-            $data = $connection->createCommand($sql);
-            $moreRequest = $data->queryAll();
-
-            foreach ($moreRequest as $request) {
-                $counter += 1;
-            }
-
-            $sql = " SELECT sales.id, client.name , sales.deserving from sales, client
-        where sales.clinet = client.id and sales.deserving - CURRENT_DATE() <= 0";
-
-            $connection = Yii::$app->db;
-            $data = $connection->createCommand($sql);
-            $soon = $data->queryAll();
-
-            foreach ($soon as $recent) {
-                $amount += 1;
-            }
-
+            $userId = Yii::$app->user->identity->id;
             $tempPurchase = TempInvoicePurchase::find()->select('created_by')
-                ->where(['state' => '0', 'created_by' => Yii::$app->user->identity->id])->distinct()->count();
+                ->where(['state' => '0', 'created_by' => $userId])->distinct()->count();
 
             $tempSales = TempInvoice::find()->select('created_by')
-                ->where(['created_by' => Yii::$app->user->identity->id])->distinct()->count();
+                ->where(['created_by' => $userId])->distinct()->count();
 
-            $deleviried = Sales::find()->select('id')->where(['deleviried' => 0])->distinct()->count();
-
-            // $sql = " SELECT max(client.name) cleintName, sum(total) countt from sales, client
-            // where sales.clinet = client.id and sales.branch = ".'1'." group by sales.clinet
-            // HAVING sum(total)>=50 LIMIT 10";
-
-            // $connection = Yii::$app->db;
-            // $data = $connection->createCommand($sql);
-            // $infos = $data->queryAll();
-
-            // $sql = "select salesDetails.category, sum(salesDetails.quantity) counts, max(category.name) categoryName
-            //         from salesDetails, category
-            //         where salesDetails.category=category.id
-            //         group by salesDetails.category
-            //         HAVING sum(salesDetails.quantity) >=2
-            //         Order By counts desc LIMIT 10";
-
-            // $connection = Yii::$app->db;
-            // $data = $connection->createCommand($sql);
-            // $details = $data->queryAll();
-
-            $dateOfArrival = Purchases::find()->select(['count(*) as dateOfArrival'])
-                ->where('DATEDIFF(dateOfArrival, sysdate()) <=0 ')
-                ->andWhere(['=', 'type', '3'])
-                ->asArray()
-                ->one();
-
-            $compare = Prices::find()
-                ->leftJoin('stocks', 'prices.category = stocks.category')
-                ->select('id')
-                ->where('maxPrice <= costPrice')
-                ->andWhere('stocks.quantity > 0')
-                ->count();
-
-            $zeroQ = Stocks::find()->select('id')->where(['<', 'quantity', 0])->count();
+            $count = $stats['reorder'];
+            $counter = $stats['request'];
+            $amount = $stats['amount'];
+            $deleviried = $stats['deleviried'];
+            $dateOfArrival = ['dateOfArrival' => $stats['dateOfArrival']];
+            $compare = $stats['compare'];
+            $zeroQ = $stats['zeroQ'];
 
             $model = new TempInvoice();
-            $company = CompanyInfo::find()->one();
+            $company = CompanyInfo::current();
             return $this->render('index', [
                 'reorder' => $count,
                 'tempPurchase' => $tempPurchase,

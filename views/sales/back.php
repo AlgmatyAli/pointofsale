@@ -38,8 +38,8 @@ use kartik\date\DatePicker;
 
         </div>
         <div class="col-md-5">
-            <?= $form->field($model, 'clinet')->widget(Select2::class, [
-                'data' => ArrayHelper::map(Client::find()->where(['in', 'type', [0, 2]])->all(), 'id', 'name'),
+            <?= $form->field($model, 'clinet')->widget(\app\widgets\LookupSelect2::class, [
+                'lookup' => 'client', 'types' => [0, 2],
                 'language' => 'ar',
                 'id' => 'clinet',
                 'options' => ['placeholder' => 'الرجاء اختيار اسم العميل ...'],

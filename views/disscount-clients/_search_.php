@@ -13,11 +13,6 @@ use yii\helpers\Url;
 /** @var yii\bootstrap5\ActiveForm $form */
 
 $active = !empty($model->client) || !empty($model->at) || !empty($model->value);
-$suppliers = ArrayHelper::map(
-    Client::find()->select(['id', 'name'])->where(['in', 'type', [1]])->orderBy('name')->asArray()->all(),
-    'id',
-    'name'
-);
 ?>
 
 <div class="disscount-clients-search mb-3">
@@ -39,8 +34,8 @@ $suppliers = ArrayHelper::map(
                 ]); ?>
                 <div class="row g-2 align-items-end">
                     <div class="col-lg-4">
-                        <?= $form->field($model, 'client', ['options' => ['class' => 'mb-0']])->widget(Select2::class, [
-                            'data' => $suppliers,
+                        <?= $form->field($model, 'client', ['options' => ['class' => 'mb-0']])->widget(\app\widgets\LookupSelect2::class, [
+                            'lookup' => 'client', 'types' => [1],
                             'language' => 'ar',
                             'bsVersion' => '5.x',
                             'options' => ['placeholder' => 'الرجاء اختيار اسم المورد ...'],

@@ -17,7 +17,7 @@ foreach ($models as $value) {
     $model = $value;
 }
 
-$company = CompanyInfo::find()->asArray()->one() ?: [];
+$company = CompanyInfo::currentArray() ?: [];
 
 $logo = (string) ($company['path'] ?? '');
 if ($logo !== '' && !preg_match('~^(https?:)?//|^/~', $logo)) {

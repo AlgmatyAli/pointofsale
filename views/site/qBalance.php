@@ -39,9 +39,10 @@ $this->params['breadcrumbs'][] = $this->title;
             'attribute' => 'category',
             'label' => Yii::t('app', 'Name'),
             'value' => 'category0.name',
-            'filter' => ArrayHelper::map(Category::find()->asArray()->all(), 'id', 'name'),
-            'filterType' => GridView::FILTER_SELECT2,
+            'filter' => [],
+            'filterType' => \app\widgets\LookupSelect2::class,
             'filterWidgetOptions' => [
+                'lookup' => 'category',
                 'options' => ['prompt' => 'اختيار'],
                 'pluginOptions' => ['allowClear' => true],
             ],

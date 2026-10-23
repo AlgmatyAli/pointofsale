@@ -187,7 +187,7 @@ class PurchasesController extends Controller
             } else {
                 $balance = DeptSupp::find()->where(['id' => $model->clinet])->andWhere(['in', 'currency', ['0', $model->currancy]])->sum('credt');
             }
-            $company = CompanyInfo::find()->one();
+            $company = CompanyInfo::current();
             return $this->render('printBill', [
                 'model' => $model,
                 'dataProvider' => $dataProvider,
@@ -257,7 +257,7 @@ class PurchasesController extends Controller
      */
     private function useAverageCost()
     {
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
         if ($company === null || !$company->hasAttribute('avgCost') || $company->avgCost === null) {
             return true;
         }
@@ -649,7 +649,7 @@ class PurchasesController extends Controller
                 return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
             }
         }
-        $company_currancy = CompanyInfo::find()->one();
+        $company_currancy = CompanyInfo::current();
 
         if ($model->load(Yii::$app->request->post())) {
             $this->requireTypePermission($model->type, 'create');
@@ -1040,17 +1040,16 @@ class PurchasesController extends Controller
         $sql = "select purchases.id, purchases.at, purchases.payWay, purchases.total, purchases.paid, 
         purchases.type, purchases.billId, purchases.notes,
                 purchasesDetails.quantity, purchasesDetails.costPrice, purchasesDetails.salePrice,
-                Totalinventory.quantity as Qtotalinventory,
+                (SELECT SUM(s.quantity) FROM stocks s WHERE s.category = purchasesDetails.category AND s.branch = :branch AND s.type <> 3) as Qtotalinventory,
                 client.name as client, client.mobile,
                 category.name as category, category.serialNo, category.company, category.commCode,
                 category_reservation.quantity as reservation
                 FROM purchases
                 JOIN purchasesDetails on purchases.id = purchasesDetails.purchasesId
-                JOIN Totalinventory on purchasesDetails.category = Totalinventory.id
                 JOIN client on purchases.clinet = client.id
                 JOIN category on category.id = purchasesDetails.category
                 left JOIN category_reservation on purchasesDetails.category = category_reservation.category
-                where purchases.id = :id and Totalinventory.branch = :branch and Totalinventory.type <> 3 
+                where purchases.id = :id
                 ";
         $connection = Yii::$app->db;
         $data = $connection->createCommand($sql, [':id' => (int)$id, ':branch' => (int)Yii::$app->user->identity->branch]);

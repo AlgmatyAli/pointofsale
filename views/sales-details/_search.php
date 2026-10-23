@@ -19,8 +19,8 @@ use yii\widgets\ActiveForm;
 
     <div class="row">
         <div class="col-md-4">
-            <?= $form->field($model, 'category')->widget(\kartik\widgets\Select2::classname(), [
-                'data' => \yii\helpers\ArrayHelper::map(\app\models\Category::find()->orderBy('id')->asArray()->all(), 'id', 'name'),
+            <?= $form->field($model, 'category')->widget(\app\widgets\LookupSelect2::class, [
+                'lookup' => 'category',
                 'options' => ['placeholder' => Yii::t('app', 'Choose Category')],
                 'pluginOptions' => [
                     'allowClear' => true

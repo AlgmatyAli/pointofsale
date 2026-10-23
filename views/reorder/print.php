@@ -3,7 +3,7 @@ use yii\helpers\Html;
 use app\models\CompanyInfo;
 use kartik\grid\GridView;
 ?>
-<?php $title = CompanyInfo::find()->select(['*'])->asArray()->one();?>
+<?php $title = CompanyInfo::currentArray();?>
 
 <!DOCTYPE html>
 <html lang="ar">

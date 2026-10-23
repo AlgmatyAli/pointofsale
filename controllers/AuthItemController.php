@@ -142,7 +142,8 @@ class AuthItemController extends Controller
         if ($model->load(Yii::$app->request->post())  ) {
             $model->save();
 
-            AuthItemChild::deleteAll(['parent'=>$model->name]);
+            AuthItemChild::deleteAll(['parent'=>$model->name]); // deleteAll لا يستدعي afterDelete
+            Yii::$app->authManager->invalidateCache();
             foreach ($model->permission as $permit) {
                 $AuthItemChild = new AuthItemChild(); 
                 $AuthItemChild->parent = $model->name;   

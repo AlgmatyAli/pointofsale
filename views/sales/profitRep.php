@@ -13,7 +13,7 @@ $this->context->layout = 'report';
 $this->title = $this->title ?: 'تقرير الأرباح اليومية';
 
 // بيانات الشركة والشعار
-$company = CompanyInfo::find()->select(['*'])->asArray()->one() ?: [];
+$company = CompanyInfo::currentArray() ?: [];
 $logo = (string) ($company['path'] ?? '');
 if ($logo !== '' && !preg_match('~^(https?:)?//|^/~', $logo)) {
     $logo = Yii::getAlias('@web/') . ltrim($logo, '/');

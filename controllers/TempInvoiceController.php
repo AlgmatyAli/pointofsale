@@ -75,7 +75,7 @@ class TempInvoiceController extends Controller
      */
     public function actionCreate()
     {
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
         $model = new TempInvoice();
         $identity = Yii::$app->user->identity;
         $userId = (int) $identity->id;
@@ -504,7 +504,7 @@ class TempInvoiceController extends Controller
     {
         $model = new TempInvoice();
         $identity = Yii::$app->user->identity;
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
 
         if (is_array(Yii::$app->request->post($model->formName()))) {
             $post = Yii::$app->request->post($model->formName());

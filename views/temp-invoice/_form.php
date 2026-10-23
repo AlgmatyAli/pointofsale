@@ -181,6 +181,8 @@ $select2Options = static function (string $id, string $route): array {
                 'data' => new JsExpression('function (params) { return {q: params.term, page: params.page}; }'),
                 'processResults' => new JsExpression('function (data) { return {results: data.results}; }'),
                 'cache' => true,
+                // ينتظر توقف الكتابة 300ms قبل إرسال البحث بدل طلب مع كل حرف
+                'delay' => 300,
             ],
             'escapeMarkup' => new JsExpression('function (markup) { return markup; }'),
             'templateResult' => new JsExpression('salesFormatProduct'),

@@ -42,6 +42,7 @@ class CategorySearch extends Category
     public function search($params)
     {
         $query = Stocks::find()
+        ->with('branches0')
         ->select('stocks.category, branch, max(category.name) as name, sum(stocks.quantity) as quantity, sum(stocks.type) as type, max(category.unit) as unit, 
         max(category.company) as company, max(category.box) as box, max(category.class) as class, 
         max(category.serialNo) as serialNo, max(category.commCode) as commCode, max(category.status) as status'

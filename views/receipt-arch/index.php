@@ -35,9 +35,10 @@ $this->params['breadcrumbs'][] = $this->title;
                 'value' => function ($model) {
                     return $model->c->name;
                 },
-                'filterType' => GridView::FILTER_SELECT2,
-                'filter' => \yii\helpers\ArrayHelper::map(Client::find()->asArray()->all(), 'id', 'name'),
+                'filterType' => \app\widgets\LookupSelect2::class,
+                'filter' => [],
                 'filterWidgetOptions' => [
+                    'lookup' => 'client',
                     'pluginOptions' => ['allowClear' => true],
                 ],
                 'filterInputOptions' => ['placeholder' => 'Client', 'id' => 'grid--search-client']

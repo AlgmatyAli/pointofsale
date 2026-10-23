@@ -9,14 +9,15 @@ use yii\helpers\Html;
 use yii\helpers\Url;
 
 /* @var $this yii\web\View */
-/* @var $model app\models\ReceiptSearch */
+
+/** @var app\models\ReceiptSearch $model */
 /* @var $form yii\bootstrap5\ActiveForm */
 
 $errCfg = ['class' => 'invalid-feedback d-block'];
 
 // العملة الافتراضية = عملة الشركة (تُطبَّق فقط إذا لم تُحدَّد عملة)، والقائمة تحوي عملة الشركة فقط كما في الكود القديم
 if (empty($model->currency)) {
-    $model->currency = CompanyInfo::find()->one()?->currancy;
+    $model->currency = CompanyInfo::current()?->currancy;
 }
 $currencies = ArrayHelper::map(
     Currancy::find()->where('id = (select currancy from company_info)')->select(['id', 'name'])->asArray()->all(),
@@ -52,7 +53,11 @@ $types = [
                         <div class="btn-group w-100" role="group" aria-label="نوع العرض">
                             <?php foreach ($types as $val => $t): ?>
                                 <?= Html::radio($model->formName() . '[type]', $typeNow === (string) $val, [
-                                    'value' => $val, 'id' => $typeId . '-' . $val, 'class' => 'btn-check', 'autocomplete' => 'off', 'label' => null,
+                                    'value' => $val,
+                                    'id' => $typeId . '-' . $val,
+                                    'class' => 'btn-check',
+                                    'autocomplete' => 'off',
+                                    'label' => null,
                                 ]) ?>
                                 <label class="btn <?= \yii\helpers\Html::encode($t[2]) ?>" for="<?= $typeId . '-' . $val ?>"><i class="bi <?= \yii\helpers\Html::encode($t[1]) ?>"></i> <?= Html::encode($t[0]) ?></label>
                             <?php endforeach; ?>

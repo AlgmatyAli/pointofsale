@@ -31,7 +31,7 @@ $dateCfg = fn() => [
 
 // العملة الافتراضية = عملة الشركة (كانت تُفرض في كل عرض؛ صارت تُطبَّق فقط إذا لم تُحدَّد عملة)
 if (empty($model->currancy)) {
-    $model->currancy = CompanyInfo::find()->one()?->currancy;
+    $model->currancy = CompanyInfo::current()?->currancy;
 }
 $currencies = ArrayHelper::map(Currancy::find()->select(['id', 'name'])->asArray()->all(), 'id', 'name');
 $users = ArrayHelper::map(

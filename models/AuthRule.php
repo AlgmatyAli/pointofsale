@@ -60,4 +60,17 @@ class AuthRule extends \yii\db\ActiveRecord
     {
         return $this->hasMany(AuthItem::className(), ['rule_name' => 'name']);
     }
+
+    // authManager يحفظ الصلاحيات في الكاش؛ أي تعديل مباشر على الجداول يجب أن يمسحه
+    public function afterSave($insert, $changedAttributes)
+    {
+        parent::afterSave($insert, $changedAttributes);
+        \Yii::$app->authManager->invalidateCache();
+    }
+
+    public function afterDelete()
+    {
+        parent::afterDelete();
+        \Yii::$app->authManager->invalidateCache();
+    }
 }

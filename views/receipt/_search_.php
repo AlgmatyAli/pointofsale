@@ -27,11 +27,8 @@ use yii\helpers\Url;
 
             <?= $form->field($model, 'rId') ?>
 
-            <?= $form->field($model, 'clinet')->widget(Select2::class, [
-                'data' => ArrayHelper::map(Client::find()
-                    // ->where(['branch' => Yii::$app->user->identity->branch])
-                    ->where(['in', 'type', [1, 2]])
-                    ->all(), 'id', 'name'),
+            <?= $form->field($model, 'clinet')->widget(\app\widgets\LookupSelect2::class, [
+                'lookup' => 'client', 'types' => [1, 2],
                 'language' => 'ar',
                 'options' => ['placeholder' => 'الرجاء اختيار اسم العميل ...'],
                 'pluginOptions' => [

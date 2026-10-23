@@ -92,7 +92,8 @@ class SalesDetails extends \yii\db\ActiveRecord
     }
     public function getPrice()
     {
-        return $this->hasOne(Totalinventory::class, ['id' => 'category']);
+        // الأسعار من جدول prices مباشرة (Totalinventory يحسب كل تاريخ الحركات)
+        return $this->hasOne(Prices::class, ['category' => 'category']);
     }
 
     public function getPrices()

@@ -28,7 +28,7 @@ $isReturn = ($model->type == 2);   // مسترجع مبيعات
 
 // $company يصل عادةً من الكنترولر، ونجلبه هنا إن لم يصل
 if (!isset($company)) {
-    $company = CompanyInfo::find()->one();
+    $company = CompanyInfo::current();
 }
 $roundPrices = ($company->criteriaـvalue <> 0);   // تقريب الأسعار لأقرب 5 أو 10
 
@@ -156,11 +156,7 @@ JS, View::POS_HEAD, 'sales-update-helpers');
 // ---------------------------------------------------------------------------
 // العملاء: المستخدم المرتبط بعملاء يرى عملاءه فقط
 // ---------------------------------------------------------------------------
-$clientsQuery = Client::find()->where(['in', 'type', [0, 2]])->orderBy('id');
-if ($isClientUser) {
-    $clientsQuery->andWhere(['in', 'id', explode(',', $identity->client)]);
-}
-$clients = ArrayHelper::map($clientsQuery->asArray()->all(), 'id', 'name');
+// قائمة العملاء تُبحث عبر Ajax (LookupSelect2)، والمستخدم المرتبط بعملاء يرى عملاءه فقط من lookup/client
 
 $payWay = $isReturn
     ? ['1' => 'نقدا', '2' => 'آجـــل']
@@ -259,8 +255,8 @@ $datePlugin = ['autoclose' => true, 'format' => 'yyyy-mm-dd', 'todayHighlight' =
                 ->dropDownList(['2' => 'مسترجع مبيعات', '1' => 'فاتورة نهائية', '3' => 'فاتورة حجز', '4' => 'فاتورة مبدئية'])
                 ->label(Yii::t('app', 'Invoice Type')) ?>
 
-            <?= $form->field($model, 'clinet')->widget(Select2::class, [
-                'data' => $clients,
+            <?= $form->field($model, 'clinet')->widget(\app\widgets\LookupSelect2::class, [
+                'lookup' => 'client', 'types' => [0, 2],
                 'pluginOptions' => ['allowClear' => true],
             ]) ?>
 
@@ -353,6 +349,8 @@ $datePlugin = ['autoclose' => true, 'format' => 'yyyy-mm-dd', 'todayHighlight' =
                     'data' => new JsExpression('function (params) { return {q: params.term, page: params.page}; }'),
                     'processResults' => new JsExpression('function (data) { return {results: data.results}; }'),
                     'cache' => true,
+                    // ينتظر توقف الكتابة 300ms قبل إرسال البحث بدل طلب مع كل حرف
+                    'delay' => 300,
                 ],
                 'escapeMarkup' => new JsExpression('function (markup) { return markup; }'),
                 'templateResult' => new JsExpression('salesFormatProduct'),

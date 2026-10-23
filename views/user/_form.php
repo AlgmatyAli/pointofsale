@@ -92,8 +92,8 @@ CSS);
                         'pluginOptions' => ['allowClear' => true],
                     ]) ?>
 
-                    <?= $form->field($model, 'client')->widget(Select2::class, [
-                        'data' => ArrayHelper::map(Client::find()->orderBy('id')->asArray()->all(), 'id', 'name'),
+                    <?= $form->field($model, 'client')->widget(\app\widgets\LookupSelect2::class, [
+                        'lookup' => 'client',
                         'options' => ['placeholder' => 'اختر العملاء (اختياري) ...'],
                         'pluginOptions' => ['allowClear' => true, 'multiple' => true],
                     ])->hint('اختياري: يقتصر المستخدم على العملاء المحددين.') ?>

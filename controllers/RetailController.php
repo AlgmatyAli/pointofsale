@@ -99,7 +99,7 @@ class RetailController extends Controller
     public function actionCreate()
     {
         $this->layout = 'pos';
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
         $identity = Yii::$app->user->identity;
 
         $classes = (new Query())->select('class')->from('category')
@@ -128,7 +128,7 @@ class RetailController extends Controller
     public function actionProducts($q = '', $class = '')
     {
         Yii::$app->response->format = Response::FORMAT_JSON;
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
         $branch = (int) Yii::$app->user->identity->branch;
 
         $query = (new Query())
@@ -381,7 +381,7 @@ class RetailController extends Controller
         Yii::$app->response->format = Response::FORMAT_JSON;
         $identity = Yii::$app->user->identity;
         $userId = (int) $identity->id;
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
         $req = Yii::$app->request;
         $fail = function ($m) {
             return ['success' => false, 'message' => $m];
@@ -566,7 +566,7 @@ class RetailController extends Controller
         return $this->render('receipt', [
             'sale' => $sale,
             'lines' => $lines,
-            'company' => CompanyInfo::find()->one(),
+            'company' => CompanyInfo::current(),
             'client' => $client,
             'isDefaultClient' => ((int) $sale->clinet === $this->defaultClientId()),
             'balance' => $balance,
@@ -592,7 +592,7 @@ class RetailController extends Controller
     private function respond(callable $fn)
     {
         Yii::$app->response->format = Response::FORMAT_JSON;
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
         try {
             $message = $fn($company);
         } catch (\DomainException $e) {

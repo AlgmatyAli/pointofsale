@@ -16,11 +16,6 @@ use yii\web\View;
 // نفس منطق الاختيار القديم: type=1 => عملاء (0,2)، غير ذلك => موردون (1)
 $typeParam = Yii::$app->request->get('type', $model->type);
 $partyTypes = ((string) $typeParam === '1') ? [0, 2] : [1];
-$parties = ArrayHelper::map(
-    Client::find()->select(['id', 'name'])->where(['in', 'type', $partyTypes])->orderBy('name')->asArray()->all(),
-    'id',
-    'name'
-);
 $currencies = ArrayHelper::map(Currancy::find()->select(['id', 'name'])->asArray()->all(), 'id', 'name');
 
 if ($model->isNewRecord && empty($model->at)) {
@@ -48,8 +43,8 @@ CSS);
                     <?= Html::activeHiddenInput($model, 'type', ['value' => $typeVal]) ?>
                     <?= Html::error($model, 'type', $errCfg) ?>
 
-                    <?= $form->field($model, 'client', ['errorOptions' => $errCfg])->widget(Select2::class, [
-                        'data' => $parties,
+                    <?= $form->field($model, 'client', ['errorOptions' => $errCfg])->widget(\app\widgets\LookupSelect2::class, [
+                        'lookup' => 'client', 'types' => $partyTypes,
                         'language' => 'ar',
                         'bsVersion' => '5.x',
                         'options' => ['placeholder' => 'الرجاء اختيار اسم المورد ...'],

@@ -14,7 +14,7 @@ $this->context->layout = 'report';
 $this->title = $this->title ?: 'كشف حساب صنف';
 
 // بيانات الشركة والشعار (المسار النسبي يُنسب إلى مجلد web)
-$company = CompanyInfo::find()->select(['*'])->asArray()->one() ?: [];
+$company = CompanyInfo::currentArray() ?: [];
 $logo = (string) ($company['path'] ?? '');
 if ($logo !== '' && !preg_match('~^(https?:)?//|^/~', $logo)) {
     $logo = Yii::getAlias('@web/') . ltrim($logo, '/');

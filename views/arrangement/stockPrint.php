@@ -4,7 +4,7 @@ use app\models\CompanyInfo;
 use yii\helpers\Url;
 use yii\grid\GridView;
 ?>
-<?php $title = CompanyInfo::find()->select(['*'])->asArray()->one();?>
+<?php $title = CompanyInfo::currentArray();?>
 
 <!DOCTYPE html>
 <html lang="ar">

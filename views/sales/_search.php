@@ -79,13 +79,8 @@ use app\models\PaymentTypes;
 
             <?php
             if (Yii::$app->user->identity->client <> null) {
-                echo $form->field($model, 'clinet')->widget(\kartik\widgets\Select2::class, [
-                    'data' => \yii\helpers\ArrayHelper::map(\app\models\Client::find()
-                        ->where(['in', 'type', [0, 2]])
-                        //->andWhere(['branch' => Yii::$app->user->identity->branch])
-                        ->andWhere(['in', 'id', explode(',', Yii::$app->user->identity->client)])
-
-                        ->orderBy('id')->asArray()->all(), 'id', 'name'),
+                echo $form->field($model, 'clinet')->widget(\app\widgets\LookupSelect2::class, [
+                    'lookup' => 'client', 'types' => [0, 2],
                     'options' => [
                         'placeholder' => 'الرجاء اختيار اسم العميل ...'
                     ],
@@ -94,11 +89,8 @@ use app\models\PaymentTypes;
                     ],
                 ]);
             } else {
-                echo $form->field($model, 'clinet')->widget(\kartik\widgets\Select2::class, [
-                    'data' => \yii\helpers\ArrayHelper::map(\app\models\Client::find()
-                        ->where(['in', 'type', [0, 2]])
-                        //->andWhere(['branch' => Yii::$app->user->identity->branch])                       
-                        ->orderBy('id')->asArray()->all(), 'id', 'name'),
+                echo $form->field($model, 'clinet')->widget(\app\widgets\LookupSelect2::class, [
+                    'lookup' => 'client', 'types' => [0, 2],
                     'options' => [
                         'placeholder' => 'الرجاء اختيار اسم العميل ...'
                     ],

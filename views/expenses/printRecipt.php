@@ -10,7 +10,7 @@ use yii\helpers\Html;
 $this->context->layout = 'invoice';
 $this->title = 'ايصال صرف';
 
-$company = CompanyInfo::find()->asArray()->one() ?: [];
+$company = CompanyInfo::currentArray() ?: [];
 
 $logo = (string) ($company['path'] ?? '');
 if ($logo !== '' && !preg_match('~^(https?:)?//|^/~', $logo)) {

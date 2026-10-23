@@ -41,7 +41,7 @@ class PurchasesSearch extends Purchases
      */
     public function search($params)
     {
-        $query = Purchases::find();
+        $query = Purchases::find()->with(['c', 'paymentType0', 'br', 'purchasesDetails.category0']);
 
         // add conditions that should always apply here
 

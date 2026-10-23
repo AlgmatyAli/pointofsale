@@ -28,6 +28,9 @@ $config = [
     'components' => [
         'authManager' => [
             'class' => 'yii\rbac\DbManager',
+            // الصلاحيات تُحفظ في الكاش بدل قراءتها من قاعدة البيانات في كل طلب.
+            // بعد تعديل الصلاحيات من خارج النظام (مثلاً من phpMyAdmin) نفّذ: php yii cache/flush cache
+            'cache' => 'cache',
         ],
         'request' => [
             'cookieValidationKey' => '21232f297a57a5a743894a0e4a801fc3',
@@ -45,12 +48,6 @@ $config = [
         'cache' => [
             'class' => 'yii\caching\FileCache',
         ],
-        // Duration of schema cache.
-        'schemaCacheDuration' => '3600',
-
-        // Name of the cache component used to store schema information
-        'schemaCache' => 'cache',
-
         'user' => [
             'identityClass' => 'app\models\User',
             'enableAutoLogin' => false,
@@ -81,10 +78,25 @@ $config = [
                 [
                     'class' => 'yii\log\FileTarget',
                     'levels' => ['error', 'warning'],
+                    // لا تُنسخ $_SERVER و $_SESSION مع كل رسالة، فيبقى ملف السجل صغيراً وسريع الكتابة
+                    'logVars' => [],
+                    'maxFileSize' => 5120,
+                    'maxLogFiles' => 5,
                 ],
             ],
         ],
         'db' => $db,
+
+        'i18n' => [
+            'translations' => [
+                // ترجمة التقويم من kartik غير متوفرة بالعربية؛ نستخدم ملفاً محلياً بدل تسجيل خطأ في كل صفحة
+                'kvdate' => [
+                    'class' => 'yii\i18n\PhpMessageSource',
+                    'basePath' => '@app/messages',
+                    'sourceLanguage' => 'en-US',
+                ],
+            ],
+        ],
 
         'formatter' => [
             'currencyCode' => 'IDR',

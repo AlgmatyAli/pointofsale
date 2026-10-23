@@ -14,7 +14,7 @@ use yii\web\JsExpression;
 /** @var yii\web\View $this */
 /** @var app\models\Sales $model */
 
-$company = CompanyInfo::find()->one();
+$company = CompanyInfo::current();
 $identity = Yii::$app->user->identity;
 $isClientUser = ($identity->client <> null);
 $isAjax = Yii::$app->request->isAjax;
@@ -26,12 +26,7 @@ $dropdown = $isAjax
     ? ['dropdownParent' => new JsExpression("$('#modal')")]
     : [];
 
-// العملاء: المستخدم المرتبط بعملاء يرى عملاءه فقط
-$clientsQuery = Client::find()->where(['in', 'type', [0, 2]])->orderBy('id');
-if ($isClientUser) {
-    $clientsQuery->andWhere(['in', 'id', explode(',', $identity->client)]);
-}
-$clients = ArrayHelper::map($clientsQuery->asArray()->all(), 'id', 'name');
+// قائمة العملاء تُبحث عبر Ajax (LookupSelect2)، والمستخدم المرتبط بعملاء يرى عملاءه فقط من lookup/client
 
 // ---------------------------------------------------------------------------
 // أدوات مساعدة للعرض
@@ -116,8 +111,8 @@ CSS);
     <?= $section('bi-person-vcard', 'العميل والتاريخ') ?>
     <div class="row g-3 mb-2">
         <div class="col-md-7">
-            <?= $form->field($model, 'clinet')->widget(Select2::class, [
-                'data' => $clients,
+            <?= $form->field($model, 'clinet')->widget(\app\widgets\LookupSelect2::class, [
+                'lookup' => 'client', 'types' => [0, 2],
                 'options' => ['placeholder' => 'اختر العميل ...'],
                 'pluginOptions' => ['allowClear' => true] + $dropdown,
             ]) ?>

@@ -19,11 +19,6 @@ $type = (string) ($model->isNewRecord ? Yii::$app->request->get('type', $model->
 $isReceive = ($type === '1');
 $accent = $isReceive ? 'success' : 'danger';
 
-$clients = ArrayHelper::map(
-    Client::find()->where(['in', 'type', $isReceive ? [0, 2] : [1, 2]])->all(),
-    'id',
-    'name'
-);
 
 $this->registerCss(<<<'CSS'
 .receipt-form .form-label { font-size: .85rem; margin-bottom: .2rem; }
@@ -66,8 +61,8 @@ CSS);
 
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <?= $form->field($model, 'clinet')->widget(Select2::class, [
-                                'data' => $clients,
+                            <?= $form->field($model, 'clinet')->widget(\app\widgets\LookupSelect2::class, [
+                                'lookup' => 'client', 'types' => ($isReceive ? [0, 2] : [1, 2]),
                                 'language' => 'ar',
                                 'options' => ['placeholder' => 'الرجاء اختيار اسم العميل ...'],
                                 'pluginOptions' => ['allowClear' => true, 'multiple' => false],

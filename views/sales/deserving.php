@@ -9,7 +9,7 @@ use app\models\CompanyInfo;
 // تفعيل تخطيط الطباعة المستقل
 $this->context->layout = 'invoice';
 
-$title = CompanyInfo::find()->select(['*'])->asArray()->one();
+$title = CompanyInfo::currentArray();
 $logo = (string) ($title['path'] ?? '');
 if ($logo !== '' && !preg_match('~^(https?:)?//|^/~', $logo)) {
   $logo = Yii::getAlias('@web/') . ltrim($logo, '/');

@@ -34,9 +34,10 @@ $this->params['breadcrumbs'][] = $this->title;
             'label' => Yii::t('app', 'Client'),
             //'value' => 'sales.clinet',
             'width' => '310px',
-            'filter' => ArrayHelper::map(Client::find()->asArray()->all(), 'id', 'name'),
-            'filterType' => GridView::FILTER_SELECT2,
+            'filter' => [],
+            'filterType' => \app\widgets\LookupSelect2::class,
             'filterWidgetOptions' => [
+                'lookup' => 'client',
                 'options' => ['prompt' => 'اختيار'],
                 'pluginOptions' => ['allowClear' => true],
             ],
@@ -51,9 +52,10 @@ $this->params['breadcrumbs'][] = $this->title;
             'label' => Yii::t('app', 'Name'),
             'value' => 'category0.name',
             'width' => '310px',
-            'filter' => ArrayHelper::map(Category::find()->asArray()->all(), 'id', 'name'),
-            'filterType' => GridView::FILTER_SELECT2,
+            'filter' => [],
+            'filterType' => \app\widgets\LookupSelect2::class,
             'filterWidgetOptions' => [
+                'lookup' => 'category',
                 'options' => ['prompt' => 'اختيار'],
                 'pluginOptions' => ['allowClear' => true],
             ],
@@ -81,7 +83,7 @@ $this->params['breadcrumbs'][] = $this->title;
             'attribute' => 'company',
             'label' => Yii::t('app', 'Company'),
             'value' => 'company',
-            'filter' => ArrayHelper::map(Category::find()->asArray()->all(), 'company', 'company'),
+            'filter' => ArrayHelper::map(Category::find()->select('company')->distinct()->asArray()->all(), 'company', 'company'),
             'filterType' => GridView::FILTER_SELECT2,
             'filterWidgetOptions' => [
                 'options' => ['prompt' => 'اختيار الشركة'],
@@ -92,7 +94,7 @@ $this->params['breadcrumbs'][] = $this->title;
             'attribute' => 'class',
             'label' => Yii::t('app', 'Class'),
             'value' => 'class',
-            'filter' => ArrayHelper::map(Category::find()->asArray()->all(), 'class', 'class'),
+            'filter' => ArrayHelper::map(Category::find()->select('class')->distinct()->asArray()->all(), 'class', 'class'),
             'filterType' => GridView::FILTER_SELECT2,
             'filterWidgetOptions' => [
                 'options' => ['prompt' => 'اختيار التصنيف'],

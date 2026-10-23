@@ -302,12 +302,8 @@ $gridColumns = [
         <div class="card-body py-2">
             <?php $form = ActiveForm::begin(['id' => 'backSale']); ?>
 
-            <?= $form->field($model, 'client')->widget(Select2::class, [
-                'data' => ArrayHelper::map(
-                    Client::find()->where(['in', 'type', [0, 2]])->orderBy('id')->asArray()->all(),
-                    'id',
-                    'name'
-                ),
+            <?= $form->field($model, 'client')->widget(\app\widgets\LookupSelect2::class, [
+                'lookup' => 'client', 'types' => [0, 2],
                 'options' => [
                     'placeholder' => Yii::t('app', 'Select a client ...'),
                     'dir' => 'rtl',

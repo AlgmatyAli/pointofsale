@@ -33,7 +33,7 @@ foreach ($models as $model) {
     }
     ?>
 
-    <?php $title = CompanyInfo::find()->select(['*'])->asArray()->one(); ?>
+    <?php $title = CompanyInfo::currentArray(); ?>
 
     <img src=<?php echo \yii\helpers\Html::encode($title["path"]) ?> class="img-circle logo" alt="Cinque Terre">
     <h4><br><?php

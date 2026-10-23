@@ -4,7 +4,8 @@ use yii\helpers\Html;
 use yii\widgets\DetailView;
 
 /* @var $this yii\web\View */
-/* @var $model app\models\CustomsDeclaration */
+
+/** @var  app\models\CustomsDeclaration $model*/
 
 $this->title = $model->name;
 $this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Customs Declarations'), 'url' => ['index']];

@@ -329,8 +329,8 @@ $gridColumns = [
                         ]) ?>
                     </div>
                     <div class="col-lg-4 col-md-4">
-                        <?= $form->field($model, 'clinet')->widget(Select2::class, [
-                            'data' => ArrayHelper::map(Client::find()->where(['in', 'type', [1, 2]])->all(), 'id', 'name'),
+                        <?= $form->field($model, 'clinet')->widget(\app\widgets\LookupSelect2::class, [
+                            'lookup' => 'client', 'types' => [1, 2],
                             'language' => 'ar',
                             'options' => ['placeholder' => 'الرجاء اختيار اسم العميل ...'],
                             'pluginOptions' => ['allowClear' => true, 'multiple' => false],
@@ -414,7 +414,7 @@ $gridColumns = [
                     <div class="col-lg-6 d-flex align-items-center">
                         <?php
                         // الحالة الابتدائية من خيار المؤسسة «تعديل أسعار البيع عند تعديل فاتورة مشتريات»؛ وبعد إرسال النموذج تُحفظ قيمة المستخدم
-                        $companyOpt = \app\models\CompanyInfo::find()->one();
+                        $companyOpt = \app\models\CompanyInfo::current();
                         $defaultChange = ($companyOpt === null || !$companyOpt->hasAttribute('editSalePriceOnPurchaseUpdate') || $companyOpt->editSalePriceOnPurchaseUpdate === null)
                             ? true : ((int) $companyOpt->editSalePriceOnPurchaseUpdate !== 0);
                         $changeChecked = ($model->changeSalePrice === null || $model->changeSalePrice === '') ? $defaultChange : (bool) $model->changeSalePrice;

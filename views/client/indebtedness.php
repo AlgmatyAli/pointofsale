@@ -17,7 +17,7 @@ $errCfg = ['class' => 'invalid-feedback d-block'];
 
 // العملة الافتراضية = عملة الشركة (تُطبَّق فقط إذا لم تُحدَّد عملة)، والقائمة تحوي عملة الشركة فقط كما في الكود القديم
 if (empty($model->currency)) {
-    $model->currency = CompanyInfo::find()->one()?->currancy;
+    $model->currency = CompanyInfo::current()?->currancy;
 }
 $currencies = ArrayHelper::map(
     Currancy::find()->where('id = (select currancy from company_info)')->select(['id', 'name'])->asArray()->all(),

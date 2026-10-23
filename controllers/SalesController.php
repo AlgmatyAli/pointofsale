@@ -218,7 +218,7 @@ class SalesController extends Controller
 
     public function actionUpdate($id)
     {
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
         $model = $this->findModel($id);
         $identity = Yii::$app->user->identity;
         if ($model->branch != $identity->branch) {
@@ -494,10 +494,14 @@ class SalesController extends Controller
     public function actionGetPrices($id)
     {
 
-        $info = Totalinventory::find()
-            ->where(['name' => $id])
+        // تُستدعى من ajax-modal-popup.js وتستخدم minPrice فقط؛ من prices مباشرة بدل Totalinventory
+        $info = (new Query())
+            ->select(['category.id', 'category.name', 'prices.maxPrice', 'prices.minPrice', 'prices.minPrice2', 'prices.minPrice3'])
+            ->from('category')
+            ->leftJoin('prices', 'prices.category = category.id')
+            ->where(['category.name' => $id])
             ->one();
-        echo json::encode($info);
+        echo json::encode($info ?: null);
     }
 
     public function actionFtran()
@@ -593,7 +597,7 @@ class SalesController extends Controller
     {
         $this->layout = 'invoice';
 
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
         $model = $this->findModel($id);
         $branch = (int) Yii::$app->user->identity->branch;
 
@@ -605,15 +609,12 @@ class SalesController extends Controller
                     'salesDetails.category',
                     'salesDetails.quantity',
                     'branches.name as branchName',
-                    'Totalinventory.quantity as Qtotalinventory',
+                    // الرصيد من جدول stocks (المحدَّث مع كل حركة) بدل View الـ Totalinventory الذي يحسب كل التاريخ
+                    '(SELECT SUM(s.quantity) FROM stocks s WHERE s.category = salesDetails.category AND s.branch = :tb AND s.type <> 3) as Qtotalinventory',
                     'category_reservation.quantity as reservation',
-                    '(SELECT SUM(quantity) from Totalinventory where branch <> ' . $branch . ' and type <> 3 and id = salesDetails.category) as otherQtotalinventory',
+                    '(SELECT SUM(s.quantity) FROM stocks s WHERE s.category = salesDetails.category AND s.branch <> :tb2 AND s.type <> 3) as otherQtotalinventory',
                 ])
-                ->leftJoin(
-                    'Totalinventory',
-                    'salesDetails.category = Totalinventory.id AND Totalinventory.branch = :tb AND Totalinventory.type <> 3',
-                    [':tb' => $branch]
-                )
+                ->addParams([':tb' => $branch, ':tb2' => $branch])
                 ->leftJoin('category_reservation', 'salesDetails.category = category_reservation.category')
                 ->leftJoin('branches', 'branches.id = salesDetails.branch')
                 ->where(['=', 'salesDetails.salesId', $model->id]),
@@ -641,7 +642,7 @@ class SalesController extends Controller
             ->where(['salesId' => $model->id])
             ->sum('salePrice * quantity');
 
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
         $providerSalesDetails = new ActiveDataProvider([
             'query' => SalesDetails::find()
                 ->select([
@@ -858,7 +859,7 @@ class SalesController extends Controller
         $totalInvoice = SalesDetails::find()->where(['salesId' => $model->id])
             ->sum('salePrice * quantity');
 
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
         $providerSalesDetails = new Yii\data\ArrayDataProvider([
             'allModels' => $model->salesDetails,
             'pagination' => false,
@@ -925,7 +926,7 @@ class SalesController extends Controller
             return $this->redirect($back);
         }
 
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
         $net = (float) $model->total - (float) $model->disscount;
         $remaining = $net - (float) $model->paid;
         $m = function ($v) {
@@ -973,7 +974,7 @@ class SalesController extends Controller
         $content = $this->renderPartial('pdfPublic', [
             'model' => $model,
             'lines' => $lines,
-            'company' => CompanyInfo::find()->one(),
+            'company' => CompanyInfo::current(),
             'client' => Client::findOne($model->clinet),
             'balance' => ((int) $model->payWay === 1) ? (float) Dept::find()->where(['id' => $model->clinet])->sum('credt') : null,
         ]);
@@ -1111,14 +1112,12 @@ class SalesController extends Controller
         $costCol = ($identity->seeCostPrice == 1) ? 'salesDetails.costPrice' : 'NULL AS costPrice';
         $sql = "select sales.id, sales.at, sales.payWay, sales.total, sales.disscount, sales.paid, sales.type, sales.billId, sales.notes, sales.deleviried,
                 salesDetails.quantity, $costCol, salesDetails.salePrice,
-                Totalinventory.quantity as Qtotalinventory,
+                (SELECT SUM(s.quantity) FROM stocks s WHERE s.category = salesDetails.category AND s.branch = :b AND s.type <> 3) as Qtotalinventory,
                 client.name as client, client.mobile,
                 category.name as category, category.serialNo, category.company,
                 category_reservation.quantity as reservation
                 FROM sales
                 JOIN salesDetails on sales.id = salesDetails.salesId
-                LEFT JOIN Totalinventory on salesDetails.category = Totalinventory.id
-                     AND Totalinventory.branch = :b AND Totalinventory.type <> 3
                 JOIN client on sales.clinet = client.id
                 JOIN category on category.id = salesDetails.category
                 left JOIN category_reservation on salesDetails.category = category_reservation.category
@@ -1213,7 +1212,7 @@ class SalesController extends Controller
             throw new \yii\web\ForbiddenHttpException();
         }
         $isClient = ($identity->client != null);
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
 
         $criteria = ($company->criteriaـvalue != 0) ? (float) $company->criteriaـvalue : 1.0;
         if ($company->rate != 0) {
@@ -1267,20 +1266,31 @@ class SalesController extends Controller
                 ->orderBy(['category.id' => SORT_ASC])
                 ->all());
         } elseif ($id > 0) {
-            $item = Totalinventory::find()->where(['id' => (int) $id])->one();
-            if ($item !== null) {
+            // من category و prices و stocks بدل Totalinventory (الذي يحسب كل تاريخ الحركات)
+            $item = (new Query())
+                ->select([
+                    'category.name', 'category.company', 'category.serialNo', 'category.commCode',
+                    'prices.maxPrice', 'prices.minPrice',
+                    'quantity' => (new Query())->select('SUM(s.quantity)')->from('stocks s')
+                        ->where('s.category = category.id')->andWhere(['<>', 's.type', 3])->andWhere(['in', 's.branch', ($identity->seeOtherBranchQ == 0) ? [(int) $identity->branch] : $this->allBranchIds()]),
+                ])
+                ->from('category')
+                ->leftJoin('prices', 'prices.category = category.id')
+                ->where(['category.id' => (int) $id])
+                ->one();
+            if ($item) {
                 $result = [
                     'id' => (int) $id,
-                    'text' => $item->name,
-                    'company' => $item->company,
-                    'quantity' => $item->quantity,
-                    'maxPrice' => $item->maxPrice,
-                    'serialNo' => $item->serialNo,
-                    'type' => $item->type,
-                    'commCode' => $item->commCode,
+                    'text' => $item['name'],
+                    'company' => $item['company'],
+                    'quantity' => $item['quantity'],
+                    'maxPrice' => $item['maxPrice'],
+                    'serialNo' => $item['serialNo'],
+                    'type' => 1,
+                    'commCode' => $item['commCode'],
                 ];
                 if (!$isClient) {
-                    $result['minPrice'] = $item->minPrice;
+                    $result['minPrice'] = $item['minPrice'];
                 }
                 $out['results'] = $result;
             }
@@ -1291,7 +1301,7 @@ class SalesController extends Controller
     public function actionCreate()
     {
         $model = new Sales();
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
         $identity = Yii::$app->user->identity;
         $userId = (int) $identity->id;
 
@@ -1471,7 +1481,7 @@ class SalesController extends Controller
             //->andWhere(['=', 'branch', Yii::$app->user->identity->branch])
             ->sum('salePrice * quantity');
 
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
         $model = $this->findModel($id);
         $providerSalesDetails = new ActiveDataProvider([
             'query' => SalesDetails::find()
@@ -1499,7 +1509,7 @@ class SalesController extends Controller
     {
         $this->layout = 'invoice';
 
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
         $providerSalesDetails = new ActiveDataProvider([
             'query' => SalesDetails::find()->where(['=', 'salesId', $id]),
             'sort' => [
@@ -1525,7 +1535,7 @@ class SalesController extends Controller
             //->andWhere(['=', 'branch', Yii::$app->user->identity->branch])
             ->sum('salePrice * quantity');
 
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
         $model = $this->findModel($id);
         $providerSalesDetails = new ActiveDataProvider([
             'query' => SalesDetails::find()
@@ -1583,7 +1593,7 @@ class SalesController extends Controller
         }
         $isClient = ($identity->client != null);
 
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
 
         // أي قيمة تدخل في نص SQL تُحوَّل لرقم أولاً
         $criteria = ($company->criteriaـvalue != 0) ? (float) $company->criteriaـvalue : 1.0;
@@ -1661,6 +1671,7 @@ class SalesController extends Controller
                     ['like', 'category.id', $qSearch],
                     ['like', 'place', $qSearch],
                     ['like', 'company', $qSearch],
+                    ['like', 'category.class', $qSearch],
                 ])
                 ->andWhere($branchCondition)
                 ->limit(60)
@@ -1787,7 +1798,7 @@ class SalesController extends Controller
     public function actionSaveAsNew($oldId)
     {
         $old = $this->findModel($oldId);
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
         $identity = Yii::$app->user->identity;
 
         $model = new Sales();
@@ -1951,7 +1962,7 @@ class SalesController extends Controller
         try {
             $sale = $this->findModel($salesId);
             $this->ownBranchOrFail($sale);
-            $company = CompanyInfo::find()->one();
+            $company = CompanyInfo::current();
 
             $message = $this->withStockLock(function () use ($sale, $company, $categoryId) {
                 $category = Category::findOne($categoryId);

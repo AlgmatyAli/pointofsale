@@ -16,8 +16,8 @@ use app\models\Category;
     <div class="row">
     <div class="col-md-12">
        
-        <?= $form->field($model, 'id')->widget(\kartik\widgets\Select2::class, [
-       'data' => ArrayHelper::map(Category::find()->all(),'id', 'name'),
+        <?= $form->field($model, 'id')->widget(\app\widgets\LookupSelect2::class, [
+       'lookup' => 'category',
         'language' => 'en',
         'options' => ['placeholder' => Yii::t('app', 'Choose Category'),
         'dir' => 'rtl',

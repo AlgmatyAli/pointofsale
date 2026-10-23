@@ -24,8 +24,8 @@ use yii\widgets\ActiveForm;
             <?= $form->field($model, 'value')->textInput(['maxlength' => true, 'placeholder' => 'Value']) ?>
 
             <?php
-            echo $form->field($model, 'clinet')->widget(Select2::class, [
-                'data' => ArrayHelper::map(Client::find()->all(), 'id', 'name'),
+            echo $form->field($model, 'clinet')->widget(\app\widgets\LookupSelect2::class, [
+                'lookup' => 'client',
                 'language' => 'ar',
                 'options' => ['placeholder' => '...'],
                 'pluginOptions' => [

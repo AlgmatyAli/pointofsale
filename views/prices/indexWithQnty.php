@@ -41,9 +41,10 @@ $editable = [
                 return $model->category0?->name;
             },
             'width' => '30%',
-            'filterType' => GridView::FILTER_SELECT2,
-            'filter' => ArrayHelper::map(Category::find()->asArray()->all(), 'id', 'name'),
+            'filterType' => \app\widgets\LookupSelect2::class,
+            'filter' => [],
             'filterWidgetOptions' => [
+                'lookup' => 'category',
                 'pluginOptions' => ['allowClear' => true],
             ],
             'filterInputOptions' => ['placeholder' => Yii::t('app', 'Category'), 'id' => 'grid-prices-search-category'],
@@ -57,7 +58,7 @@ $editable = [
                 return $model->category0?->company;
             },
             'filterType' => GridView::FILTER_SELECT2,
-            'filter' => ArrayHelper::map(Category::find()->asArray()->all(), 'company', 'company'),
+            'filter' => ArrayHelper::map(Category::find()->select('company')->distinct()->asArray()->all(), 'company', 'company'),
             'filterWidgetOptions' => [
                 'pluginOptions' => ['allowClear' => true],
             ],

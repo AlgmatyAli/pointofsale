@@ -12,15 +12,13 @@ use yii\helpers\Json;
 use yii\helpers\Url;
 use yii\web\View;
 
-/* @var $this yii\web\View */
-/* @var $model app\models\ReceiptSearch */
-/* @var $form yii\bootstrap5\ActiveForm */
+/** @var  app\models\Client $model*/
 
 $errCfg = ['class' => 'invalid-feedback d-block'];
 
 // العملة الافتراضية = عملة الشركة (تُطبَّق فقط إذا لم تُحدَّد عملة)، والقائمة تحوي عملة الشركة فقط كما في الكود القديم
 if (empty($model->currency)) {
-    $model->currency = CompanyInfo::find()->one()?->currancy;
+    $model->currency = CompanyInfo::current()?->currancy;
 }
 $currencies = ArrayHelper::map(
     Currancy::find()->where('id = (select currancy from company_info)')->select(['id', 'name'])->asArray()->all(),
@@ -99,7 +97,11 @@ $catList = [0 => 'زبائن', 1 => 'موردين', 2 => 'كلاهما'];
 
                     <div class="form-check form-switch mt-1">
                         <?= Html::checkbox($model->formName() . '[allData]', (bool) $model->allData, [
-                            'value' => 1, 'uncheck' => 0, 'id' => 'histrans-allData', 'class' => 'form-check-input', 'role' => 'switch',
+                            'value' => 1,
+                            'uncheck' => 0,
+                            'id' => 'histrans-allData',
+                            'class' => 'form-check-input',
+                            'role' => 'switch',
                         ]) ?>
                         <label class="form-check-label" for="histrans-allData"><?= Html::encode($model->getAttributeLabel('allData')) ?></label>
                     </div>

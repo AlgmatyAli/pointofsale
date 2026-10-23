@@ -70,16 +70,58 @@ class CompanyInfo extends \yii\db\ActiveRecord
         return self::SKINS[$skin][1] ?? self::LEGACY_SKINS[$skin] ?? '';
     }
 
+    /** @var array|null|false نسخة الطلب الحالي من صف بيانات الشركة (false = لم تُقرأ بعد) */
+    private static $_currentRow = false;
+
+    /**
+     * صف بيانات الشركة كمصفوفة، من الكاش بدل استعلام في كل مرة.
+     * بديل CompanyInfo::find()->asArray()->one(). يُمسح الكاش عند حفظ بيانات الشركة.
+     */
+    public static function currentArray(): ?array
+    {
+        if (self::$_currentRow === false) {
+            self::$_currentRow = Yii::$app->cache->getOrSet(
+                'company-info-row',
+                fn() => static::find()->asArray()->one() ?: [],
+                3600
+            );
+        }
+        return self::$_currentRow ?: null;
+    }
+
+    /**
+     * بيانات الشركة كـ Model للقراءة، بديل CompanyInfo::find()->one().
+     * لا تستخدمه لتعديل البيانات وحفظها؛ استخدم findOne() في شاشة التعديل.
+     */
+    public static function current(): ?self
+    {
+        $row = static::currentArray();
+        if ($row === null) {
+            return null;
+        }
+        $model = static::instantiate($row);
+        static::populateRecord($model, $row);
+        $model->afterFind();
+        return $model;
+    }
+
+    public static function clearCache(): void
+    {
+        self::$_currentRow = false;
+        Yii::$app->cache->delete('company-info');
+        Yii::$app->cache->delete('company-info-row');
+    }
+
     public function afterSave($insert, $changedAttributes)
     {
         parent::afterSave($insert, $changedAttributes);
-        Yii::$app->cache->delete('company-info');
+        static::clearCache();
     }
 
     public function afterDelete()
     {
         parent::afterDelete();
-        Yii::$app->cache->delete('company-info');
+        static::clearCache();
     }
 
     /**

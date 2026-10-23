@@ -11,7 +11,7 @@ use app\models\CompanyInfo;
       $model = $value;
     }
     ?>
-     <?php $title = CompanyInfo::find()->select(['*'])->asArray()->one();?>
+     <?php $title = CompanyInfo::currentArray();?>
      <img src=<?php //echo $title["path"]?> class="img-circle logo" alt="Cinque Terre">
      <h3><?php
       echo  \yii\helpers\Html::encode($title['name']);

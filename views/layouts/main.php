@@ -16,12 +16,8 @@ if (Yii::$app->controller->action->id === 'login') {
 
 AppAsset::register($this);
 
-// استعلام واحد مخزّن مؤقتاً بدل استعلامين في كل طلب (يُحذف المفتاح عند حفظ CompanyInfo)
-$company = Yii::$app->cache->getOrSet(
-    'company-info',
-    fn() => CompanyInfo::find()->select(['skin', 'name'])->asArray()->one() ?: [],
-    3600
-);
+// من الكاش بدل استعلام في كل طلب (يُمسح عند حفظ CompanyInfo)
+$company = CompanyInfo::currentArray() ?? [];
 $companyName = $company['name'] ?? Yii::$app->name;
 
 // لون القائمة الجانبية من عمود skin (يُختار من قائمة ألوان Bootstrap في بيانات الشركة)

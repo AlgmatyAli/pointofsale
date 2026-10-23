@@ -11,7 +11,7 @@ use yii\helpers\Html;
 $this->context->layout = 'invoice';
 $this->registerCssFile('@web/css/template.css');
 
-$company = CompanyInfo::find()->select(['*'])->asArray()->one() ?: [];
+$company = CompanyInfo::currentArray() ?: [];
 
 $logo = (string) ($company['path'] ?? '');
 if ($logo !== '' && !preg_match('~^(https?:)?//|^/~', $logo)) {

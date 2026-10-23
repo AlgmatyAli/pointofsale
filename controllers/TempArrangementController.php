@@ -284,7 +284,7 @@ class TempArrangementController extends Controller
 
     public function actionGetInv($category)
     {
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
         if ($company->criteriaـvalue != 0) {
             $criteriaـvalue = $company->criteriaـvalue;
         } else {

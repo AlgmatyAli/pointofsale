@@ -94,8 +94,8 @@ CSS);
     <?= $section('bi-person-vcard', 'المورد والتواريخ') ?>
     <div class="row g-3 mb-2">
         <div class="col-md-7">
-            <?= $form->field($model, 'clinet')->widget(Select2::class, [
-                'data' => ArrayHelper::map(Client::find()->where(['in', 'type', [1, 2]])->orderBy('id')->asArray()->all(), 'id', 'name'),
+            <?= $form->field($model, 'clinet')->widget(\app\widgets\LookupSelect2::class, [
+                'lookup' => 'client', 'types' => [1, 2],
                 'language' => 'ar',
                 'options' => ['placeholder' => 'الرجاء اختيار اسم العميل ...'],
                 'pluginOptions' => ['allowClear' => true, 'multiple' => false] + $dropdown,

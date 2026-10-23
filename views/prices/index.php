@@ -54,9 +54,10 @@ $gridColumns = [
         'value' => function ($model) {
             return $model->category0?->name;
         },
-        'filterType' => GridView::FILTER_SELECT2,
-        'filter' => ArrayHelper::map(Category::find()->asArray()->all(), 'id', 'name'),
+        'filterType' => \app\widgets\LookupSelect2::class,
+        'filter' => [],
         'filterWidgetOptions' => [
+            'lookup' => 'category',
             'pluginOptions' => ['allowClear' => true],
         ],
         'filterInputOptions' => ['placeholder' => Yii::t('app', 'Category'), 'id' => 'grid-prices-search-category'],

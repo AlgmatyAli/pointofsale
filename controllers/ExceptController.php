@@ -95,7 +95,7 @@ class ExceptController extends Controller
             throw new \yii\web\ForbiddenHttpException();
         }
 
-        $company = CompanyInfo::find()->one();
+        $company = CompanyInfo::current();
         if ($company->criteriaـvalue != 0) {
             $criteriaـvalue = (float) $company->criteriaـvalue; // رقم فقط لأنه يدخل في نص SQL
         } else {
