@@ -73,7 +73,12 @@ CSS);
 
 <div class="purchases-form">
 
-    <?php $form = ActiveForm::begin(['id' => 'purchases-create-form']); ?>
+    <?php
+        // العملة الافتراضية من بيانات المؤسسة (company_info.currancy) عند فتح سجل جديد
+        if ($model->isNewRecord && !Yii::$app->request->isPost && ($companyCur = \app\models\CompanyInfo::current()?->currancy)) {
+            $model->currancy = $companyCur;
+        }
+        $form = ActiveForm::begin(['id' => 'purchases-create-form']); ?>
 
     <?= $form->errorSummary($model, ['class' => 'alert alert-danger py-2 small']) ?>
 

@@ -72,7 +72,7 @@ $this->registerJs(<<<'JS'
     function chip(label, value, cls) {
         if (value === null || value === undefined || value === '') { return ''; }
         return '<span class="badge ' + (cls || 'text-bg-light border') + ' fw-normal">' +
-            '<span class="text-body-secondary">' + esc(label) + ':</span> ' + esc(value) + '</span>';
+            '<span class="text-body-secondary">' + esc(label) + ':</span> <bdi>' + esc(value) + '</bdi></span>';
     }
 
     // شكل الصنف داخل القائمة المنسدلة: الاسم في سطر والشارات تحته

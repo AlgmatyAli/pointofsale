@@ -16,7 +16,12 @@ use kartik\date\DatePicker;
 
 <div class="sales-form">
 
-    <?php $form = ActiveForm::begin(['id' => 'dynamic-form']); ?>
+    <?php
+        // العملة الافتراضية من بيانات المؤسسة (company_info.currancy) عند فتح سجل جديد
+        if ($model->isNewRecord && !Yii::$app->request->isPost && ($companyCur = \app\models\CompanyInfo::current()?->currancy)) {
+            $model->currancy = $companyCur;
+        }
+        $form = ActiveForm::begin(['id' => 'dynamic-form']); ?>
     <div class="row">
         <div class="col-md-1"></div>
         <div class="col-md-5">

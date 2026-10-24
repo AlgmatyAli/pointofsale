@@ -61,7 +61,7 @@ use yii\widgets\ActiveForm;
                      '</div>' +
                      '<br>'+
                      '<div class="row">' + 
-                     '<div class="col-sm-6"><i class="badge badge-primary badge-pill"> رقم القطعة 1 - </i> ' + product.serialNo + '</div>' +
+                     '<div class="col-sm-6"><i class="badge badge-primary badge-pill"> رقم القطعة 1 - </i> <bdi>' + product.serialNo + '</bdi></div>' +
                      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> رقم القطعة 2 - </i> ' + product.commCode + '</div>' +
                      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> رقم التسلسل - </i> '  + product.id + '</div>' +
                      '<div class="col-sm-2"><i class="badge badge-primary badge-pill"> الشركة - </i> ' + product.company + '</div>' +

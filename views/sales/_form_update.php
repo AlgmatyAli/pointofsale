@@ -108,7 +108,7 @@ $this->registerJs(<<<'JS'
                 '<div class="col-sm-2">' + field('مكان الصنف', esc(product.place)) + '</div>' +
             '</div>' +
             '<div class="row mt-2">' +
-                '<div class="col-sm-2">' + field('رقم القطعة', esc(product.serialNo)) + '</div>' +
+                '<div class="col-sm-2">' + field('رقم القطعة', '<bdi>' + esc(product.serialNo) + '</bdi>') + '</div>' +
                 '<div class="col-sm-2">' + field('رقم القطعة التجاري', esc(product.commCode)) + '</div>' +
                 '<div class="col-sm-2">' + field('رقم التسلسل', esc(product.id)) + '</div>' +
                 '<div class="col-sm-2">' + field('حالة القطعة', esc(product.type)) + '</div>' +
@@ -167,7 +167,12 @@ $datePlugin = ['autoclose' => true, 'format' => 'yyyy-mm-dd', 'todayHighlight' =
 
 <div class="sales-form">
 
-    <?php $form = ActiveForm::begin(); ?>
+    <?php
+        // إن لم تُحدَّد عملة للسجل نعرض عملة المؤسسة الافتراضية
+        if (empty($model->currancy) && ($companyCur = \app\models\CompanyInfo::current()?->currancy)) {
+            $model->currancy = $companyCur;
+        }
+        $form = ActiveForm::begin(); ?>
 
     <!-- الأزرار العلوية -->
     <div class="d-flex flex-wrap justify-content-between gap-2 mb-4">

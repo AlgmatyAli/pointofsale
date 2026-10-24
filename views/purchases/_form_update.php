@@ -99,7 +99,7 @@ $this->registerJs(<<<'JS'
     function tag(label, value, strong) {
         if (value === null || value === undefined || value === '') { return ''; }
         return '<span class="pur-opt-tag' + (strong ? ' pur-opt-strong' : '') + '">' +
-            '<span class="text-body-secondary">' + esc(label) + ':</span> <b>' + esc(value) + '</b></span>';
+            '<span class="text-body-secondary">' + esc(label) + ':</span> <b><bdi>' + esc(value) + '</bdi></b></span>';
     }
 
     // شكل الصنف داخل القائمة المنسدلة: الاسم في سطر، والتفاصيل تحته وتلتف على الشاشات الضيقة
@@ -313,7 +313,12 @@ $gridColumns = [
                 <?php // معرّف صريح للنموذج: بدونه يأخذ Yii المعرّف التلقائي w0، وهو نفسه معرّف حاوية الجدول (Pjax)،
                 // فتحلّ إعادة رسم الجدول محل النموذج كله.
                 ?>
-                <?php $form = ActiveForm::begin(['id' => 'purchases-form']); ?>
+                <?php
+                    // إن لم تُحدَّد عملة للسجل نعرض عملة المؤسسة الافتراضية
+                    if (empty($model->currancy) && ($companyCur = \app\models\CompanyInfo::current()?->currancy)) {
+                        $model->currancy = $companyCur;
+                    }
+                    $form = ActiveForm::begin(['id' => 'purchases-form']); ?>
 
                 <?= $form->errorSummary($model) ?>
 

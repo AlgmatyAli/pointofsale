@@ -33,7 +33,7 @@ $formatJs = <<<'JS'
 var esc = function (s) { return $('<div>').text(s == null ? '' : String(s)).html(); };
 var hsChip = function (label, val) {
     return (val === undefined || val === null || val === '') ? '' :
-        '<span class="badge text-bg-light border fw-normal me-1">' + label + ' ' + esc(val) + '</span>';
+        '<span class="badge text-bg-light border fw-normal me-1">' + label + ' <bdi>' + esc(val) + '</bdi></span>';
 };
 var formatProduct = function (product) {
     if (product.loading) { return esc(product.text); }

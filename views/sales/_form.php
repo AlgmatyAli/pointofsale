@@ -90,7 +90,12 @@ CSS);
 
 <div class="sales-form">
 
-    <?php $form = ActiveForm::begin(); ?>
+    <?php
+        // العملة الافتراضية من بيانات المؤسسة (company_info.currancy) عند فتح سجل جديد
+        if ($model->isNewRecord && !Yii::$app->request->isPost && ($companyCur = \app\models\CompanyInfo::current()?->currancy)) {
+            $model->currancy = $companyCur;
+        }
+        $form = ActiveForm::begin(); ?>
 
     <?= $form->errorSummary($model, ['class' => 'alert alert-danger py-2 small']) ?>
 

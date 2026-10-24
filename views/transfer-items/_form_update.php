@@ -26,7 +26,7 @@ var esc = function (v) {
 };
 var chip = function (label, value, cls) {
     return '<span class="badge ' + (cls || 'text-bg-light border') + ' fw-normal">' +
-        '<span class="text-body-secondary">' + label + ':</span> ' + esc(value) + '</span>';
+        '<span class="text-body-secondary">' + label + ':</span> <bdi>' + esc(value) + '</bdi></span>';
 };
 
 var formatProduct = function (product) {
