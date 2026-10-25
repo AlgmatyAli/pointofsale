@@ -403,7 +403,8 @@ $datePlugin = ['autoclose' => true, 'format' => 'yyyy-mm-dd', 'todayHighlight' =
                 // Html::encode: اسم الصنف يُدخله المستخدم ولا يجوز طباعته كما هو داخل HTML
                 return Html::a(
                     Html::encode($category->name),
-                    ['category/info', 'id' => $category->id],
+                    // salesId: لعرض آخر 3 فواتير للزبون في بطاقة الصنف (من تعديل فاتورة المبيعات فقط)
+                    ['category/info', 'id' => $category->id, 'salesId' => $model->salesId],
                     ['class' => 'btn-link popupModal']
                 );
             },

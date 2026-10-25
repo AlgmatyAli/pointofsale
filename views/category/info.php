@@ -68,6 +68,24 @@ use yii\helpers\Html;
                 ?>
             </tr>
         </table>
+        <?php if ($clientSalesInfo !== null) { ?>
+            <h5> <?= Yii::t('app', 'آخر 3 فواتير للزبون') ?>: <?= Html::encode($clientName) ?></h5>
+            <hr>
+            <table class="kv-grid-table table table-bordered table-striped kv-table-wrap">
+                <tr style="font-size: 10px; font-weight: bold;">
+                    <th><?= Yii::t('app', 'At') ?></th>
+                    <th><?= Yii::t('app', 'Sale Price') ?></th>
+                </tr>
+                <?php if ($clientSalesInfo) {
+                    foreach ($clientSalesInfo as $sale) {
+                        echo '<tr><td>' . Html::encode($sale->at) . '</td>';
+                        echo '<td>' . Yii::$app->formatter->asDecimal($sale->salePrice, 2) . '</td></tr>';
+                    }
+                } else {
+                    echo '<tr><td colspan="2">' . Yii::t('app', 'No Sales Found') . '</td></tr>';
+                } ?>
+            </table>
+        <?php } ?>
     </div>
     <div class="col-md-5">
         <table class="kv-grid-table table table-bordered table-striped kv-table-wrap">

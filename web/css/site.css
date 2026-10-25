@@ -261,3 +261,10 @@ hr {
 .app-sidebar.sidebar-custom .sidebar-menu .nav-link.active {
   background-color: rgba(var(--bs-emphasis-color-rgb), 0.15) !important;
 }
+
+/* ===== إزالة الخط تحت الروابط داخل جداول GridView مع إبقاء اللون الأزرق ===== */
+.grid-view tbody a,
+.grid-view tbody a:hover,
+.grid-view tbody a:focus {
+  text-decoration: none;
+}

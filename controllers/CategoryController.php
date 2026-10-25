@@ -569,7 +569,7 @@ class CategoryController extends Controller
         echo json::encode($value);
     }
 
-    public function actionInfo($id)
+    public function actionInfo($id, $salesId = null)
     {
         $model = new Category();
         $modelInfo = Stocks::find()
@@ -594,7 +594,20 @@ class CategoryController extends Controller
             ->orderBy(['sales.at' => SORT_DESC])
             ->all();
 
-
+        // آخر 3 فواتير مبيعات لنفس الزبون، فقط عند الفتح من شاشة تعديل فاتورة المبيعات
+        $clientSalesInfo = null;
+        $currentSale = $salesId !== null ? Sales::findOne((int) $salesId) : null;
+        if ($currentSale !== null) {
+            $clientSalesInfo = Sales::find()
+                ->select(['sales.at', 'salesDetails.salePrice'])
+                ->leftJoin('salesDetails', 'sales.id = salesDetails.salesId')
+                ->where(['sales.type' => 1, 'sales.clinet' => $currentSale->clinet])
+                ->andWhere(['=', 'salesDetails.category', $id])
+                ->andWhere(['<>', 'sales.id', $currentSale->id])
+                ->limit(3)
+                ->orderBy(['sales.at' => SORT_DESC])
+                ->all();
+        }
 
         if ($model->load(Yii::$app->request->post())) {
             return $this->redirect(Yii::$app->request->referrer);
@@ -604,6 +617,8 @@ class CategoryController extends Controller
                 'modelInfo' => $modelInfo,
                 'dateOfArrival' => $dateOfArrival,
                 'salesInfo' => $salesInfo,
+                'clientSalesInfo' => $clientSalesInfo,
+                'clientName' => $currentSale?->c?->name,
             ]);
         }
     }
