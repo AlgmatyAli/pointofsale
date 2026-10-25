@@ -598,14 +598,16 @@ class CategoryController extends Controller
         $clientSalesInfo = null;
         $currentSale = $salesId !== null ? Sales::findOne((int) $salesId) : null;
         if ($currentSale !== null) {
-            $clientSalesInfo = Sales::find()
-                ->select(['sales.at', 'salesDetails.salePrice'])
-                ->leftJoin('salesDetails', 'sales.id = salesDetails.salesId')
+            // سطر الصنف نفسه من كل فاتورة (سعره وكميته)، وليس إجمالي الفاتورة
+            $clientSalesInfo = \app\models\SalesDetails::find()
+                ->innerJoinWith('sales', false)
+                ->select(['salesDetails.salePrice', 'salesDetails.quantity', 'salesDetails.salesId'])
                 ->where(['sales.type' => 1, 'sales.clinet' => $currentSale->clinet])
-                ->andWhere(['=', 'salesDetails.category', $id])
+                ->andWhere(['salesDetails.category' => $id])
                 ->andWhere(['<>', 'sales.id', $currentSale->id])
+                ->with('sales')
+                ->orderBy(['sales.at' => SORT_DESC, 'salesDetails.id' => SORT_DESC])
                 ->limit(3)
-                ->orderBy(['sales.at' => SORT_DESC])
                 ->all();
         }
 

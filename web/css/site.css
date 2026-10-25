@@ -268,3 +268,9 @@ hr {
 .grid-view tbody a:focus {
   text-decoration: none;
 }
+
+/* ===== لون خلفية المنظومة (أريح للعين من الأبيض) ===== */
+body.bg-body-tertiary,
+.app-main {
+  background-color: #ecf0f5 !important;
+}
