@@ -21,8 +21,10 @@ class m261025_000001_create_item_company extends Migration
             ], 'CHARACTER SET utf8mb4 ENGINE=InnoDB');
         }
 
+        // IGNORE: أسماء تختلف فقط بحالة الأحرف أو بتشكيل عربي (مثل 'ِAISIN' و 'AISIN') تُعتبر نفس الاسم
+        // في الفهرس الفريد، فيُحفظ أولها ويُتجاهل الباقي، ثم تُربط كل أصنافها بنفس الشركة في الخطوة التالية
         $this->execute("
-            INSERT INTO itemCompany (name, created_at)
+            INSERT IGNORE INTO itemCompany (name, created_at)
             SELECT DISTINCT TRIM(c.company), NOW()
             FROM category c
             WHERE c.company IS NOT NULL AND TRIM(c.company) <> ''
