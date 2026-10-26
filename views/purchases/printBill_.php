@@ -7,7 +7,7 @@ use app\models\CompanyInfo;
 /* @var $models array */
 /* @var $infos array */
 
-// تخطيط مستقل بلا الشريط الجانبي والعلوي، وزر Print يستدعي printInvoice() (طباعة داخل إطار معزول)
+// تخطيط مستقل (يعرض الشريط الجانبي والعلوي، ولا يدخلان في الطباعة)، وزر Print يستدعي printInvoice() (طباعة داخل إطار معزول)
 $this->context->layout = 'invoice';
 $this->registerCssFile('@web/css/template.css');
 

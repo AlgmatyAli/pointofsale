@@ -23,6 +23,8 @@ return [
     ['label' => 'تسجيل طلبية مشتريات', 'icon' => 'bi-clipboard-plus', 'url' => ['/temp-reorder/create']],
     ['label' => 'ايصالات القبض', 'icon' => 'bi-receipt', 'url' => ['/receipt/create', 'type' => '1']],
     ['label' => 'تسجيل الأصناف والمواد', 'icon' => 'bi-boxes', 'url' => ['/category']],
+    ['label' => 'الشركات المصنّعة', 'icon' => 'bi-building', 'url' => ['/item-company/index'],
+        'visible' => Yii::$app->user->can('createCategory') || Yii::$app->user->can('updateCategory')],
     [
         'label' => 'الأجور والمرتبات',
         'icon' => 'bi-people',

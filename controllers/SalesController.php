@@ -966,7 +966,7 @@ class SalesController extends Controller
         }
 
         $lines = (new Query())
-            ->select(['c.name', 'd.quantity', 'd.salePrice'])
+            ->select(['c.name', 'c.company', 'd.quantity', 'd.salePrice'])
             ->from(['d' => 'salesDetails'])
             ->innerJoin(['c' => 'category'], 'c.id = d.category')
             ->where(['d.salesId' => $model->id])->orderBy('d.id')->all();
@@ -989,6 +989,8 @@ class SalesController extends Controller
             'destination' => Pdf::DEST_BROWSER,
             'filename' => 'invoice-' . (int) $model->billId . '.pdf',
             'content' => $content,
+            // التنسيق من ملف مستقل: وسم <style> داخل المحتوى كان يظهر نصاً في الـ PDF
+            'cssFile' => '@webroot/css/invoice-pdf.css',
             'defaultFont' => 'Sans-serif',
             'options' => ['title' => 'فاتورة رقم ' . (int) $model->billId, 'autoScriptToLang' => true, 'autoLangToFont' => true],
         ]);
@@ -1212,18 +1214,8 @@ class SalesController extends Controller
             throw new \yii\web\ForbiddenHttpException();
         }
         $isClient = ($identity->client != null);
-        $company = CompanyInfo::current();
-
-        $criteria = ($company->criteriaـvalue != 0) ? (float) $company->criteriaـvalue : 1.0;
-        if ($company->rate != 0) {
-            $crit = sprintf('%.6F', $criteria);
-            $rate = sprintf('%.6F', (float) $company->rate / 100);
-            $maxPrice = "CASE WHEN maxPrice >= $crit THEN ROUND(maxPrice * $rate + maxPrice) ELSE maxPrice END AS maxPrice";
-            $minPrice = "CASE WHEN maxPrice >= $crit THEN ROUND(minPrice * $rate + minPrice) ELSE minPrice END AS minPrice";
-        } else {
-            $maxPrice = 'maxPrice';
-            $minPrice = 'minPrice';
-        }
+        // نسبة الزيادة العامة على أصناف الشركات المختارة في بيانات المؤسسة
+        [$maxPrice, $minPrice] = \app\components\CompanyRate::priceColumns();
 
         $branchCondition = ($identity->seeOtherBranchQ == 0)
             ? ['stocks.branch' => (int) $identity->branch]
@@ -1595,18 +1587,8 @@ class SalesController extends Controller
 
         $company = CompanyInfo::current();
 
-        // أي قيمة تدخل في نص SQL تُحوَّل لرقم أولاً
-        $criteria = ($company->criteriaـvalue != 0) ? (float) $company->criteriaـvalue : 1.0;
-
-        if ($company->rate != 0) {
-            $crit = sprintf('%.6F', $criteria);
-            $rate = sprintf('%.6F', (float) $company->rate / 100);
-            $maxPrice = "CASE WHEN maxPrice >= $crit THEN ROUND(maxPrice * $rate + maxPrice) ELSE maxPrice END AS maxPrice";
-            $minPrice = "CASE WHEN maxPrice >= $crit THEN ROUND(minPrice * $rate + minPrice) ELSE minPrice END AS minPrice";
-        } else {
-            $maxPrice = 'maxPrice';
-            $minPrice = 'minPrice';
-        }
+        // نسبة الزيادة العامة على أصناف الشركات المختارة في بيانات المؤسسة
+        [$maxPrice, $minPrice] = \app\components\CompanyRate::priceColumns();
 
         // الفرع: من يرى كل الفروع
         $branchCondition = ($identity->seeOtherBranchQ == 0)

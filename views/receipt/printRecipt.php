@@ -7,7 +7,7 @@ use yii\helpers\Html;
 /** @var app\models\Receipts $model */
 /** @var float $balance */
 
-// تخطيط مستقل بلا الشريط الجانبي والعلوي. زر Print يستدعي printInvoice('receipts') (طباعة داخل إطار معزول)
+// تخطيط مستقل (يعرض الشريط الجانبي والعلوي، ولا يدخلان في الطباعة). زر Print يستدعي printInvoice('receipts') (طباعة داخل إطار معزول)
 $this->context->layout = 'invoice';
 $this->title = 'ايصال';
 

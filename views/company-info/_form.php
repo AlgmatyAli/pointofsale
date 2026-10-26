@@ -105,7 +105,16 @@ $switch = function ($model, string $attribute, string $hint = '') {
                             <?= $form->field($model, 'rate')->textInput(['maxlength' => true, 'inputmode' => 'decimal'])->label('نسبة  الزيادة') ?>
                         </div>
                         <div class="col-md-6">
-                            <?= $form->field($model, $criteriaAttr)->textInput(['maxlength' => true])->label('قيمة البحث') ?>
+                            <?= $form->field($model, $criteriaAttr)->textInput(['maxlength' => true])->label('قيمة البحث')
+                                ->hint('تُطبَّق النسبة على الأصناف التي سعرها أكبر من أو يساوي هذه القيمة. 0 = بدون شرط على السعر.') ?>
+                        </div>
+                        <div class="col-md-6">
+                            <?php $model->rateCompanies = $model->rateCompanies ? explode(',', $model->rateCompanies) : []; ?>
+                            <?= $form->field($model, 'rateCompanies')->widget(Select2::class, [
+                                'data' => \app\models\ItemCompany::map(),
+                                'options' => ['placeholder' => 'كافة الشركات', 'multiple' => true],
+                                'pluginOptions' => ['allowClear' => true],
+                            ])->label('الشركات التي تُطبَّق عليها النسبة')->hint('اتركها فارغة لتطبيق النسبة على كل الشركات.') ?>
                         </div>
                         <div class="col-md-6">
                             <?= $form->field($model, 'skin')->dropDownList(

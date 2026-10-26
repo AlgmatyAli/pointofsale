@@ -22,6 +22,8 @@ use Yii;
  * @property string|null $serialNo
  * @property string|null $country
  * @property string|null $company
+ * @property int|null $companyId
+ * @property ItemCompany|null $itemCompany
  * @property string|null $path
  * @property int $user_insert
  * @property string $created_at
@@ -60,6 +62,9 @@ class Category extends \yii\db\ActiveRecord
             [['created_at', 'update_at', 'place', 'commCode', 'moreRequest', 'weight'], 'safe'],
             [['name', 'class', 'serialNo', 'country', 'company', 'path'], 'string', 'max' => 255],
             [['unit'], 'string', 'max' => 100],
+            [['companyId'], 'default', 'value' => null],
+            [['companyId'], 'integer'],
+            [['companyId'], 'exist', 'skipOnError' => true, 'targetClass' => ItemCompany::class, 'targetAttribute' => ['companyId' => 'id']],
             [['user_insert'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_insert' => 'id']],
             [['user_update'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_update' => 'id']],
             [['file'], 'file', 'extensions' => ['jpg', 'jpeg', 'png', 'webp'], 'maxSize' => 1024 * 1024 * 2],
@@ -87,6 +92,7 @@ class Category extends \yii\db\ActiveRecord
             'serialNo' => Yii::t('app', 'Serial No'),
             'country' => Yii::t('app', 'Country'),
             'company' => Yii::t('app', 'Company'),
+            'companyId' => Yii::t('app', 'Company'),
             'path' => Yii::t('app', 'Path'),
             'user_insert' => Yii::t('app', 'User Insert'),
             'created_at' => Yii::t('app', 'Created At'),
@@ -152,5 +158,40 @@ class Category extends \yii\db\ActiveRecord
     public function getTotal()
     {
         return $this->hasOne(Totalinventory::class, ['id' => 'id']);
+    }
+
+    public function getItemCompany()
+    {
+        return $this->hasOne(ItemCompany::class, ['id' => 'companyId']);
+    }
+
+    /**
+     * عمود company النصي تعتمد عليه التقارير والـ Views، فيبقى مطابقاً لـ companyId:
+     *  - عند اختيار شركة من القائمة يُكتب اسمها في company.
+     *  - عند إدخال الاسم نصاً فقط (مثل الاستيراد من Excel) تُربط بالشركة أو تُنشأ.
+     */
+    public function beforeSave($insert)
+    {
+        if (!parent::beforeSave($insert)) {
+            return false;
+        }
+
+        if ($this->isAttributeChanged('companyId', false)) {
+            $this->company = $this->companyId ? ItemCompany::find()->select('name')->where(['id' => $this->companyId])->scalar() : null;
+        } elseif (trim((string) $this->company) === '') {
+            $this->company = null;
+            $this->companyId = null;
+        } elseif (empty($this->companyId) || $this->isAttributeChanged('company', false)) {
+            $name = trim($this->company);
+            $itemCompany = ItemCompany::findOne(['name' => $name]);
+            if ($itemCompany === null) {
+                $itemCompany = new ItemCompany(['name' => $name]);
+                $itemCompany->save(false);
+            }
+            $this->companyId = $itemCompany->id;
+            $this->company = $itemCompany->name;
+        }
+
+        return true;
     }
 }

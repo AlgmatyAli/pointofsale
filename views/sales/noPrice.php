@@ -8,7 +8,7 @@ use yii\helpers\Html;
 /** @var app\models\CompanyInfo $company */
 /** @var yii\data\ActiveDataProvider $providerSalesDetails */
 
-// عرض الفاتورة بتخطيط مستقل بلا الشريط الجانبي والعلوي (يحمّل template.css تلقائياً)
+// عرض الفاتورة بتخطيط مستقل (يعرض الشريط الجانبي والعلوي، ولا يدخلان في الطباعة) (يحمّل template.css تلقائياً)
 $this->context->layout = 'invoice';
 
 // مسار الشعار: إن كان نسبياً نجعله نسبةً إلى مجلد web

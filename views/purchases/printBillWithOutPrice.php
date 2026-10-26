@@ -9,7 +9,7 @@ use yii\helpers\Html;
 /** @var yii\data\ActiveDataProvider $dataProvider */
 /** @var float $balance */
 
-// عرض الفاتورة بتخطيط مستقل بلا الشريط الجانبي والعلوي. زر Print يستدعي printInvoice() من تخطيط invoice (طباعة داخل إطار معزول)
+// عرض الفاتورة بتخطيط مستقل (يعرض الشريط الجانبي والعلوي، ولا يدخلان في الطباعة). زر Print يستدعي printInvoice() من تخطيط invoice (طباعة داخل إطار معزول)
 $this->context->layout = 'invoice';
 
 // مسار الشعار

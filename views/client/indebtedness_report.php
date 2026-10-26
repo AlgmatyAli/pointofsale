@@ -7,7 +7,7 @@ use yii\helpers\Html;
 /** @var array $models */
 /** @var int $indebtedness */
 
-// تقرير بتخطيط مستقل بلا الشريط الجانبي والعلوي، ويُطبع داخل إطار معزول (printReport في layouts/report.php)
+// تقرير بتخطيط مستقل (يعرض الشريط الجانبي والعلوي، ولا يدخلان في الطباعة)، ويُطبع داخل إطار معزول (printReport في layouts/report.php)
 $this->context->layout = 'report';
 $this->title = $this->title ?: 'تقرير المديونية';
 

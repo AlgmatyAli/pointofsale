@@ -12,6 +12,8 @@ AppAsset::register($this);
 
 // report.css يجب أن يُحمَّل بعد AppAsset حتى لا تغلبه أنماط Bootstrap/AdminLTE
 $this->registerCssFile('@web/css/report.css', ['depends' => [AppAsset::class]]);
+// التقرير على خلفية بيضاء داخل الصفحة (خلفية المنظومة رمادية)
+$this->registerCss('.app-main .report { background: #fff; padding: 12px; }');
 
 // طباعة التقرير داخل إطار مستقل لا يحمّل إلا report.css، فلا تتداخل معه أنماط الموقع.
 // printReport() تطبع العنصر #report، و printReport('id') تطبع عنصراً آخر.
@@ -69,12 +71,10 @@ $this->registerJs(
     <title><?= Html::encode($this->title ?: Yii::$app->name) ?></title>
     <?php $this->head() ?>
 </head>
-<body class="bg-white">
+<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
 <?php $this->beginBody() ?>
 
-<div class="container-fluid py-3">
-    <?= $content ?>
-</div>
+<?= $this->render('_shell', ['content' => $content]) ?>
 
 <?php $this->endBody() ?>
 </body>

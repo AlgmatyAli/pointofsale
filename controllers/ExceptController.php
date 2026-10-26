@@ -95,28 +95,8 @@ class ExceptController extends Controller
             throw new \yii\web\ForbiddenHttpException();
         }
 
-        $company = CompanyInfo::current();
-        if ($company->criteriaـvalue != 0) {
-            $criteriaـvalue = (float) $company->criteriaـvalue; // رقم فقط لأنه يدخل في نص SQL
-        } else {
-            $criteriaـvalue = 1;
-        }
-
-        if ($company->rate != 0) {
-            $rate = ((float) $company->rate / 100);
-            $maxPrice = 'CASE
-        WHEN maxPrice >= ' . $criteriaـvalue . ' THEN round(maxPrice * "' . $rate . '" + maxPrice)
-        ELSE maxPrice
-        END  as maxPrice';
-
-            $minPrice = 'CASE
-        WHEN maxPrice >= ' . $criteriaـvalue . ' THEN round(minPrice * "' . $rate . '" + minPrice)
-        ELSE minPrice
-        END  as minPrice';
-        } else {
-            $maxPrice = 'maxPrice';
-            $minPrice = 'minPrice';
-        }
+        // نسبة الزيادة العامة على أصناف الشركات المختارة في بيانات المؤسسة
+        [$maxPrice, $minPrice] = \app\components\CompanyRate::priceColumns();
 
         // الأعمدة الأساسية المتاحة للجميع
         $select = [
@@ -139,10 +119,11 @@ class ExceptController extends Controller
 
         $value = Stocks::find()
             ->leftJoin('prices', 'stocks.category = prices.category')
+            ->leftJoin('category', 'category.id = stocks.category')
             ->select($select)
             // ->andWhere(['stocks.branch' => $identity->branch])
             ->andWhere(['stocks.category' => $category])
-            ->andWhere(['in', 'type', [1, 2]])
+            ->andWhere(['in', 'stocks.type', [1, 2]])
             ->asArray()->one();
 
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;

@@ -48,7 +48,43 @@ if ($logo !== '' && !preg_match('~^(https?:)?//|^/~', $logo)) {
   <div class="clearfix"></div>
   <br>
 
-  <table class="kv-grid-table table table-bordered table-striped kv-table-wrap">
+  <?php
+  // تجميع الفواتير حسب الزبون: صف لكل زبون، والضغط عليه يُظهر فواتيره أسفله (مثل sales/index)
+  $groups = [];
+  foreach ($models as $model) {
+    $key = (string) $model['client'];
+    if (!isset($groups[$key])) {
+      $groups[$key] = ['row' => $model, 'invoices' => [], 'remaining' => 0.0, 'deserving' => $model['deserving']];
+    }
+    $groups[$key]['invoices'][] = $model;
+    $groups[$key]['remaining'] += (float) ($model['total'] - $model['disscount'] - $model['paid']);
+    if ((string) $model['deserving'] < (string) $groups[$key]['deserving']) {
+      $groups[$key]['deserving'] = $model['deserving'];
+    }
+  }
+  // الأقرب استحقاقاً أولاً
+  uasort($groups, fn($a, $b) => strcmp((string) $a['deserving'], (string) $b['deserving']));
+
+  // صفوف الفواتير مخفية في الصفحة فقط؛ الطباعة (printInvoice) لا تحمّل هذا التنسيق فتُطبع كل الفواتير
+  $this->registerCss('
+    .deserving-invoice.is-hidden { display: none; }
+    .deserving-client { cursor: pointer; font-weight: bold; }
+    .deserving-client:hover td { background: #e9f2ff; }
+    .deserving-invoice td:first-child { border-right: 3px solid #0d6efd; }
+  ');
+  $this->registerJs('
+    $(document).on("click", ".deserving-client", function (e) {
+      if ($(e.target).closest("a, button").length) { return; }
+      var key = $(this).data("client");
+      var rows = $(".deserving-invoice[data-client=\"" + key + "\"]");
+      var open = rows.first().hasClass("is-hidden");
+      rows.toggleClass("is-hidden", !open);
+      $(this).find(".toggle-icon").toggleClass("bi-chevron-left", !open).toggleClass("bi-chevron-down", open);
+    });
+  ');
+  ?>
+
+  <table class="kv-grid-table table table-bordered kv-table-wrap">
     <thead class="kv-table-header w1">
       <tr>
         <th>#</th>
@@ -82,46 +118,29 @@ if ($logo !== '' && !preg_match('~^(https?:)?//|^/~', $logo)) {
     <tbody>
       <?php
       $coun = 1;
-      foreach ($models as $model):
+      foreach ($groups as $key => $group):
+        $first = $group['row'];
+        $clientStyle = (($first['post_paid'] ?? 0) == 0) ? 'color: red; text-decoration: underline;' : '';
       ?>
-        <tr>
+        <tr class="deserving-client table-light" data-client="<?= Html::encode($key) ?>">
           <td><?= $coun++ ?></td>
-          <td><?= Html::encode($model["id"]) ?></td>
-          <?php if (($model["post_paid"] ?? 0) == 0): ?>
-            <td style="color: red; text-decoration: underline;"><?= Html::encode($model["clientName"]) ?></td>
-          <?php else: ?>
-            <td><?= Html::encode($model["clientName"]) ?></td>
-          <?php endif; ?>
-          <td><?= Html::encode($model["billId"]) ?></td>
-          <td style="color: green;"><?= number_format((float)($model["total"] - $model["disscount"] - $model["paid"]), 3) ?></td>
-          <td style="color: blue;"><?= number_format((float)$model["credt"], 3) ?></td>
-          <td><?= Html::encode($model["at"]) ?></td>
-          <td><?= Html::encode($model["deserving"]) ?></td>
-          <td class="no-print d-print-none">
-            <?= Html::a(
-              '<i class="bi bi-folder2-open"></i>',
-              ['sales/print', 'id' => $model["id"]],
-              ['class' => 'btn btn-success btn-sm', 'title' => Yii::t('app', 'View')]
-            ) ?>
+          <td><?= Html::encode($first['client']) ?></td>
+          <td>
+            <i class="bi bi-chevron-left toggle-icon no-print"></i>
+            <span style="<?= $clientStyle ?>"><?= Html::encode($first['clientName']) ?></span>
           </td>
-          <td class="no-print d-print-none">
-            <?= Html::a(
-              '<i class="bi bi-send"></i>',
-              ['sales/done', 'id' => $model["id"]],
-              ['class' => 'btn btn-secondary btn-sm', 'title' => Yii::t('app', 'Done')]
-            ) ?>
-          </td>
-          <td class="no-print d-print-none">
-            <?= Html::a(
-              '<i class="bi bi-whatsapp"></i>',
-              ['sales/whatsapp', 'id' => $model["id"], 'reminder' => 1],
-              ['class' => 'btn btn-success btn-sm', 'title' => 'تذكير عبر واتساب', 'target' => '_blank', 'rel' => 'noopener']
-            ) ?>
-          </td>
+          <td><?= count($group['invoices']) ?> فاتورة</td>
+          <td style="color: green;"><?= number_format($group['remaining'], 3) ?></td>
+          <td style="color: blue;"><?= number_format((float) $first['credt'], 3) ?></td>
+          <td></td>
+          <td><?= Html::encode($group['deserving']) ?></td>
+          <td class="no-print d-print-none"></td>
+          <td class="no-print d-print-none"></td>
+          <td class="no-print d-print-none"></td>
           <td class="no-print d-print-none">
             <?= Html::a(
               '<i class="bi bi-slash-circle"></i>',
-              ['sales/stop-credit', 'id' => $model["client"]],
+              ['sales/stop-credit', 'id' => $first['client']],
               [
                 'class' => 'btn btn-danger btn-sm',
                 'title' => Yii::t('app', 'Stop Credit'),
@@ -130,6 +149,40 @@ if ($logo !== '' && !preg_match('~^(https?:)?//|^/~', $logo)) {
             ) ?>
           </td>
         </tr>
+        <?php foreach ($group['invoices'] as $model): ?>
+          <tr class="deserving-invoice is-hidden" data-client="<?= Html::encode($key) ?>">
+            <td></td>
+            <td></td>
+            <td></td>
+            <td><?= Html::encode($model["billId"]) ?></td>
+            <td style="color: green;"><?= number_format((float)($model["total"] - $model["disscount"] - $model["paid"]), 3) ?></td>
+            <td></td>
+            <td><?= Html::encode($model["at"]) ?></td>
+            <td><?= Html::encode($model["deserving"]) ?></td>
+            <td class="no-print d-print-none">
+              <?= Html::a(
+                '<i class="bi bi-folder2-open"></i>',
+                ['sales/print', 'id' => $model["id"]],
+                ['class' => 'btn btn-success btn-sm', 'title' => Yii::t('app', 'View')]
+              ) ?>
+            </td>
+            <td class="no-print d-print-none">
+              <?= Html::a(
+                '<i class="bi bi-send"></i>',
+                ['sales/done', 'id' => $model["id"]],
+                ['class' => 'btn btn-secondary btn-sm', 'title' => Yii::t('app', 'Done')]
+              ) ?>
+            </td>
+            <td class="no-print d-print-none">
+              <?= Html::a(
+                '<i class="bi bi-whatsapp"></i>',
+                ['sales/whatsapp', 'id' => $model["id"], 'reminder' => 1],
+                ['class' => 'btn btn-success btn-sm', 'title' => 'تذكير عبر واتساب', 'target' => '_blank', 'rel' => 'noopener']
+              ) ?>
+            </td>
+            <td class="no-print d-print-none"></td>
+          </tr>
+        <?php endforeach; ?>
       <?php endforeach; ?>
     </tbody>
   </table>

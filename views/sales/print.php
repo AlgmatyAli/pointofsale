@@ -12,7 +12,7 @@ use yii\helpers\Html;
 /** @var float $totalInvoice */
 /** @var float $balance */
 
-// عرض الفاتورة بتخطيط مستقل بلا الشريط الجانبي والعلوي، فتُطبع بعرض الورقة تماماً
+// عرض الفاتورة بتخطيط مستقل (يعرض الشريط الجانبي والعلوي، ولا يدخلان في الطباعة)، فتُطبع بعرض الورقة تماماً
 $this->context->layout = 'invoice';
 
 // مسار الشعار: إن كان نسبياً نجعله نسبةً إلى مجلد web.
@@ -44,7 +44,7 @@ if (in_array($model->type, [1, 3, 4])) {
 
 <!-- شريط الأزرار: لا يُطبع -->
 <?= $this->render('_flash') ?>
-<div class="no-print d-print-none mb-3 d-flex flex-wrap justify-content-between gap-2">
+<div class="no-print d-print-none mb-3 d-flex flex-wrap justify-content-between gap-5">
     <div class="d-flex flex-wrap gap-2">
         <button type="button" class="btn btn-primary" onclick="printInvoice()">
             <i class="bi bi-printer"></i> <?= Yii::t('app', 'Print') ?>
@@ -87,11 +87,12 @@ if (in_array($model->type, [1, 3, 4])) {
         ) ?>
 
         <?php
-        // Html::a(
-        //     '<i class="bi bi-whatsapp"></i> إرسال واتساب',
-        //     ['whatsapp', 'id' => $model->id],
-        //     ['class' => 'btn btn-success', 'target' => '_blank', 'rel' => 'noopener']
-        // ) 
+        echo
+        Html::a(
+            '<i class="bi bi-whatsapp"></i> إرسال واتساب',
+            ['whatsapp', 'id' => $model->id],
+            ['class' => 'btn btn-success', 'target' => '_blank', 'rel' => 'noopener']
+        )
         ?>
 
         <?= Html::a(

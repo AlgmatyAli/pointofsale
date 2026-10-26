@@ -112,6 +112,12 @@ $flag = function (string $attribute) use ($model) {
                     <div class="row g-3">
                         <?= $item('نسبة  الزيادة', $model->rate) ?>
                         <?= $item('قيمة البحث', $model->$criteriaAttr) ?>
+                        <?php
+                        $rateCompanyNames = $model->rateCompanies
+                            ? \app\models\ItemCompany::find()->select('name')->where(['id' => array_map('intval', explode(',', $model->rateCompanies))])->column()
+                            : [];
+                        ?>
+                        <?= $item('الشركات التي تُطبَّق عليها النسبة', $rateCompanyNames ? implode('، ', $rateCompanyNames) : 'كافة الشركات') ?>
                         <?= $item($model->getAttributeLabel('skin'), $model->skin) ?>
                     </div>
                 </div>

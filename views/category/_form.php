@@ -106,7 +106,11 @@ CSS);
                         <div class="col-6"><?= $form->field($model, 'quantity')->textInput(['inputmode' => 'decimal']) ?></div>
                         <div class="col-6"><?= $form->field($model, 'minimum')->textInput(['inputmode' => 'decimal']) ?></div>
                     </div>
-                    <?= $form->field($model, 'company')->textInput() ?>
+                    <?= $form->field($model, 'companyId')->widget(\kartik\select2\Select2::class, [
+                        'data' => \app\models\ItemCompany::map(),
+                        'options' => ['placeholder' => Yii::t('app', 'اختر الشركة')],
+                        'pluginOptions' => ['allowClear' => true],
+                    ])->hint(Html::a(Yii::t('app', 'إدارة الشركات'), ['/item-company/index'], ['target' => '_blank'])) ?>
                     <?= $form->field($model, 'country')->textInput() ?>
                 </div>
             </div>

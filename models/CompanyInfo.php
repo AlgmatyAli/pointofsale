@@ -24,6 +24,7 @@ use Yii;
  * @property int $repeatCategory
  * @property int $payWayCash
  * @property int|null $invoiceState
+ * @property string|null $rateCompanies أرقام itemCompany التي تُطبَّق عليها نسبة الزيادة، فارغ = كل الأصناف
  *
  * @property Currancy $currancy0
  */
@@ -133,6 +134,11 @@ class CompanyInfo extends \yii\db\ActiveRecord
         return [
             [['name', 'work', 'address', 'phone1', 'phone2', 'phone3', 'fax', 'email', 'searchById', 'repeatCategory', 'payWayCash'], 'required'],
             [['rate'], 'number'],
+            // Select2 متعدد يرسل مصفوفة، وتُحفظ أرقاماً مفصولة بفاصلة
+            [['rateCompanies'], 'filter', 'filter' => function ($value) {
+                $ids = array_values(array_unique(array_filter(array_map('intval', is_array($value) ? $value : explode(',', (string) $value)))));
+                return $ids ? implode(',', $ids) : null;
+            }],
             [['address', 'terms'], 'string'],
             [['currancy', 'searchById', 'repeatCategory', 'payWayCash', 'invoiceState', 'waitQnty', 'criteriaـvalue', 'zeroQnty', 'avgCost', 'editSalePriceOnPurchaseUpdate'], 'integer'],
             [['name', 'work'], 'string', 'max' => 150],
@@ -173,6 +179,7 @@ class CompanyInfo extends \yii\db\ActiveRecord
             'zeroQnty' => Yii::t('app', 'Zero Qnty'),
             'avgCost' => Yii::t('app', 'Average Cost'),
             'editSalePriceOnPurchaseUpdate' => Yii::t('app', 'Edit Sale Price on Purchase Update'),
+            'rateCompanies' => Yii::t('app', 'الشركات التي تُطبَّق عليها النسبة'),
         ];
     }
 

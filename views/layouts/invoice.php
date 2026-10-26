@@ -11,6 +11,8 @@ AppAsset::register($this);
 
 // template.css (قالب الفاتورة) يجب أن يُحمَّل بعد AppAsset، وإلا تغلبه أنماط Bootstrap/AdminLTE
 $this->registerCssFile('@web/css/template.css', ['depends' => [AppAsset::class]]);
+// الفاتورة على خلفية بيضاء داخل الصفحة (خلفية المنظومة رمادية)
+$this->registerCss('.app-main #container { background: #fff; padding: 10px; }');
 
 // طباعة الفاتورة داخل إطار مستقل لا يحمّل إلا template.css.
 // هكذا لا تتداخل معها أنماط Bootstrap وAdminLTE وutil.css وmain.css التي تغيّر عرض الصفحة عند الطباعة.
@@ -80,12 +82,10 @@ $this->registerJs(
     <title><?= Html::encode($this->title ?: Yii::$app->name) ?></title>
     <?php $this->head() ?>
 </head>
-<body class="bg-white">
+<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
 <?php $this->beginBody() ?>
 
-<div class="container-fluid py-3">
-    <?= $content ?>
-</div>
+<?= $this->render('_shell', ['content' => $content]) ?>
 
 <?php $this->endBody() ?>
 </body>
