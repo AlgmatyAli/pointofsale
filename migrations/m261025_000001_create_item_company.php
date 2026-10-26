@@ -12,13 +12,31 @@ class m261025_000001_create_item_company extends Migration
 {
     public function safeUp()
     {
+        // نفس ترميز عمود category.company، وإلا رفض MySQL مقارنة الأسماء بين الجدولين
+        // (Illegal mix of collations) عندما يختلف الترميز الافتراضي للسيرفر عن ترميز الجداول القديمة
+        $collation = $this->db->createCommand(
+            "SELECT COLLATION_NAME FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'category' AND COLUMN_NAME = 'company'"
+        )->queryScalar() ?: 'utf8mb4_general_ci';
+        $collation = preg_replace('/[^a-z0-9_]/i', '', $collation);
+        $charset = strstr($collation, '_', true);
+
         if ($this->db->getTableSchema('itemCompany', true) === null) {
             $this->createTable('itemCompany', [
                 'id' => $this->primaryKey(),
                 'name' => $this->string(255)->notNull()->unique()->comment('اسم الشركة'),
                 'created_at' => $this->dateTime()->null(),
                 'update_at' => $this->dateTime()->null(),
-            ], 'CHARACTER SET utf8mb4 ENGINE=InnoDB');
+            ], "CHARACTER SET $charset COLLATE $collation ENGINE=InnoDB");
+        } else {
+            // جدول أُنشئ في محاولة سابقة بترميز السيرفر الافتراضي
+            $current = $this->db->createCommand(
+                "SELECT COLLATION_NAME FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'itemCompany' AND COLUMN_NAME = 'name'"
+            )->queryScalar();
+            if ($current !== $collation) {
+                $this->execute("ALTER TABLE itemCompany CONVERT TO CHARACTER SET $charset COLLATE $collation");
+            }
         }
 
         // IGNORE: أسماء تختلف فقط بحالة الأحرف أو بتشكيل عربي (مثل 'ِAISIN' و 'AISIN') تُعتبر نفس الاسم
