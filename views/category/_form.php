@@ -106,10 +106,15 @@ CSS);
                         <div class="col-6"><?= $form->field($model, 'quantity')->textInput(['inputmode' => 'decimal']) ?></div>
                         <div class="col-6"><?= $form->field($model, 'minimum')->textInput(['inputmode' => 'decimal']) ?></div>
                     </div>
-                    <?= $form->field($model, 'companyId')->widget(\kartik\select2\Select2::class, [
-                        'data' => \app\models\ItemCompany::map(),
+                    <?php // بحث Ajax في جدول الشركات (lookup/company) بدل تحميل القائمة كاملة ?>
+                    <?= $form->field($model, 'companyId')->widget(\app\widgets\LookupSelect2::class, [
+                        'lookup' => 'company',
                         'options' => ['placeholder' => Yii::t('app', 'اختر الشركة')],
-                        'pluginOptions' => ['allowClear' => true],
+                        // داخل النافذة المنبثقة (#modal، من شاشتي المبيعات والمشتريات) تُرسم القائمة داخل النافذة،
+                        // وإلا يسرق Bootstrap 5 التركيز من خانة البحث فلا يمكن الكتابة فيها
+                        'pluginOptions' => ['allowClear' => true] + (Yii::$app->request->isAjax
+                            ? ['dropdownParent' => new \yii\web\JsExpression("$('#modal')")]
+                            : []),
                     ])->hint(Html::a(Yii::t('app', 'إدارة الشركات'), ['/item-company/index'], ['target' => '_blank'])) ?>
                     <?= $form->field($model, 'country')->textInput() ?>
                 </div>

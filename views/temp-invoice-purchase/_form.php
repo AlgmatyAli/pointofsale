@@ -373,10 +373,10 @@ $gridColumns = [
                     <?= $form->field($model, 'salePrice_')->label('السعر الأدنى')->textInput(['maxlength' => true, 'inputmode' => 'decimal', 'autocomplete' => 'off']) ?>
                 </div>
                 <div class="col-6 col-md-4 col-lg-2">
-                    <?= $form->field($model, 'salePrice_2')->label('السعر الأدنى 2')->textInput(['maxlength' => true, 'inputmode' => 'decimal', 'autocomplete' => 'off']) ?>
+                    <?= $form->field($model, 'salePrice_2')->label('التكلفة بالدولار')->textInput(['maxlength' => true, 'inputmode' => 'decimal', 'autocomplete' => 'off']) ?>
                 </div>
                 <div class="col-6 col-md-4 col-lg-2">
-                    <?= $form->field($model, 'salePrice_3')->label('السعر الأدنى 3')->textInput(['maxlength' => true, 'inputmode' => 'decimal', 'autocomplete' => 'off']) ?>
+                    <?= $form->field($model, 'salePrice_3')->label('التكلفة بالدرهم')->textInput(['maxlength' => true, 'inputmode' => 'decimal', 'autocomplete' => 'off']) ?>
                 </div>
             </div>
 

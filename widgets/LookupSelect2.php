@@ -20,7 +20,7 @@ use yii\web\JsExpression;
  */
 class LookupSelect2 extends Select2
 {
-    /** @var string client | category */
+    /** @var string client | category | company */
     public $lookup = 'client';
 
     /** @var int[]|null أنواع العملاء (client.type) المسموح بها، مثل [0, 2] للعملاء و [1, 2] للموردين */
@@ -64,7 +64,7 @@ class LookupSelect2 extends Select2
         if (!$ids) {
             return [];
         }
-        $table = $lookup === 'category' ? 'category' : 'client';
+        $table = ['category' => 'category', 'company' => 'itemCompany'][$lookup] ?? 'client';
         return (new Query())->select(['name', 'id'])->from($table)
             ->where(['id' => $ids])->indexBy('id')->column();
     }

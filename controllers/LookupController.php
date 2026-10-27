@@ -71,6 +71,19 @@ class LookupController extends Controller
         return $this->page($query->orderBy(['id' => SORT_ASC]), $page);
     }
 
+    /** lookup/company?q=.. الشركات المصنّعة (itemCompany) */
+    public function actionCompany($q = '', $page = 1)
+    {
+        $query = (new Query())->select(['id', 'text' => 'name'])->from('itemCompany');
+
+        $q = trim(mb_substr((string) $q, 0, 100));
+        if ($q !== '') {
+            $query->andWhere(['like', 'name', '%' . str_replace(' ', '%', $q) . '%', false]);
+        }
+
+        return $this->page($query->orderBy(['name' => SORT_ASC]), $page);
+    }
+
     private function page(Query $query, $page): array
     {
         $page = max(1, (int) $page);
