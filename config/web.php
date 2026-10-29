@@ -124,7 +124,7 @@ $config = [
     // الصلاحيات التفصيلية (RBAC) تبقى في behaviors() داخل كل Controller.
     'as access' => [
         'class' => \yii\filters\AccessControl::class,
-        'except' => ['site/login', 'site/error', 'site/captcha', 'sales/invoice-pdf', 'debug/*', 'gii/*'],
+        'except' => ['site/login', 'site/error', 'site/captcha', 'sales/invoice-pdf', 'sales/statement-pdf', 'debug/*', 'gii/*'],
         'rules' => [
             ['allow' => true, 'roles' => ['@']],
         ],

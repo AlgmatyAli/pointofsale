@@ -64,6 +64,9 @@ $fmt = static fn($value): string => number_format((float) $value, 3);
         <th>اسم العميل</th>
         <th>رقم الهاتف</th>
         <th class="rp-bal">الرصيـد</th>
+        <th>تاريخ آخر إيصال</th>
+        <th class="rp-num">قيمته</th>
+        <th class="rp-actions no-print"></th>
         <th class="rp-actions no-print"></th>
       </tr>
     </thead>
@@ -101,6 +104,8 @@ $fmt = static fn($value): string => number_format((float) $value, 3);
             </td>
             <td><?= Html::encode((string) ($model['phone'] ?? '')) ?></td>
             <td class="rp-num rp-bal"><?= $fmt($val) ?></td>
+            <td><?= Html::encode((string) ($model['lastReceiptAt'] ?? '')) ?></td>
+            <td class="rp-num"><?= ($model['lastReceiptAt'] ?? null) !== null ? $fmt($model['lastReceiptValue']) : '' ?></td>
             <td class="rp-actions no-print">
               <?= Html::a(
                 '<i class="bi bi-folder2-open"></i>',
@@ -116,11 +121,18 @@ $fmt = static fn($value): string => number_format((float) $value, 3);
                 ]
               ) ?>
             </td>
+            <td class="rp-actions no-print">
+              <?= Html::a(
+                '<i class="bi bi-whatsapp"></i>',
+                ['client/whatsapp-statement', 'id' => $model['id'] ?? '', 'type' => $model['type'] ?? 0],
+                ['title' => 'إرسال كشف الحساب عبر واتساب', 'class' => 'btn btn-sm btn-success', 'target' => '_blank', 'rel' => 'noopener']
+              ) ?>
+            </td>
           </tr>
         <?php endforeach; ?>
       <?php else: ?>
         <tr>
-          <td colspan="6" class="text-center text-muted">
+          <td colspan="8" class="text-center text-muted">
             <b>لا توجد بيانات مسجلة.</b>
           </td>
         </tr>
@@ -131,8 +143,8 @@ $fmt = static fn($value): string => number_format((float) $value, 3);
       <tr>
         <td colspan="4">الإجمالي</td>
         <td class="rp-num rp-bal">
-          <div>إجمالي المدين: <b><?= $fmt($credt) ?></b></div>
-          <div>إجمالي الدائن: <b><?= $fmt($dept) ?></b></div>
+        </td>
+        <td colspan="2">
         </td>
         <td class="rp-actions no-print"></td>
       </tr>

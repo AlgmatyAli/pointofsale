@@ -60,6 +60,27 @@ class WhatsappHelper
         return hash_equals(self::signature($id, (int) $exp), (string) $sig);
     }
 
+    private static function statementSignature($client, $type, $exp)
+    {
+        return hash_hmac('sha256', 'client-statement|' . (int) $client . '|' . (int) $type . '|' . (int) $exp, (string) Yii::$app->request->cookieValidationKey);
+    }
+
+    /** رابط مطلق لملف PDF كشف حساب العميل (يفتح بلا تسجيل دخول) */
+    public static function statementUrl($client, $type)
+    {
+        $exp = time() + self::LINK_TTL;
+        return Url::to(['sales/statement-pdf', 'client' => (int) $client, 'type' => (int) $type, 'exp' => $exp,
+            'sig' => self::statementSignature($client, $type, $exp)], true);
+    }
+
+    public static function verifyStatement($client, $type, $exp, $sig)
+    {
+        if (!ctype_digit((string) $exp) || (int) $exp < time()) {
+            return false;
+        }
+        return hash_equals(self::statementSignature($client, $type, (int) $exp), (string) $sig);
+    }
+
     public static function waUrl($phone, $text)
     {
         return 'https://wa.me/' . $phone . '?text=' . rawurlencode($text);

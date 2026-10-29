@@ -55,7 +55,7 @@ class ClientController extends Controller
                     ],
                     [
                         'allow' => true,
-                        'actions' => ['credts', 'indebtedness'],
+                        'actions' => ['credts', 'indebtedness', 'whatsapp-statement'],
                         'roles' => ['clientDepts'],
                     ],
                     [
@@ -251,7 +251,8 @@ class ClientController extends Controller
             if ($model->type == 0) {
                 $model->type = '0,2';
                 $sql = " SELECT dept.id, dept.type as type, MAX(dept.name) as name, SUM(dept.credt) as credt, 
-                MAX(dept.Phone) as phone, max(dept.deserving) as deserving, max(post_paid) as post_paid FROM dept
+                MAX(dept.Phone) as phone, max(dept.deserving) as deserving, max(post_paid) as post_paid,
+                " . self::lastReceiptColumns(1, 'dept') . " FROM dept
                 where dept.Type in(" . \app\components\SqlSafe::intList($model->type) . ")  and dept.currency in( 0, " . \app\components\SqlSafe::intList($model->currency) . ")
                 GROUP BY dept.id, dept.type having SUM(dept.credt)<>0";
                 $connection = Yii::$app->db;
@@ -272,7 +273,8 @@ class ClientController extends Controller
             } elseif ($model->type == 1 && Yii::$app->user->can('seeVendorCredit')) {
                 $model->type = '1';
                 $sql = " SELECT dept_supp.id, dept_supp.type as type, MAX(dept_supp.name) as name,  SUM(dept_supp.credt) as credt,
-                MAX(dept_supp.Phone) as phone, '1' as post_paid FROM dept_supp
+                MAX(dept_supp.Phone) as phone, '1' as post_paid,
+                " . self::lastReceiptColumns(2, 'dept_supp') . " FROM dept_supp
                 where dept_supp.Type in(" . \app\components\SqlSafe::intList($model->type) . ") and dept_supp.currency in( 0, " . \app\components\SqlSafe::intList($model->currency) . ")
                 GROUP BY dept_supp.id, dept_supp.type having SUM(dept_supp.credt)<>0";
                 $connection = Yii::$app->db;
@@ -535,6 +537,51 @@ class ClientController extends Controller
                 ->select(['id', 'name'])->asArray()->all();
             return $data;
         }
+    }
+
+    /** أعمدة SQL لتاريخ وقيمة آخر إيصال للعميل في تقرير إجمالي الديون: النوع 1 قبض (العملاء)، 2 صرف (الموردون) */
+    private static function lastReceiptColumns(int $receiptType, string $table): string
+    {
+        $table = $table === 'dept_supp' ? 'dept_supp' : 'dept';
+        $last = "FROM receipt r WHERE r.clinet = $table.id AND r.type = $receiptType ORDER BY r.at DESC, r.id DESC LIMIT 1";
+        return "(SELECT r.at $last) as lastReceiptAt, (SELECT r.value $last) as lastReceiptValue";
+    }
+
+    /**
+     * رسالة واتساب للعميل من تقرير إجمالي الديون (creditsrep): الرصيد، آخر إيصال، ورابط PDF كشف الحساب (موقَّع، 30 يوماً).
+     * $type نوع الحساب (0 أو 2 عميل، 1 مورد) كما في كشف الحساب.
+     */
+    public function actionWhatsappStatement($id, $type)
+    {
+        $id = (int) $id;
+        $type = (int) $type;
+        $back = Yii::$app->request->referrer ?: ['credts'];
+        $client = Client::findOne($id);
+
+        $phone = \app\components\WhatsappHelper::normalizePhone($client ? ($client->mobile ?: $client->phone) : '');
+        if ($phone === null) {
+            Yii::$app->session->setFlash('error', 'رقم هاتف العميل غير موجود أو غير صالح. أدخل رقماً ليبياً مثل 0912345678 في بيانات العميل.');
+            return $this->redirect($back);
+        }
+
+        $m = fn($v) => \app\components\WhatsappHelper::money($v);
+        // نفس مصدر الرصيد في التقرير: dept للعملاء، dept_supp للموردين
+        $balance = (float) (new \yii\db\Query())->from($type === 1 ? 'dept_supp' : 'dept')->where(['id' => $id])->sum('credt');
+        $receiptType = $type === 1 ? 2 : 1;
+        $lastReceipt = (new \yii\db\Query())->select(['at', 'value'])->from('receipt')
+            ->where(['clinet' => $id, 'type' => $receiptType])
+            ->orderBy(['at' => SORT_DESC, 'id' => SORT_DESC])->one();
+
+        $lines = ['السلام عليكم ' . $client->name . '،'];
+        $lines[] = 'نود إعلامكم بأن رصيد حسابكم لدينا حتى تاريخ ' . date('Y-m-d') . ': ' . $m($balance);
+        if ($lastReceipt) {
+            $lines[] = 'آخر ' . ($receiptType === 1 ? 'دفعة مستلمة منكم' : 'دفعة مسددة لكم') . ': ' . $m($lastReceipt['value'])
+                . ' بتاريخ ' . $lastReceipt['at'] . '.';
+        }
+        $lines[] = 'كشف الحساب (PDF): ' . \app\components\WhatsappHelper::statementUrl($id, $type);
+        $lines[] = 'شكراً لتعاملكم مع ' . \app\models\CompanyInfo::current()->name;
+
+        return $this->redirect(\app\components\WhatsappHelper::waUrl($phone, implode("\n", $lines)));
     }
 
     public function actionIndebtedness()

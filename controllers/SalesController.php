@@ -61,7 +61,7 @@ class SalesController extends Controller
                     [
                         // رابط PDF الفاتورة للزبون: يُفتح بلا تسجيل دخول، والتحقق بتوقيع HMAC داخل الإجراء نفسه
                         'allow' => true,
-                        'actions' => ['invoice-pdf'],
+                        'actions' => ['invoice-pdf', 'statement-pdf'],
                         'roles' => ['?', '@'],
                     ],
                     [
@@ -1035,8 +1035,67 @@ class SalesController extends Controller
 
     public function actionHistrans($client, $allData, $type)
     {
-        $client = (int) $client;
-        $type = (int) $type;
+        [$lastBalance, $info, $min_date, $max_date] = $this->clientStatementData((int) $client, (int) $type);
+
+        if (!$info) {
+            Yii::$app->session->setFlash('error', 'عفوا لايوجد بيانات للعرض');
+            return $this->redirect(['client/histrans']);
+        }
+
+        return $this->render('/client/histransrep', [
+            'models' => $info,
+            'min_date' => $min_date,
+            'max_date' => $max_date,
+            'sumwared' => 0,
+            'sumsader' => 0,
+            'sum' => 0,
+            'coun' => 1,
+            'count' => 0,
+            'lastBalance' => $lastBalance,
+            'balance' => 0,
+            'id' => null,
+        ]);
+    }
+
+    /** ملف PDF كشف حساب العميل عبر رابط موقَّع ينتهي بعد 30 يوماً (يُرسل من تقرير إجمالي الديون عبر واتساب) */
+    public function actionStatementPdf($client, $type, $exp, $sig)
+    {
+        if (!\app\components\WhatsappHelper::verifyStatement($client, $type, $exp, $sig)) {
+            throw new NotFoundHttpException('الرابط غير صالح أو انتهت صلاحيته.');
+        }
+        [$lastBalance, $info] = $this->clientStatementData((int) $client, (int) $type);
+
+        $content = $this->renderPartial('statementPdf', [
+            'models' => $info,
+            'lastBalance' => $lastBalance,
+            'type' => (int) $type,
+            'client' => Client::findOne((int) $client),
+            'company' => CompanyInfo::current(),
+        ]);
+
+        Yii::$app->response->format = Response::FORMAT_RAW;
+        Yii::$app->response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+
+        $pdf = new Pdf([
+            'mode' => Pdf::MODE_UTF8,
+            'format' => Pdf::FORMAT_A4,
+            'orientation' => Pdf::ORIENT_PORTRAIT,
+            'destination' => Pdf::DEST_BROWSER,
+            'filename' => 'statement-' . (int) $client . '.pdf',
+            'content' => $content,
+            'cssFile' => '@webroot/css/invoice-pdf.css',
+            'defaultFont' => 'Sans-serif',
+            'options' => ['title' => 'كشف حساب', 'autoScriptToLang' => true, 'autoLangToFont' => true],
+        ]);
+        return $pdf->render();
+    }
+
+    /**
+     * حركات كشف حساب العميل/المورد: [الرصيد السابق, الحركات, من تاريخ, إلى تاريخ].
+     * تستخدمها شاشة كشف الحساب و PDF كشف الحساب المرسل عبر واتساب.
+     */
+    private function clientStatementData(int $client, int $type): array
+    {
         $min_date = '2020-01-30';
         $max_date = date('Y-m-d');
         $db = Yii::$app->db;
@@ -1083,24 +1142,7 @@ class SalesController extends Controller
             throw new \yii\web\BadRequestHttpException('نوع غير صحيح.');
         }
 
-        if (!$info) {
-            Yii::$app->session->setFlash('error', 'عفوا لايوجد بيانات للعرض');
-            return $this->redirect(['client/histrans']);
-        }
-
-        return $this->render('/client/histransrep', [
-            'models' => $info,
-            'min_date' => $min_date,
-            'max_date' => $max_date,
-            'sumwared' => 0,
-            'sumsader' => 0,
-            'sum' => 0,
-            'coun' => 1,
-            'count' => 0,
-            'lastBalance' => $lastBalance,
-            'balance' => 0,
-            'id' => null,
-        ]);
+        return [$lastBalance, $info, $min_date, $max_date];
     }
 
     public function actionSavePdf($id)
