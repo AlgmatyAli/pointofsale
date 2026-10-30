@@ -82,7 +82,7 @@ $this->params['breadcrumbs'][] = $this->title;
             'buttons' => [
                 'transfer' => function ($url, $model, $key) {
                     $url = Url::to(['stocks/transfer', 'id' => $model['id']]);
-                    return Html::a('<i class="glyphicon glyphicon-open"></i>', $url, ['class' => 'btn btn-default']);
+                    return Html::a('<i class="bi bi-send"></i>', $url, ['class' => 'btn btn-default']);
                 }
             ],
         ],
