@@ -13,7 +13,6 @@ use Yii;
  * @property string $at
  * @property float $value
  * @property string $why
- * @property string $payWay
  * @property int $type
  * @property int $user_insert
  * @property string $created_at
@@ -59,15 +58,21 @@ class Receipt extends \yii\db\ActiveRecord
             // لا قيم سالبة أو صفرية
             [['value'], 'number', 'min' => 0.01, 'on' => self::SCENARIO_SAVE],
             // العميل يجب أن يناسب نوع السند (قبض: زبون/كلاهما، صرف: مورد/كلاهما)، ويُفحص عند الإنشاء أو تغيير العميل فقط
-            [['clinet'], 'exist', 'on' => self::SCENARIO_SAVE, 'skipOnError' => true,
-                'targetClass' => Client::class, 'targetAttribute' => ['clinet' => 'id'],
+            [
+                ['clinet'],
+                'exist',
+                'on' => self::SCENARIO_SAVE,
+                'skipOnError' => true,
+                'targetClass' => Client::class,
+                'targetAttribute' => ['clinet' => 'id'],
                 'filter' => function ($query) {
                     $query->andWhere(['type' => ((int)$this->type === 1) ? [0, 2] : [1, 2]]);
                 },
                 'when' => function ($model) {
                     return $model->isNewRecord || $model->isAttributeChanged('clinet', false);
                 },
-                'message' => 'العميل المختار لا يناسب نوع السند'],
+                'message' => 'العميل المختار لا يناسب نوع السند'
+            ],
             // التفقيط نص عادي فقط
             [['tafqet'], 'filter', 'on' => self::SCENARIO_SAVE, 'filter' => function ($v) {
                 return $v === null ? null : trim(strip_tags((string)$v));
@@ -87,7 +92,6 @@ class Receipt extends \yii\db\ActiveRecord
             'at' => Yii::t('app', 'At'),
             'value' => Yii::t('app', 'Value'),
             'why' => Yii::t('app', 'Why'),
-            'payWay' => Yii::t('app', 'Pay Way'),
             'type' => Yii::t('app', 'Type'),
             'user_insert' => Yii::t('app', 'User Insert'),
             'created_at' => Yii::t('app', 'Created At'),

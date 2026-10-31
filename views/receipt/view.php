@@ -93,7 +93,7 @@ $currency = $model->currancy0?->name;
                     <?= $row($model->getAttributeLabel('at'), $model->at) ?>
                     <?= $row($model->getAttributeLabel('value'), Yii::$app->formatter->asDecimal((float) $model->value, 3)) ?>
                     <?= $row(Yii::t('app', 'Currancy'), $currency) ?>
-                    <?= $row($model->getAttributeLabel('payWay'), $model->payWay) ?>
+                    <?= $row($model->getAttributeLabel('payment_type'), $model->paymentType0?->name) ?>
                     <?= $row($model->getAttributeLabel('tafqet'), $model->tafqet) ?>
                     <div class="pt-2">
                         <div class="text-body-secondary mb-1"><?= Html::encode(Yii::t('app', 'Why')) ?></div>
