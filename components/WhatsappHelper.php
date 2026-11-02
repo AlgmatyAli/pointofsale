@@ -112,7 +112,7 @@ class WhatsappHelper
     /** آخر سطرين في رسائل واتساب: الشكر ثم العنوان (وفيه البلد) والهواتف غير الفارغة من بيانات المؤسسة */
     public static function footerLines($company)
     {
-        $lines = ['شكراً لتعاملكم مع ' . $company->name];
+        $lines = ['شكراً لتعاملكم مع ' . $company->name . ' ' . $company->work];
         $phones = array_filter(array_map('trim', [(string) $company->phone1, (string) $company->phone2, (string) $company->phone3, (string) $company->fax]));
         $contact = array_filter([
             trim((string) $company->address),
