@@ -573,13 +573,14 @@ class ClientController extends Controller
             ->orderBy(['at' => SORT_DESC, 'id' => SORT_DESC])->one();
 
         $lines = ['السلام عليكم ' . $client->name . '،'];
-        $lines[] = 'نود إعلامكم بأن رصيد حسابكم لدينا حتى تاريخ ' . date('Y-m-d') . ': ' . $m($balance);
+        $lines[] = 'نود إعلامكم برصيد حسابكم لدينا حتى تاريخ ' . date('Y-m-d') . '.';
+        $lines[] = \app\components\WhatsappHelper::balanceLine($balance);
         if ($lastReceipt) {
             $lines[] = 'آخر ' . ($receiptType === 1 ? 'دفعة مستلمة منكم' : 'دفعة مسددة لكم') . ': ' . $m($lastReceipt['value'])
                 . ' بتاريخ ' . $lastReceipt['at'] . '.';
         }
         $lines[] = 'كشف الحساب (PDF): ' . \app\components\WhatsappHelper::statementUrl($id, $type);
-        $lines[] = 'شكراً لتعاملكم مع ' . \app\models\CompanyInfo::current()->name;
+        $lines = array_merge($lines, \app\components\WhatsappHelper::footerLines(\app\models\CompanyInfo::current()));
 
         return $this->redirect(\app\components\WhatsappHelper::waUrl($phone, implode("\n", $lines)));
     }

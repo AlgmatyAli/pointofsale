@@ -298,3 +298,10 @@ body.bg-body-tertiary,
 .select2-container--krajee-bs5 .select2-results__option:last-child {
   border-bottom: 0;
 }
+
+/* أيقونة البحث في قوائم Select2 كانت على اليمين فتغطي أول حروف الكتابة العربية: نقلها لليسار مع مسافة للنص */
+.select2-container--krajee-bs5 .select2-search--dropdown .select2-search__field {
+  background-position: left 0.625rem center !important;
+  padding-left: 2rem !important;
+  padding-right: 0.5rem !important;
+}

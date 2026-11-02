@@ -283,8 +283,10 @@ class SalesController extends Controller
                 Yii::$app->session->setFlash('error', 'الخصم لا يمكن أن يزيد عن إجمالي الفاتورة.');
                 return $this->redirect(['sales/update', 'id' => $model->id]);
             }
-            if ($model->payWay == 1 && $model->type == 1
-                && (float) $model->paid > (float) $model->total - (float) $model->disscount) {
+            if (
+                $model->payWay == 1 && $model->type == 1
+                && (float) $model->paid > (float) $model->total - (float) $model->disscount
+            ) {
                 Yii::$app->session->setFlash('error', 'المدفوع لا يمكن أن يزيد عن صافي الفاتورة.');
                 return $this->redirect(['sales/update', 'id' => $model->id]);
             }
@@ -478,8 +480,10 @@ class SalesController extends Controller
         // مستخدم العميل لا يرى إلا فواتير عملائه
         if ($model !== null) {
             $client = Yii::$app->user->identity->client;
-            if ($client !== null && $client !== ''
-                && !in_array((string) $model->clinet, array_map('trim', explode(',', (string) $client)), true)) {
+            if (
+                $client !== null && $client !== ''
+                && !in_array((string) $model->clinet, array_map('trim', explode(',', (string) $client)), true)
+            ) {
                 $model = null;
             }
         }
@@ -825,8 +829,14 @@ class SalesController extends Controller
                     WHERE sales.id = salesDetails.salesId and sales.type = 2
                     and sales.currancy = :cur2 and sales.user_insert = :u2 and sales.at between :min2 and :max2";
             $params = [
-                ':cur1' => $model->currancy, ':u1' => (int) $model->user_insert, ':min1' => $model->min_date, ':max1' => $model->max_date,
-                ':cur2' => $model->currancy, ':u2' => (int) $model->user_insert, ':min2' => $model->min_date, ':max2' => $model->max_date,
+                ':cur1' => $model->currancy,
+                ':u1' => (int) $model->user_insert,
+                ':min1' => $model->min_date,
+                ':max1' => $model->max_date,
+                ':cur2' => $model->currancy,
+                ':u2' => (int) $model->user_insert,
+                ':min2' => $model->min_date,
+                ':max2' => $model->max_date,
             ];
 
             $info = Yii::$app->db->createCommand($sql, $params)->queryAll();
@@ -928,28 +938,28 @@ class SalesController extends Controller
 
         $company = CompanyInfo::current();
         $net = (float) $model->total - (float) $model->disscount;
-        $remaining = $net - (float) $model->paid;
         $m = function ($v) {
             return \app\components\WhatsappHelper::money($v);
         };
         $link = \app\components\WhatsappHelper::invoiceUrl($model->id);
 
+        // الرصيد = إجمالي دين الزبون (نفس رقم كشف الحساب)، وليس المتبقي من هذه الفاتورة فقط
+        $balanceLine = \app\components\WhatsappHelper::balanceLine(Dept::find()->where(['id' => $model->clinet])->sum('credt'));
+
         $lines = ['السلام عليكم ' . ($client ? $client->name : '') . '،'];
         if ((int) $reminder === 1) {
-            $balance = (float) Dept::find()->where(['id' => $model->clinet])->sum('credt');
             $lines[] = 'نود تذكيركم بقرب موعد استحقاق الفاتورة رقم ' . $model->billId
                 . ($model->deserving ? ' بتاريخ ' . $model->deserving : '') . '.';
-            $lines[] = 'المتبقي من الفاتورة: ' . $m($remaining);
-            $lines[] = 'إجمالي رصيدكم: ' . $m($balance);
+            $lines[] = $balanceLine;
         } else {
             $lines[] = 'فاتورة رقم ' . $model->billId . ' بتاريخ ' . $model->at . '.';
-            $lines[] = 'الصافي: ' . $m($net);
+            $lines[] = 'صافي الفاتورة: ' . $m($net);
             if ((int) $model->payWay === 1) {
-                $lines[] = 'المتبقي من الفاتورة: ' . $m($remaining);
+                $lines[] = $balanceLine;
             }
         }
         $lines[] = 'للاطلاع على الفاتورة (PDF): ' . $link;
-        $lines[] = 'شكراً لتعاملكم مع ' . $company->name;
+        $lines = array_merge($lines, \app\components\WhatsappHelper::footerLines($company));
 
         return $this->redirect(\app\components\WhatsappHelper::waUrl($phone, implode("\n", $lines)));
     }
@@ -1303,8 +1313,12 @@ class SalesController extends Controller
             // من category و prices و stocks بدل Totalinventory (الذي يحسب كل تاريخ الحركات)
             $item = (new Query())
                 ->select([
-                    'category.name', 'category.company', 'category.serialNo', 'category.commCode',
-                    'prices.maxPrice', 'prices.minPrice',
+                    'category.name',
+                    'category.company',
+                    'category.serialNo',
+                    'category.commCode',
+                    'prices.maxPrice',
+                    'prices.minPrice',
                     'quantity' => (new Query())->select('SUM(s.quantity)')->from('stocks s')
                         ->where('s.category = category.id')->andWhere(['<>', 's.type', 3])->andWhere(['in', 's.branch', ($identity->seeOtherBranchQ == 0) ? [(int) $identity->branch] : $this->allBranchIds()]),
                 ])
@@ -1391,8 +1405,10 @@ class SalesController extends Controller
                 return $this->redirect($back);
             }
             // في الآجل يتحول المتبقي إلى دين، فلا يجوز أن يزيد المدفوع عن صافي الفاتورة
-            if ($model->payWay == 1 && $model->type != 4
-                && (float) $model->paid > (float) $model->total - (float) $model->disscount) {
+            if (
+                $model->payWay == 1 && $model->type != 4
+                && (float) $model->paid > (float) $model->total - (float) $model->disscount
+            ) {
                 Yii::$app->session->setFlash('error', 'المدفوع لا يمكن أن يزيد عن صافي الفاتورة.');
                 return $this->redirect($back);
             }
@@ -2001,8 +2017,10 @@ class SalesController extends Controller
                 }
 
                 // يخصم المخزون فقط للنهائية والحجز، ويُقيَّد بالمتاح إلا إن كان البيع بلا رصيد مفعلاً
-                if (in_array((int) $sale->type, [1, 3], true) && $company->zeroQnty == 0
-                    && $this->allowedQty($categoryId, 1, [(int) $sale->type], $company) <= 0) {
+                if (
+                    in_array((int) $sale->type, [1, 3], true) && $company->zeroQnty == 0
+                    && $this->allowedQty($categoryId, 1, [(int) $sale->type], $company) <= 0
+                ) {
                     throw new \DomainException(Yii::t('app', "عفوا لقد تجاوزت الكمية الموجودة لايمكنك الاستمرار"));
                 }
 
@@ -2145,5 +2163,4 @@ class SalesController extends Controller
 
         return $this->redirect(Yii::$app->request->referrer ?: Yii::$app->homeUrl);
     }
-
 }

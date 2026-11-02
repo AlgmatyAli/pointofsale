@@ -69,8 +69,13 @@ class WhatsappHelper
     public static function statementUrl($client, $type)
     {
         $exp = time() + self::LINK_TTL;
-        return Url::to(['sales/statement-pdf', 'client' => (int) $client, 'type' => (int) $type, 'exp' => $exp,
-            'sig' => self::statementSignature($client, $type, $exp)], true);
+        return Url::to([
+            'sales/statement-pdf',
+            'client' => (int) $client,
+            'type' => (int) $type,
+            'exp' => $exp,
+            'sig' => self::statementSignature($client, $type, $exp)
+        ], true);
     }
 
     public static function verifyStatement($client, $type, $exp, $sig)
@@ -89,5 +94,33 @@ class WhatsappHelper
     public static function money($v)
     {
         return number_format((float) $v, 3, '.', ',');
+    }
+
+    /** سطر الرصيد في رسائل واتساب: موجب «عليك»، سالب «لك» بدون إشارة، صفر بدون وصف */
+    public static function balanceLine($balance)
+    {
+        $balance = round((float) $balance, 3);
+        if ($balance > 0) {
+            return 'الرصيد: عليك ' . self::money($balance);
+        }
+        if ($balance < 0) {
+            return 'الرصيد: لك ' . self::money(-$balance);
+        }
+        return 'الرصيد: ' . self::money(0);
+    }
+
+    /** آخر سطرين في رسائل واتساب: الشكر ثم العنوان (وفيه البلد) والهواتف غير الفارغة من بيانات المؤسسة */
+    public static function footerLines($company)
+    {
+        $lines = ['شكراً لتعاملكم مع ' . $company->name];
+        $phones = array_filter(array_map('trim', [(string) $company->phone1, (string) $company->phone2, (string) $company->phone3, (string) $company->fax]));
+        $contact = array_filter([
+            trim((string) $company->address),
+            $phones ? 'هاتف: ' . implode(' - ', $phones) : '',
+        ]);
+        if ($contact) {
+            $lines[] = implode(' - ', $contact);
+        }
+        return $lines;
     }
 }
