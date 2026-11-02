@@ -41,6 +41,9 @@ use Yii;
  */
 class Sales extends \yii\db\ActiveRecord
 {
+    /** يُفعَّل عند تعديل فاتورة محفوظة ليُسجَّل أي تغيير في salesAudit */
+    public $audit = false;
+
     public $file;
     public $phone, $net, $category, $min_date, $max_date, $salePrice;
 
@@ -173,5 +176,18 @@ class Sales extends \yii\db\ActiveRecord
     public function getPaymentType0()
     {
         return $this->hasOne(PaymentTypes::class, ['id' => 'payment_type']);
+    }
+
+    public function afterSave($insert, $changedAttributes)
+    {
+        parent::afterSave($insert, $changedAttributes);
+        if ($insert || !$this->audit) {
+            return;
+        }
+        foreach (array_keys(SalesAudit::LABELS) as $attr) {
+            if (array_key_exists($attr, $changedAttributes)) {
+                SalesAudit::log((int) $this->id, $this->billId, $attr, $changedAttributes[$attr], $this->$attr);
+            }
+        }
     }
 }

@@ -156,9 +156,16 @@ class SalesController extends Controller
     }
 
     /** يحسب مجموع الفاتورة من أسطرها ويحفظه، ويعيده (null إن لم يبق أسطر) */
-    private function recalcTotal($salesId)
+    private function recalcTotal($salesId, $audit = true)
     {
         $sum = SalesDetails::find()->where(['salesId' => $salesId])->sum('salePrice * quantity');
+        if ($audit) {
+            // تغيّر إجمالي فاتورة محفوظة يُسجَّل لتنبيه المدير
+            $row = Sales::find()->select(['total', 'billId'])->where(['id' => $salesId])->asArray()->one();
+            if ($row !== null) {
+                \app\models\SalesAudit::log((int) $salesId, $row['billId'], 'total', $row['total'], (float) $sum);
+            }
+        }
         Sales::updateAll(['total' => (float) $sum], ['id' => $salesId]);
         return $sum;
     }
@@ -319,6 +326,7 @@ class SalesController extends Controller
                     if ($oldType !== (int) $model->type) {
                         $model->billId = (int) Sales::find()->where(['type' => $model->type])->max('billId') + 1;
                     }
+                    $model->audit = true;
                     $model->save(false);
 
                     if ($oldType !== (int) $model->type) {
@@ -1493,7 +1501,7 @@ class SalesController extends Controller
                         }
                         Yii::$app->session->addFlash('error', implode(' | ', $parts) . ' (أرقام الأصناف)');
                     }
-                    $this->recalcTotal($id);
+                    $this->recalcTotal($id, false);
                     TempInvoice::deleteAll(['created_by' => $userId, 'state' => 1]);
                     return $id;
                 });
@@ -1905,7 +1913,7 @@ class SalesController extends Controller
                         $modelDetails->save(false);
                         $this->applyDetail($model->type, $data->category, $branch, $modelDetails->quantity, false);
                     }
-                    $this->recalcTotal($id);
+                    $this->recalcTotal($id, false);
                     return $id;
                 });
             } catch (\DomainException $e) {

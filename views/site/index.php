@@ -37,6 +37,10 @@ $infoBoxes = [
     ['color' => 'info',    'icon' => 'bi-bell',         'text' => 'اصناف سعر البيع فيها أقل من سعر التكلفة', 'value' => $compare,                      'url' => ['/prices/compare'],                                        'link' => 'لعرض الاصناف اضغط هنا...'],
     ['color' => 'danger',  'icon' => 'bi-bell',         'text' => 'اصناف كمياتها أقل من الصفر',          'value' => $zeroQ,                          'url' => ['/stocks/zero-q'],                                         'link' => 'لعرض الاصناف اضغط هنا...'],
 ];
+// تنبيه المدير: فواتير تحوّلت إلى آجل أو تغيّر مبلغها بعد الحفظ
+if (Yii::$app->user->can('companyInfo')) {
+    array_unshift($infoBoxes, ['color' => 'danger', 'icon' => 'bi-exclamation-triangle', 'text' => 'فواتير عُدّلت بعد الحفظ (تحويل لآجل / تغيير المبلغ)', 'value' => \app\models\SalesAudit::pendingInvoices(), 'url' => ['/sales-audit/index'], 'link' => 'لمراجعة الفواتير اضغط هنا...']);
+}
 // عدد التنبيهات التي فيها قيمة (للعرض فقط في عنوان القسم)
 $activeAlerts = 0;
 foreach ($infoBoxes as $b) {
