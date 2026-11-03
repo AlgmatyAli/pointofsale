@@ -1,0 +1,79 @@
+# تحديث السيرفرات تلقائياً
+# - كل push على main: يُحدَّث السيرفر التجريبي فقط (DEPLOY_PILOT).
+# - بعد التجربة: Actions > Deploy > Run workflow > target = all
+#   فتُحدَّث بقية السيرفرات (DEPLOY_SERVERS) على نفس الـ commit المجرَّب.
+#
+# الإعداد (Settings > Secrets and variables > Actions):
+#   Secret   DEPLOY_SSH_KEY   المفتاح الخاص الذي يدخل على كل السيرفرات
+#   Variable DEPLOY_PILOT     {"name":"alwahal1","host":"1.2.3.4","port":22,"user":"alwahal1","path":"~/public_html"}
+#   Variable DEPLOY_SERVERS   [ {...}, {...} ]  بنفس الشكل، بدون السيرفر التجريبي
+#   الحقول الاختيارية لكل سيرفر: "php" و "composer" لمسار الأوامر.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'pilot = السيرفر التجريبي فقط، all = بقية السيرفرات'
+        type: choice
+        options: [pilot, all]
+        default: pilot
+      sha:
+        description: 'commit محدد (اتركه فارغاً لاستخدام ما على السيرفر التجريبي)'
+        required: false
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  pilot:
+    if: github.event_name == 'push' || inputs.target == 'pilot'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to pilot
+        env:
+          SERVER: ${{ vars.DEPLOY_PILOT }}
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          TARGET_SHA: ${{ inputs.sha || github.sha }}
+        run: bash deploy/remote.sh
+
+  pilot-sha:
+    # الـ commit الموجود على السيرفر التجريبي، لتنزيله هو بالضبط على الباقي
+    if: github.event_name == 'workflow_dispatch' && inputs.target == 'all'
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.get.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: get
+        env:
+          SERVER: ${{ vars.DEPLOY_PILOT }}
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          WANTED: ${{ inputs.sha }}
+        run: |
+          if [ -n "$WANTED" ]; then echo "sha=$WANTED" >> "$GITHUB_OUTPUT"; exit 0; fi
+          sha=$(REMOTE_CMD='git rev-parse HEAD' bash deploy/remote.sh | tail -1)
+          echo "Pilot is on $sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+  all:
+    needs: pilot-sha
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        server: ${{ fromJSON(vars.DEPLOY_SERVERS) }}
+    name: ${{ matrix.server.name }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy
+        env:
+          SERVER: ${{ toJSON(matrix.server) }}
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          TARGET_SHA: ${{ needs.pilot-sha.outputs.sha }}
+        run: bash deploy/remote.sh
