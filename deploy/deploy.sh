@@ -11,8 +11,10 @@
 #   BRANCH        الفرع الذي يتبعه هذا السيرفر (الافتراضي main)
 #   PHP_BIN       أمر php (مثلاً /opt/cpanel/ea-php82/root/usr/bin/php)
 #   COMPOSER_BIN  أمر composer
-#   KEEP_BACKUPS  عدد النسخ الاحتياطية المحفوظة (الافتراضي 10)
+#   KEEP_BACKUPS  عدد نسخ ما قبل migrate المحفوظة (الافتراضي 10)
+#   BACKUP_DIR    مجلد النسخ (الافتراضي ~/db-backups)
 #   FORCE=1       ينفّذ migrate و cache حتى لو لم يوجد تحديث
+#   SKIP_DAILY=1  بدون النسخة اليومية backup_DB.sql.gz
 #
 # عند أي فشل يُنشأ الملف runtime/deploy.failed ويتوقف التحديث التلقائي
 # حتى تصلح المشكلة وتحذفه. السجل في ~/deploy.log.
@@ -35,6 +37,37 @@ APP_DIR="${APP_DIR/#\~/$HOME}"
 cd "$APP_DIR" || { log "المجلد غير موجود: $APP_DIR"; exit 1; }
 [ -d .git ] || { log "$APP_DIR ليس مستودع git"; exit 1; }
 mkdir -p runtime
+
+# ---- قاعدة البيانات: النسخ الاحتياطية -------------------------------------
+envval() { grep -E "^$1=" .env | tail -1 | cut -d= -f2- | tr -d '\r' | sed -E "s/^['\"]//; s/['\"]\$//"; }
+# dump_db <ملف.sql.gz> : يكتب في ملف مؤقت ثم يستبدل، فالنسخة القديمة لا تضيع إن فشل التصدير
+dump_db() {
+    local out="$1" cnf tmp
+    local DB_HOST DB_NAME DB_USER DB_PASS
+    DB_HOST=$(envval DB_HOST); DB_NAME=$(envval DB_NAME); DB_USER=$(envval DB_USER); DB_PASS=$(envval DB_PASS)
+    [ -n "$DB_NAME" ] || { log "لم أجد DB_NAME في .env"; return 1; }
+    mkdir -p "$BACKUP_DIR"; chmod 700 "$BACKUP_DIR"
+    cnf=$(mktemp); chmod 600 "$cnf"
+    printf '[client]\nhost=%s\nuser=%s\npassword="%s"\n' "${DB_HOST:-localhost}" "$DB_USER" "$DB_PASS" > "$cnf"
+    tmp="$out.tmp"
+    if mysqldump --defaults-extra-file="$cnf" --single-transaction --routines --triggers --no-tablespaces "$DB_NAME" | gzip > "$tmp"; then
+        rm -f "$cnf"; chmod 600 "$tmp"; mv -f "$tmp" "$out"
+    else
+        rm -f "$cnf" "$tmp"; return 1
+    fi
+}
+# مكان النسخ لشاشة "النسخ الاحتياطية" في المنظومة
+echo "$BACKUP_DIR" > runtime/backup.dir
+
+# نسخة يومية واحدة باسم ثابت backup_DB.sql.gz (تُستبدل كل يوم)
+DAILY="$BACKUP_DIR/backup_DB.sql.gz"
+if [ "${SKIP_DAILY:-0}" != "1" ] && { [ ! -f "$DAILY" ] || [ -n "$(find "$DAILY" -mmin +1200)" ]; }; then
+    if dump_db "$DAILY"; then
+        log "النسخة اليومية: $DAILY ($(du -h "$DAILY" | cut -f1))"
+    else
+        log "فشلت النسخة اليومية لقاعدة البيانات"
+    fi
+fi
 
 FAILED="runtime/deploy.failed"
 fail() {
@@ -92,21 +125,11 @@ if echo "$PENDING" | grep -q 'No new migrations found'; then
 else
     echo "$PENDING"
 
-    # نسخة احتياطية لقاعدة البيانات قبل التنفيذ (من بيانات .env)
-    envval() { grep -E "^$1=" .env | tail -1 | cut -d= -f2- | tr -d '\r' | sed -E "s/^['\"]//; s/['\"]\$//"; }
-    DB_HOST=$(envval DB_HOST); DB_NAME=$(envval DB_NAME); DB_USER=$(envval DB_USER); DB_PASS=$(envval DB_PASS)
-    [ -n "$DB_NAME" ] || fail "لم أجد DB_NAME في .env"
-    mkdir -p "$BACKUP_DIR"; chmod 700 "$BACKUP_DIR"
-    CNF=$(mktemp); chmod 600 "$CNF"
-    printf '[client]\nhost=%s\nuser=%s\npassword="%s"\n' "${DB_HOST:-localhost}" "$DB_USER" "$DB_PASS" > "$CNF"
-    BACKUP="$BACKUP_DIR/${DB_NAME}-$(date +%Y%m%d-%H%M%S)-${OLD:0:7}.sql.gz"
+    # نسخة احتياطية قبل التنفيذ
+    BACKUP="$BACKUP_DIR/before-migrate-$(date +%Y%m%d-%H%M%S)-${OLD:0:7}.sql.gz"
     log "نسخة احتياطية: $BACKUP"
-    if ! mysqldump --defaults-extra-file="$CNF" --single-transaction --routines --triggers --no-tablespaces "$DB_NAME" | gzip > "$BACKUP"; then
-        rm -f "$CNF" "$BACKUP"
-        fail "فشلت النسخة الاحتياطية، لم يتم تنفيذ migrate (الكود الآن ${NEW:0:7})"
-    fi
-    rm -f "$CNF"
-    ls -1t "$BACKUP_DIR/${DB_NAME}-"*.sql.gz 2>/dev/null | tail -n +"$((KEEP_BACKUPS + 1))" | xargs -r rm -f
+    dump_db "$BACKUP" || fail "فشلت النسخة الاحتياطية، لم يتم تنفيذ migrate (الكود الآن ${NEW:0:7})"
+    ls -1t "$BACKUP_DIR/before-migrate-"*.sql.gz 2>/dev/null | tail -n +"$((KEEP_BACKUPS + 1))" | xargs -r rm -f
 
     log "تنفيذ migrate..."
     "$PHP_BIN" yii migrate --interactive=0 \
