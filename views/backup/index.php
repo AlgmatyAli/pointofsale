@@ -7,6 +7,7 @@ use yii\helpers\Html;
 /** @var array $files */
 /** @var string|null $lastDeploy */
 /** @var string|null $deployFailed */
+/** @var string|null $backupFailed */
 
 $this->title = 'النسخ الاحتياطية لقاعدة البيانات';
 $this->params['breadcrumbs'][] = $this->title;
@@ -26,9 +27,17 @@ $size = function (int $bytes): string {
 
     <h1><?= Html::encode($this->title) ?></h1>
     <p class="text-body-secondary">
-        تُنشأ نسخة يومية تلقائياً باسم <code>backup_DB</code> وتُستبدل كل ليلة،
+        نسخة واحدة باسم <code>backup_DB</code> تُحدَّث تلقائياً كل ساعة،
         إضافة إلى نسخة قبل كل تحديث فيه تعديل على قاعدة البيانات.
     </p>
+
+    <?php if ($backupFailed !== null): ?>
+        <div class="alert alert-danger">
+            <strong>فشلت آخر محاولة للنسخ الاحتياطي:</strong><br>
+            <?= nl2br(Html::encode($backupFailed)) ?>
+            <div class="small mt-1">الملف المعروض أدناه هو آخر نسخة ناجحة.</div>
+        </div>
+    <?php endif; ?>
 
     <?php if ($deployFailed !== null): ?>
         <div class="alert alert-danger">
@@ -39,7 +48,7 @@ $size = function (int $bytes): string {
 
     <?php if (!$dirFound || !$files): ?>
         <div class="alert alert-warning">
-            لا توجد نسخ احتياطية بعد. تظهر هنا بعد أول تشغيل لمهمة التحديث الليلية (Cron) على السيرفر.
+            لا توجد نسخ احتياطية بعد. تظهر هنا بعد أول تشغيل لمهمة النسخ الاحتياطي (Cron) على السيرفر.
         </div>
     <?php else: ?>
         <div class="table-responsive">
@@ -57,7 +66,7 @@ $size = function (int $bytes): string {
                         <tr<?= $f['daily'] ? ' class="table-success"' : '' ?>>
                             <td>
                                 <?php if ($f['daily']): ?>
-                                    <strong>النسخة اليومية</strong> <span class="text-body-secondary">(backup_DB)</span>
+                                    <strong>آخر نسخة</strong> <span class="text-body-secondary">(backup_DB، تُحدَّث كل ساعة)</span>
                                 <?php else: ?>
                                     قبل تحديث قاعدة البيانات
                                     <div class="small text-body-secondary"><bdi><?= Html::encode($f['name']) ?></bdi></div>

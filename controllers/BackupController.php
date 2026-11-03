@@ -9,7 +9,7 @@ use yii\web\NotFoundHttpException;
 
 /**
  * تحميل النسخ الاحتياطية لقاعدة البيانات التي ينشئها deploy/deploy.sh على السيرفر
- * (النسخة اليومية backup_DB.sql.gz ونسخ ما قبل migrate).
+ * (backup_DB.sql.gz من deploy/backup.sh كل ساعة، ونسخ ما قبل migrate من deploy/deploy.sh).
  */
 class BackupController extends Controller
 {
@@ -70,6 +70,7 @@ class BackupController extends Controller
             'files' => $this->files($dir),
             'lastDeploy' => $read('deploy.last'),
             'deployFailed' => $read('deploy.failed'),
+            'backupFailed' => $read('backup.failed'),
         ]);
     }
 
@@ -83,7 +84,7 @@ class BackupController extends Controller
         }
         $prefix = preg_replace('/[^A-Za-z0-9_-]+/', '', (string) Yii::$app->request->hostName);
         $download = $name === 'backup_DB.sql.gz'
-            ? ($prefix ? $prefix . '-' : '') . 'backup_DB-' . date('Y-m-d', filemtime("$dir/$name")) . '.sql.gz'
+            ? ($prefix ? $prefix . '-' : '') . 'backup_DB-' . date('Y-m-d_H-i', filemtime("$dir/$name")) . '.sql.gz'
             : $name;
 
         return Yii::$app->response->sendFile("$dir/$name", $download, ['mimeType' => 'application/gzip']);
