@@ -8,20 +8,25 @@ use yii\helpers\ArrayHelper;
 use app\models\Client;
 use app\models\PaymentTypes;
 use kartik\date\DatePicker;
+use yii\web\JsExpression;
 
 /** @var yii\web\View $this */
 /** @var app\models\Sales $model */
 /** @var yii\widgets\ActiveForm $form */
+$isAjax = Yii::$app->request->isAjax;
+$dropdown = $isAjax
+    ? ['dropdownParent' => new JsExpression("$('#modal')")]
+    : [];
 ?>
 
 <div class="sales-form">
 
     <?php
-        // العملة الافتراضية من بيانات المؤسسة (company_info.currancy) عند فتح سجل جديد
-        if ($model->isNewRecord && !Yii::$app->request->isPost && ($companyCur = \app\models\CompanyInfo::current()?->currancy)) {
-            $model->currancy = $companyCur;
-        }
-        $form = ActiveForm::begin(['id' => 'dynamic-form']); ?>
+    // العملة الافتراضية من بيانات المؤسسة (company_info.currancy) عند فتح سجل جديد
+    if ($model->isNewRecord && !Yii::$app->request->isPost && ($companyCur = \app\models\CompanyInfo::current()?->currancy)) {
+        $model->currancy = $companyCur;
+    }
+    $form = ActiveForm::begin(); ?>
     <div class="row">
         <div class="col-md-1"></div>
         <div class="col-md-5">
@@ -43,16 +48,28 @@ use kartik\date\DatePicker;
 
         </div>
         <div class="col-md-5">
-            <?= $form->field($model, 'clinet')->widget(\app\widgets\LookupSelect2::class, [
-                'lookup' => 'client', 'types' => [0, 2],
-                'language' => 'ar',
-                'id' => 'clinet',
-                'options' => ['placeholder' => 'الرجاء اختيار اسم العميل ...'],
-                'pluginOptions' => [
-                    'allowClear' => true,
-                    'multiple' => false,
-                ],
-            ]); ?>
+            <?php
+            echo $form->field($model, 'clinet')->widget(\app\widgets\LookupSelect2::class, [
+                'lookup' => 'client',
+                'types' => [0, 2],
+                'options' => ['placeholder' => 'اختر العميل ...'],
+                'pluginOptions' => ['allowClear' => true] + $dropdown,
+            ])
+            ?>
+
+            <?php
+            // $form->field($model, 'clinet')->widget(\app\widgets\LookupSelect2::class, [
+            //     'lookup' => 'client',
+            //     'types' => [0, 2],
+            //     'language' => 'ar',
+            //     // 'id' => 'clinet',
+            //     'options' => ['placeholder' => 'الرجاء اختيار اسم العميل ...'],
+            //     'pluginOptions' => [
+            //         'allowClear' => true,
+            //         'multiple' => false,
+            //     ],
+            // ]); 
+            ?>
 
         </div>
     </div>
