@@ -40,6 +40,6 @@ use yii\bootstrap5\Breadcrumbs;
 </main>
 
 <footer class="app-footer">
-    <div class="float-end d-none d-sm-inline"><b>الإصدار</b> 1.0</div>
+    <div class="float-end d-none d-sm-inline"><b>الإصدار</b> 2.0</div>
     <strong>&copy; <?= date('Y') ?> Jupiter.</strong> جميع الحقوق محفوظة.
 </footer>
