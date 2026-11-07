@@ -39,7 +39,7 @@ $infoBoxes = [
 ];
 // تنبيه المدير: فواتير تحوّلت إلى آجل أو تغيّر مبلغها بعد الحفظ
 if (Yii::$app->user->can('companyInfo')) {
-    array_unshift($infoBoxes, ['color' => 'danger', 'icon' => 'bi-exclamation-triangle', 'text' => 'فواتير عُدّلت بعد الحفظ (تحويل لآجل / تغيير المبلغ)', 'value' => \app\models\SalesAudit::pendingInvoices(), 'url' => ['/sales-audit/index'], 'link' => 'لمراجعة الفواتير اضغط هنا...']);
+    array_unshift($infoBoxes, ['color' => 'danger', 'icon' => 'bi-exclamation-triangle', 'text' => 'فواتير عُدّلت بعد الحفظ', 'value' => \app\models\SalesAudit::pendingInvoices(), 'url' => ['/sales-audit/index'], 'link' => 'لمراجعة الفواتير اضغط هنا...']);
 }
 // عدد التنبيهات التي فيها قيمة (للعرض فقط في عنوان القسم)
 $activeAlerts = 0;
