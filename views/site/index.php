@@ -30,16 +30,26 @@ $infoBoxes = [
     ['color' => 'danger',  'icon' => 'bi-bell',        'text' => 'اصناف وصلت للحد الأدنى',               'value' => $reorder,                        'url' => ['/reorderitems/index'],                                    'link' => 'لعرض الاصناف اضغط هنا...'],
     ['color' => 'success', 'icon' => 'bi-folder2-open', 'text' => 'فواتير مشتريات لم يتم اعتمادها',      'value' => $tempPurchase,                   'url' => ['/temp-invoice-purchase/create'],                          'link' => 'لعرض الفواتير اضغط هنا...'],
     ['color' => 'info',    'icon' => 'bi-eye',          'text' => 'فواتير مبيعات لم يتم اعتمادها',        'value' => $tempSales,                      'url' => ['/temp-invoice/create', 'type' => 1],                      'link' => 'لعرض الفواتير اضغط هنا...'],
-    ['color' => 'warning', 'icon' => 'bi-heart-fill',   'text' => 'الأصناف الأكثر رواجا، قاربت على الانتهاء', 'value' => $request,                    'url' => ['/category/more-request'],                                 'link' => 'لعرض الاصناف اضغط هنا...'],
+    ['color' => 'warning', 'icon' => 'bi-heart-fill',   'text' => 'اصناف أكثر رواجا، قاربت على الانتهاء', 'value' => $request,                    'url' => ['/category/more-request'],                                 'link' => 'لعرض الاصناف اضغط هنا...'],
     ['color' => 'primary', 'icon' => 'bi-heart-fill',   'text' => 'فواتير لم يتم تسليمها',               'value' => $deleviried,                     'url' => ['/sales/index', 'SalesSearch' => ['deleviried' => 0]],     'link' => 'لعرض الفواتير اضغط هنا...'],
     ['color' => 'purple',  'icon' => 'bi-bell',         'text' => 'فواتير مستحقة حان موعد تسديدها',      'value' => $amount,                         'url' => ['/sales/deserving'],                                       'link' => 'لعرض الفواتير اضغط هنا...'],
     ['color' => 'purple',  'icon' => 'bi-bell',         'text' => 'فواتير مشتريات حان موعد وصولها',      'value' => $dateOfArrival['dateOfArrival'], 'url' => ['/purchases/date-of-arrival'],                            'link' => 'لعرض الفواتير اضغط هنا...'],
-    ['color' => 'info',    'icon' => 'bi-bell',         'text' => 'اصناف سعر البيع فيها أقل من سعر التكلفة', 'value' => $compare,                      'url' => ['/prices/compare'],                                        'link' => 'لعرض الاصناف اضغط هنا...'],
+    ['color' => 'info',    'icon' => 'bi-bell',         'text' => 'اصناف سعر البيع فيها أقل التكلفة', 'value' => $compare,                      'url' => ['/prices/compare'],                                        'link' => 'لعرض الاصناف اضغط هنا...'],
     ['color' => 'danger',  'icon' => 'bi-bell',         'text' => 'اصناف كمياتها أقل من الصفر',          'value' => $zeroQ,                          'url' => ['/stocks/zero-q'],                                         'link' => 'لعرض الاصناف اضغط هنا...'],
 ];
 // تنبيه المدير: فواتير تحوّلت إلى آجل أو تغيّر مبلغها بعد الحفظ
 if (Yii::$app->user->can('companyInfo')) {
     array_unshift($infoBoxes, ['color' => 'danger', 'icon' => 'bi-exclamation-triangle', 'text' => 'فواتير عُدّلت بعد الحفظ', 'value' => \app\models\SalesAudit::pendingInvoices(), 'url' => ['/sales-audit/index'], 'link' => 'لمراجعة الفواتير اضغط هنا...']);
+}
+// متابعة الزبائن: مهامي اليوم، وتنبيه المدير بالوعود المنكوثة
+if (\app\models\CrmSetting::isEnabled()) {
+    \app\components\CrmService::ensureDaily(); // تحديث المراحل والوعود مرة في اليوم
+    if (Yii::$app->user->can('crmAlerts')) {
+        array_unshift($infoBoxes, ['color' => 'danger', 'icon' => 'bi-hand-thumbs-down', 'text' => 'وعود بالدفع ', 'value' => \app\models\CrmPromise::brokenCount(), 'url' => ['/crm/promises', 'status' => 'alert'], 'link' => 'لمراجعة الوعود اضغط هنا...']);
+    }
+    if (Yii::$app->user->can('crmMyTasks')) {
+        array_unshift($infoBoxes, ['color' => 'primary', 'icon' => 'bi-list-check', 'text' => 'مهام متابعة الزبائن اليوم', 'value' => \app\models\CrmActivity::dueCountFor((int) Yii::$app->user->id), 'url' => ['/crm/tasks'], 'link' => 'لعرض المهام اضغط هنا...']);
+    }
 }
 // عدد التنبيهات التي فيها قيمة (للعرض فقط في عنوان القسم)
 $activeAlerts = 0;

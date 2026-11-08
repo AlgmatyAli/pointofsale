@@ -22,6 +22,25 @@ return [
     ['label' => Yii::t('app', 'Reports'), 'icon' => 'bi-bar-chart-line', 'url' => ['/site/report']],
     ['label' => 'تسجيل طلبية مشتريات', 'icon' => 'bi-clipboard-plus', 'url' => ['/temp-reorder/create']],
     ['label' => 'ايصالات القبض', 'icon' => 'bi-receipt', 'url' => ['/receipt/create', 'type' => '1']],
+    // متابعة الزبائن (CRM): قائمة رئيسية واحدة، كل بند حسب صلاحيته، وتظهر فقط إذا فُعّلت الوحدة في هذا المحل
+    (function () {
+        $u = Yii::$app->user;
+        $on = \app\models\CrmSetting::isEnabled();
+        $items = [
+            ['label' => 'مهامي اليوم', 'url' => ['/crm/tasks'], 'visible' => $on && $u->can('crmMyTasks')],
+            ['label' => 'لوحة التحصيل', 'url' => ['/crm/board'], 'visible' => $on && $u->can('crmBoardView')],
+            ['label' => 'وعود الدفع', 'url' => ['/crm/promises'], 'visible' => $on && $u->can('crmPromiseView')],
+            ['label' => 'مجموعات الزبائن', 'url' => ['/crm/groups'], 'visible' => $on && $u->can('crmGroupView')],
+            ['label' => 'الإعدادات', 'url' => ['/crm/settings'], 'visible' => $u->can('crmSettings')],
+        ];
+        return [
+            'label' => 'متابعة الزبائن',
+            'icon' => 'bi-person-lines-fill',
+            'url' => '#',
+            'items' => $items,
+            'visible' => (bool) array_filter(array_column($items, 'visible')),
+        ];
+    })(),
     ['label' => 'تسجيل الأصناف والمواد', 'icon' => 'bi-boxes', 'url' => ['/category']],
     ['label' => 'الشركات المصنّعة', 'icon' => 'bi-building', 'url' => ['/item-company/index']],
     [
