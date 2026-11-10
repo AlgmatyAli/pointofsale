@@ -38,28 +38,39 @@ $csrf = Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->csr
     <h2 class="h5">مراحل المتابعة</h2>
     <p class="text-body-secondary">يدخل الزبون المرحلة حين تمر عليه هذه الأيام بدون دفع (منذ آخر إيصال قبض، أو منذ أقدم فاتورة آجلة إن لم يدفع أبداً). عند دخول مرحلة جديدة تُنشأ مهمة للمسؤول.</p>
     <div class="table-responsive">
-    <table class="table align-middle">
-        <thead><tr><th>اسم المرحلة</th><th>بعد كم يوم</th><th>الإجراء</th><th>اللون</th><th></th></tr></thead>
-        <tbody>
-        <?php foreach (array_merge($levels, [$newLevel]) as $l): $id = $l->isNewRecord ? null : $l->id; $f = 'lv' . ($id ?: 'new'); ?>
-            <tr>
-                <td><input form="<?= $f ?>" type="text" name="CrmLevel[name]" value="<?= Html::encode($l->name) ?>" class="form-control form-control-sm" required maxlength="100" aria-label="اسم المرحلة" <?= $id ? '' : 'placeholder="مرحلة جديدة"' ?>></td>
-                <td style="width:110px"><input form="<?= $f ?>" type="number" name="CrmLevel[days]" value="<?= Html::encode($l->days) ?>" class="form-control form-control-sm" min="1" required aria-label="الأيام"></td>
-                <td><?= Html::dropDownList('CrmLevel[action]', $l->action, CrmLevel::ACTIONS, ['form' => $f, 'class' => 'form-select form-select-sm', 'aria-label' => 'الإجراء']) ?></td>
-                <td><?= Html::dropDownList('CrmLevel[color]', $l->color, CrmLevel::COLORS, ['form' => $f, 'class' => 'form-select form-select-sm', 'aria-label' => 'اللون']) ?></td>
-                <td class="text-nowrap">
-                    <form id="<?= $f ?>" method="post" action="<?= Url::to(['level-save', 'id' => $id]) ?>" class="d-inline"><?= $csrf ?>
-                        <button class="btn btn-sm <?= $id ? 'btn-outline-secondary' : 'btn-primary' ?>"><?= $id ? 'حفظ' : 'إضافة' ?></button>
-                    </form>
-                    <?php if ($id): ?>
-                        <?= Html::a('حذف', ['level-delete', 'id' => $id], ['class' => 'btn btn-sm btn-outline-danger',
-                            'data' => ['method' => 'post', 'confirm' => 'حذف مرحلة «' . $l->name . '»؟']]) ?>
-                    <?php endif; ?>
-                </td>
-            </tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>اسم المرحلة</th>
+                    <th>بعد كم يوم</th>
+                    <th>الإجراء</th>
+                    <th>اللون</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach (array_merge($levels, [$newLevel]) as $l): $id = $l->isNewRecord ? null : $l->id;
+                    $f = 'lv' . ($id ?: 'new'); ?>
+                    <tr>
+                        <td><input form="<?= $f ?>" type="text" name="CrmLevel[name]" value="<?= Html::encode($l->name) ?>" class="form-control form-control-sm" required maxlength="100" aria-label="اسم المرحلة" <?= $id ? '' : 'placeholder="مرحلة جديدة"' ?>></td>
+                        <td style="width:110px"><input form="<?= $f ?>" type="number" name="CrmLevel[days]" value="<?= Html::encode($l->days) ?>" class="form-control form-control-sm" min="1" required aria-label="الأيام"></td>
+                        <td><?= Html::dropDownList('CrmLevel[action]', $l->action, CrmLevel::ACTIONS, ['form' => $f, 'class' => 'form-select form-select-sm', 'aria-label' => 'الإجراء']) ?></td>
+                        <td><?= Html::dropDownList('CrmLevel[color]', $l->color, CrmLevel::COLORS, ['form' => $f, 'class' => 'form-select form-select-sm', 'aria-label' => 'اللون']) ?></td>
+                        <td class="text-nowrap">
+                            <form id="<?= $f ?>" method="post" action="<?= Url::to(['level-save', 'id' => $id]) ?>" class="d-inline"><?= $csrf ?>
+                                <button class="btn btn-sm <?= $id ? 'btn-outline-secondary' : 'btn-primary' ?>"><?= $id ? 'حفظ' : 'إضافة' ?></button>
+                            </form>
+                            <?php if ($id): ?>
+                                <?= Html::a('حذف', ['level-delete', 'id' => $id], [
+                                    'class' => 'btn btn-sm btn-outline-danger',
+                                    'data' => ['method' => 'post', 'confirm' => 'حذف مرحلة «' . $l->name . '»؟']
+                                ]) ?>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
     </div>
-    <p class="small text-body-secondary">اختياري: لتنفيذ التحديث ليلاً بدل أول فتح، أضف Cron يومي: <code>php yii crm/daily</code></p>
+    <!-- <p class="small text-body-secondary">اختياري: لتنفيذ التحديث ليلاً بدل أول فتح، أضف Cron يومي: <code>php yii crm/daily</code></p> -->
 </div>
