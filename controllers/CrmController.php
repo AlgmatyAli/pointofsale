@@ -123,7 +123,7 @@ class CrmController extends Controller
 
     // ---------------------------------------------------------------- مهامي اليوم
 
-    public function actionTasks($user = null, $when = 'due', $id = null)
+    public function actionTasks($user = null, $when = 'due', $id = null, $q = '')
     {
         $all = Yii::$app->user->can('crmAllTasks');
         $query = CrmActivity::find()->alias('a')->with(['client', 'user', 'crm.level'])->where(['a.doneAt' => null]);
@@ -134,6 +134,12 @@ class CrmController extends Controller
             $query->andWhere(['a.userId' => null]);
         } elseif ($user !== null && $user !== '') {
             $query->andWhere(['a.userId' => (int) $user]);
+        }
+        $q = trim((string) $q);
+        if ($q !== '') {
+            // بحث باسم الزبون أو هاتفه
+            $query->innerJoin('client c', 'c.id = a.clientId')
+                ->andWhere(['or', ['like', 'c.name', $q], ['like', 'c.mobile', $q], ['like', 'c.phone', $q]]);
         }
         $today = date('Y-m-d');
         if ($when === 'due') {
@@ -159,6 +165,7 @@ class CrmController extends Controller
             'balance' => $selected ? CrmService::balanceOf((int) $selected->clientId) : 0,
             'user' => $user,
             'when' => $when,
+            'q' => $q,
             'all' => $all,
             'users' => CrmService::users(),
         ]);
@@ -209,7 +216,7 @@ class CrmController extends Controller
             ]))->save(false);
         }
         Yii::$app->session->setFlash('success', 'أُغلقت المهمة.');
-        return $this->redirect(['tasks', 'user' => Yii::$app->request->post('fUser'), 'when' => Yii::$app->request->post('fWhen', 'due')]);
+        return $this->redirect(['tasks', 'user' => Yii::$app->request->post('fUser'), 'when' => Yii::$app->request->post('fWhen', 'due'), 'q' => Yii::$app->request->post('fQ', '')]);
     }
 
     public function actionTaskDelete($id)

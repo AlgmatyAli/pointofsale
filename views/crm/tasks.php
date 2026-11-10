@@ -11,6 +11,7 @@ use yii\helpers\Url;
 /** @var float $balance */
 /** @var string|null $user */
 /** @var string $when */
+/** @var string $q */
 /** @var bool $all */
 /** @var array $users */
 
@@ -19,12 +20,12 @@ $this->params['breadcrumbs'][] = 'متابعة الزبائن';
 $this->params['breadcrumbs'][] = $this->title;
 $u = Yii::$app->user;
 $today = date('Y-m-d');
-$filter = ['user' => $user, 'when' => $when];
+$filter = ['user' => $user, 'when' => $when, 'q' => $q];
 ?>
 <div class="crm-tasks">
     <?= $this->render('_nav') ?>
 
-    <form method="get" action="<?= Url::to(['tasks']) ?>" class="d-flex flex-wrap gap-2 align-items-end mb-3">
+    <?= Html::beginForm(['tasks'], 'get', ['class' => 'd-flex flex-wrap gap-2 align-items-end mb-3']) ?>
         <?php if ($all): ?>
             <div>
                 <label class="form-label small mb-1" for="f-user">المكلّف</label>
@@ -32,12 +33,16 @@ $filter = ['user' => $user, 'when' => $when];
             </div>
         <?php endif; ?>
         <div>
+            <label class="form-label small mb-1" for="f-q">الزبون</label>
+            <input type="search" name="q" id="f-q" value="<?= Html::encode($q) ?>" class="form-control form-control-sm" placeholder="الاسم أو الهاتف" autocomplete="off">
+        </div>
+        <div>
             <label class="form-label small mb-1" for="f-when">الفترة</label>
             <?= Html::dropDownList('when', $when, ['due' => 'اليوم والمتأخر', 'later' => 'القادمة', 'all' => 'كل المفتوحة'], ['id' => 'f-when', 'class' => 'form-select form-select-sm']) ?>
         </div>
         <button class="btn btn-sm btn-outline-primary">عرض</button>
         <span class="ms-auto text-body-secondary small"><?= count($tasks) ?> مهمة</span>
-    </form>
+    <?= Html::endForm() ?>
 
     <?php if (!$tasks): ?>
         <div class="text-center text-body-secondary py-5 border rounded">
@@ -99,7 +104,7 @@ $filter = ['user' => $user, 'when' => $when];
                     <?php if ($u->can('crmTaskDone')): ?>
                     <form method="post" action="<?= Url::to(['task-done', 'id' => $selected->id]) ?>" class="border rounded p-3 mb-3">
                         <?= Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->csrfToken) ?>
-                        <?= Html::hiddenInput('fUser', $user) ?><?= Html::hiddenInput('fWhen', $when) ?>
+                        <?= Html::hiddenInput('fUser', $user) ?><?= Html::hiddenInput('fWhen', $when) ?><?= Html::hiddenInput('fQ', $q) ?>
                         <h6>إغلاق المهمة</h6>
                         <div class="row g-2">
                             <div class="col-md-6">

@@ -58,10 +58,10 @@ class m261107_000001_create_crm extends Migration
                 'color' => $this->string(20)->notNull()->defaultValue('secondary'),
             ], $opt);
             $this->batchInsert('crmLevel', ['name', 'days', 'action', 'color'], [
-                ['تذكير ودّي', 15, 'whatsapp', 'info'],
-                ['اتصال هاتفي', 30, 'call', 'warning'],
+                ['تذكير', 15, 'whatsapp', 'info'],
+                ['اتصال', 30, 'call', 'warning'],
                 ['زيارة ومطالبة', 60, 'visit', 'danger'],
-                ['تصعيد للمدير', 90, 'manager', 'dark'],
+                ['تصعيد', 90, 'manager', 'dark'],
             ]);
         }
 

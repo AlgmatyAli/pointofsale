@@ -25,7 +25,7 @@ $csrf = Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->csr
 <div class="crm-board-page">
     <?= $this->render('_nav') ?>
 
-    <form method="get" action="<?= Url::to(['board']) ?>" class="d-flex flex-wrap gap-2 align-items-end mb-3">
+    <?= Html::beginForm(['board'], 'get', ['class' => 'd-flex flex-wrap gap-2 align-items-end mb-3']) ?>
         <?php if ($all): ?>
             <div>
                 <label class="form-label small mb-1" for="b-user">المسؤول</label>
@@ -43,7 +43,7 @@ $csrf = Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->csr
         <?php if ($u->can('crmSettings')): ?>
             <?= Html::a('<i class="bi bi-arrow-clockwise"></i> تحديث الآن', ['run-now'], ['class' => 'btn btn-sm btn-outline-secondary', 'data' => ['method' => 'post']]) ?>
         <?php endif; ?>
-    </form>
+    <?= Html::endForm() ?>
 
     <div class="crm-board">
         <?php foreach ($columns as $key => $col): ?>

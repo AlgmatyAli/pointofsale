@@ -152,4 +152,39 @@ class Receipt extends \yii\db\ActiveRecord
     {
         return $this->hasOne(PaymentTypes::class, ['id' => 'payment_type']);
     }
+
+    public function afterSave($insert, $changedAttributes)
+    {
+        parent::afterSave($insert, $changedAttributes);
+        $ids = [(int) $this->clinet];
+        if (isset($changedAttributes['clinet'])) {
+            $ids[] = (int) $changedAttributes['clinet'];
+        }
+        $this->refreshCrm($ids);
+    }
+
+    public function afterDelete()
+    {
+        parent::afterDelete();
+        $this->refreshCrm([(int) $this->clinet]);
+    }
+
+    /**
+     * متابعة الزبائن: يحدّث رصيد الزبون ومرحلته ووعوده فور تسجيل إيصال القبض أو تعديله أو حذفه،
+     * بدل انتظار التحديث اليومي. أي خطأ هنا لا يمنع حفظ الإيصال.
+     */
+    private function refreshCrm(array $ids)
+    {
+        if ((int) $this->type !== 1 || !\app\models\CrmSetting::isEnabled()) {
+            return;
+        }
+        foreach (array_unique(array_filter($ids)) as $id) {
+            try {
+                \app\components\CrmService::checkPromises($id);
+                \app\components\CrmService::refresh($id);
+            } catch (\Throwable $e) {
+                Yii::error('CRM refresh after receipt failed: ' . $e->getMessage(), 'crm');
+            }
+        }
+    }
 }
