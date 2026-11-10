@@ -330,7 +330,7 @@ class CrmController extends Controller
         if ($tag) {
             $query->innerJoin('crmClientTag t', 't.clientId = c.clientId')->andWhere(['t.tagId' => (int) $tag]);
         }
-        $rows = $query->orderBy(['c.balance' => SORT_DESC])->all();
+        $rows = $query->orderBy(['c.days' => SORT_DESC, 'c.balance' => SORT_DESC])->all(); // الأكثر تأخيراً أولاً، ثم الأكبر رصيداً
         $promised = (new Query())->select(['clientId', 'amount' => 'SUM(amount)', 'd' => 'MIN(promiseDate)'])->from('crmPromise')
             ->where(['status' => CrmPromise::OPEN])->groupBy('clientId')->indexBy('clientId')->all();
 
