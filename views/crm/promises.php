@@ -57,6 +57,9 @@ if ($u->can('crmAlerts')) {
                 'value' => function ($p) use ($u) {
                     $b = [];
                     if ((int) $p->status === CrmPromise::OPEN) {
+                        if ($u->can('crmWhatsapp')) {
+                            $b[] = Html::a('<i class="bi bi-whatsapp"></i> تذكير بالوعد', ['promise-whatsapp', 'id' => $p->id], ['class' => 'btn btn-sm btn-success', 'target' => '_blank', 'rel' => 'noopener']);
+                        }
                         if ($u->can('crmPromiseEdit')) {
                             $b[] = Html::a('تعديل', ['promise-update', 'id' => $p->id], ['class' => 'btn btn-sm btn-outline-primary']);
                         }
@@ -66,6 +69,9 @@ if ($u->can('crmAlerts')) {
                         }
                     }
                     if ((int) $p->status === CrmPromise::BROKEN) {
+                        if ($u->can('crmWhatsapp')) {
+                            $b[] = Html::a('<i class="bi bi-whatsapp"></i> واتساب', ['promise-whatsapp', 'id' => $p->id], ['class' => 'btn btn-sm btn-success', 'target' => '_blank', 'rel' => 'noopener', 'title' => 'تذكير الزبون بالوعد الذي لم يُنفَّذ']);
+                        }
                         if (!$p->reviewed && $u->can('crmAlerts')) {
                             $b[] = Html::a('تمت المراجعة', ['promise-review', 'id' => $p->id], ['class' => 'btn btn-sm btn-outline-success', 'data' => ['method' => 'post']]);
                         }

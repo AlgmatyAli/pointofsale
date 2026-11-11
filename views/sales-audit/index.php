@@ -40,6 +40,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'format' => 'raw',
                 'value' => fn($row) => Html::a(Html::encode((string) $row->billId), ['sales/print', 'id' => $row->salesId]),
             ],
+            ['label' => 'الزبون', 'value' => fn($row) => $row->sales->c->name ?? ''],
             ['label' => 'الحقل', 'value' => fn($row) => app\models\SalesAudit::LABELS[$row->attribute] ?? $row->attribute],
             ['label' => 'قبل', 'value' => fn($row) => $row->display($row->oldValue)],
             ['label' => 'بعد', 'value' => fn($row) => $row->display($row->newValue)],

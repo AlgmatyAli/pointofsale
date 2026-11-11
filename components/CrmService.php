@@ -262,6 +262,25 @@ class CrmService
         return implode("\n", $lines);
     }
 
+    /** نص تذكير واتساب بوعد الدفع القائم */
+    public static function promiseReminderText(Client $client, CrmPromise $promise, float $balance): string
+    {
+        $lines = ['السلام عليكم ' . $client->name . '،'];
+        if ((int) $promise->status === CrmPromise::BROKEN) {
+            // وعد مرّ موعده دون سداد
+            $lines[] = 'نذكّركم بأن موعد سداد المبلغ المتفق عليه ' . WhatsappHelper::money($promise->amount) . ' كان بتاريخ ' . $promise->promiseDate . ' ولم يصلنا السداد بعد.';
+            $lines[] = 'نرجو منكم السداد في أقرب وقت.';
+        } else {
+            $lines[] = 'نذكّركم بموعد سداد المبلغ المتفق عليه ' . WhatsappHelper::money($promise->amount) . ' بتاريخ ' . $promise->promiseDate . '.';
+        }
+        $lines[] = 'رصيد حسابكم الحالي: ' . preg_replace('/^الرصيد: /u', '', WhatsappHelper::balanceLine($balance));
+        $company = \app\models\CompanyInfo::current();
+        if ($company !== null) {
+            $lines = array_merge($lines, WhatsappHelper::footerLines($company));
+        }
+        return implode("\n", $lines);
+    }
+
     /** نسبة استهلاك سقف الدين؛ null للسقف المفتوح (debt = 0) */
     public static function limitUsage(?Client $client, float $balance): ?float
     {

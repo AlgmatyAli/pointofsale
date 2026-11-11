@@ -62,7 +62,7 @@ class CrmController extends Controller
                     $rule(['promise-update'], 'crmPromiseEdit'),
                     $rule(['promise-cancel'], 'crmPromiseCancel'),
                     $rule(['promise-review'], 'crmAlerts'),
-                    $rule(['whatsapp'], 'crmWhatsapp'),
+                    $rule(['whatsapp', 'promise-whatsapp'], 'crmWhatsapp'),
                     $rule(['groups', 'group'], 'crmGroupView'),
                     $rule(['group-save', 'group-delete'], 'crmGroupEdit'),
                     $rule(['group-add', 'group-remove'], 'crmGroupMembers'),
@@ -475,7 +475,26 @@ class CrmController extends Controller
         ]);
     }
 
-    public function actionGroup($id)
+    /** تذكير الزبون بوعد الدفع القائم عبر واتساب */
+    public function actionPromiseWhatsapp($id)
+    {
+        $p = CrmPromise::findOne((int) $id);
+        if ($p === null || !in_array((int) $p->status, [CrmPromise::OPEN, CrmPromise::BROKEN], true)) {
+            throw new NotFoundHttpException('لا يوجد وعد قائم أو منكوث.');
+        }
+        $broken = (int) $p->status === CrmPromise::BROKEN;
+        $client = $this->findClient($p->clientId);
+        $phone = WhatsappHelper::normalizePhone($client->mobile ?: $client->phone);
+        if ($phone === null) {
+            Yii::$app->session->setFlash('error', 'رقم هاتف الزبون غير موجود أو غير صالح. أدخل رقماً ليبياً مثل 0912345678 في بيانات الزبون.');
+            return $this->back(['promises']);
+        }
+        $balance = CrmService::balanceOf((int) $client->id);
+        CrmLog::add((int) $client->id, 'whatsapp', ($broken ? 'تذكير بوعد لم يُنفَّذ: ' : 'تذكير بوعد الدفع: ') . WhatsappHelper::money($p->amount) . ' بتاريخ ' . $p->promiseDate, $this->uid());
+        return $this->redirect(WhatsappHelper::waUrl($phone, CrmService::promiseReminderText($client, $p, $balance)));
+    }
+
+    public function actionGroup($id, $month = null)
     {
         $tag = CrmTag::findOne((int) $id);
         if ($tag === null) {
@@ -484,12 +503,35 @@ class CrmController extends Controller
         $members = Client::find()->alias('cl')
             ->innerJoin('crmClientTag t', 't.clientId = cl.id')
             ->where(['t.tagId' => $tag->id])->orderBy('cl.name')->all();
-        $crm = CrmClient::find()->with('user')->where(['clientId' => array_map(fn($c) => $c->id, $members)])->indexBy('clientId')->all();
+        $ids = array_map(fn($c) => (int) $c->id, $members);
+        $crm = CrmClient::find()->with('user')->where(['clientId' => $ids])->indexBy('clientId')->all();
+
+        // محصلة الشهر لكل موظف: مجموع إيصالات القبض من زبائن المجموعة، حسب المسؤول الحالي عن كل زبون
+        $month = preg_match('/^\d{4}-\d{2}$/', (string) $month) ? $month : date('Y-m');
+        $from = $month . '-01';
+        $to = date('Y-m-t', strtotime($from));
+        $paid = $ids ? (new Query())->select(['s' => 'SUM(value)', 'clinet'])->from('receipt')
+            ->where(['type' => 1, 'clinet' => $ids])->andWhere(['between', 'at', $from, $to])
+            ->groupBy('clinet')->indexBy('clinet')->column() : [];
+        $defaultUser = CrmService::responsibleOf(null);
+        $perUser = [];
+        foreach ($ids as $cid) {
+            $uid = isset($crm[$cid]) && $crm[$cid]->userId ? (int) $crm[$cid]->userId : ($defaultUser ?: 0);
+            $perUser[$uid] = $perUser[$uid] ?? ['customers' => 0, 'collected' => 0.0, 'debt' => 0.0];
+            $perUser[$uid]['customers']++;
+            $perUser[$uid]['collected'] += (float) ($paid[$cid] ?? 0);
+            $perUser[$uid]['debt'] += isset($crm[$cid]) ? max(0, (float) $crm[$cid]->balance) : 0;
+        }
+        uasort($perUser, fn($a, $b) => $b['collected'] <=> $a['collected']);
+
         return $this->render('group', [
             'tag' => $tag,
             'members' => $members,
             'crm' => $crm,
             'users' => CrmService::users(),
+            'month' => $month,
+            'perUser' => $perUser,
+            'paid' => $paid,
         ]);
     }
 

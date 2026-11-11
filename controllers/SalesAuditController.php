@@ -37,7 +37,7 @@ class SalesAuditController extends Controller
     /** $all = 1 يعرض المراجَع أيضاً */
     public function actionIndex($all = 0)
     {
-        $query = SalesAudit::find()->with(['user', 'sales'])->orderBy(['id' => SORT_DESC]);
+        $query = SalesAudit::find()->with(['user', 'sales.c'])->orderBy(['id' => SORT_DESC]);
         if (!(int) $all) {
             $query->where(['reviewed' => 0]);
         }

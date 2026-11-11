@@ -100,6 +100,11 @@ $tagIds = array_map(fn($t) => (int) $t->id, $tags);
                     <strong>وعد بالدفع:</strong> <?= WhatsappHelper::money($promise->amount) ?> بتاريخ <?= Html::encode($promise->promiseDate) ?>
                     (المقبوض منذ الوعد <?= WhatsappHelper::money($promise->paidSince) ?>)
                     <?= $promise->note ? '<br>' . Html::encode($promise->note) : '' ?>
+                    <?php if ($u->can('crmWhatsapp')): ?>
+                        <div class="mt-2">
+                            <?= Html::a('<i class="bi bi-whatsapp"></i> تذكير بالوعد', ['promise-whatsapp', 'id' => $promise->id], ['class' => 'btn btn-sm btn-success', 'target' => '_blank', 'rel' => 'noopener']) ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
 
