@@ -355,6 +355,8 @@ class CrmController extends Controller
             }
             $columns[$key]['items'][] = $r;
         }
+        // عمود الوعد: الأقرب موعداً أولاً، فيظهر من حلّ موعد وعده (بالأحمر) في الأعلى
+        usort($columns['promise']['items'], fn($a, $b) => strcmp($promised[$a->clientId]['d'], $promised[$b->clientId]['d']));
 
         return $this->render('board', [
             'columns' => $columns,

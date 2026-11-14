@@ -21,6 +21,7 @@ $u = Yii::$app->user;
 $canState = $u->can('crmStateChange');
 $canCard = $u->can('crmCardView');
 $csrf = Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->csrfToken);
+$today = date('Y-m-d');
 ?>
 <div class="crm-board-page">
     <?= $this->render('_nav') ?>
@@ -55,7 +56,8 @@ $csrf = Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->csr
                 </header>
                 <div class="crm-col-body p-2 d-grid gap-2">
                     <?php foreach ($col['items'] as $r): ?>
-                        <div class="card card-body p-2 shadow-sm">
+                        <?php $due = $key === 'promise' && isset($promised[$r->clientId]) && $promised[$r->clientId]['d'] <= $today; ?>
+                        <div class="card card-body p-2 shadow-sm<?= $due ? ' border-danger bg-danger-subtle' : '' ?>">
                             <div class="d-flex justify-content-between gap-1">
                                 <strong class="small"><?= $canCard ? Html::a(Html::encode($r->client->name ?? ('#' . $r->clientId)), ['card', 'id' => $r->clientId]) : Html::encode($r->client->name ?? '') ?></strong>
                                 <span class="small fw-bold text-nowrap"><?= WhatsappHelper::money($r->balance) ?></span>
@@ -65,7 +67,7 @@ $csrf = Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->csr
                                 <span><?= Html::encode($r->user->username ?? '') ?></span>
                             </div>
                             <?php if (isset($promised[$r->clientId])): ?>
-                                <div class="small text-primary">وعد <?= WhatsappHelper::money($promised[$r->clientId]['amount']) ?> في <?= Html::encode($promised[$r->clientId]['d']) ?></div>
+                                <div class="small <?= $due ? 'text-danger fw-semibold' : 'text-primary' ?>">وعد <?= WhatsappHelper::money($promised[$r->clientId]['amount']) ?> في <?= Html::encode($promised[$r->clientId]['d']) ?><?= $due ? ' · حلّ الموعد' : '' ?></div>
                             <?php endif; ?>
                             <?php if ($canState && $key !== 'promise'): ?>
                                 <form method="post" action="<?= Url::to(['state', 'id' => $r->clientId]) ?>" class="mt-1">
