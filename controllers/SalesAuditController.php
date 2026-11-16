@@ -27,7 +27,7 @@ class SalesAuditController extends Controller
                     [
                         'allow' => true,
                         'actions' => ['index', 'review', 'review-all'],
-                        'roles' => ['companyInfo'],
+                        'roles' => ['indexSales'],
                     ],
                 ],
             ],
