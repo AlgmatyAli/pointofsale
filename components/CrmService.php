@@ -109,6 +109,10 @@ class CrmService
         $openPromise = (new Query())->select('clientId')->from('crmPromise')
             ->where(['status' => CrmPromise::OPEN])->andFilterWhere(['clientId' => $clientId])->indexBy('clientId')->column($db);
 
+        // الزبائن الذين لهم مهمة مفتوحة الآن (لإعادة إنشاء مهمة من حُذفت مهمته)
+        $hasOpenTask = (new Query())->select('clientId')->from('crmActivity')
+            ->where(['doneAt' => null])->andFilterWhere(['clientId' => $clientId])->indexBy('clientId')->column($db);
+
         $stats = ['customers' => 0, 'tasks' => 0, 'paidOff' => 0];
         $ids = array_unique(array_merge(array_keys($balances), array_keys($crmRows)));
 
@@ -147,8 +151,14 @@ class CrmService
             $crm->levelId = $level ? $level->id : null;
             $crm->save(false);
 
-            if ($level !== null && (int) $level->id !== $oldLevel) {
-                CrmLog::add($id, 'level', 'دخل مرحلة «' . $level->name . '»: ' . $days . ' يوم بدون دفع، الرصيد ' . WhatsappHelper::money($balance));
+            $entered = $level !== null && (int) $level->id !== $oldLevel;
+            // في التحديث اليومي الكامل: زبون في مرحلة تأخير وليست له مهمة مفتوحة (حُذفت مهمته)
+            // تُنشأ له مهمة من جديد. المهمة المُغلقة (تمت) لا تتكرر لأن مفتاحها sourceKey باقٍ.
+            $missing = $level !== null && $clientId === null && !isset($hasOpenTask[$id]);
+            if ($entered || $missing) {
+                if ($entered) {
+                    CrmLog::add($id, 'level', 'دخل مرحلة «' . $level->name . '»: ' . $days . ' يوم بدون دفع، الرصيد ' . WhatsappHelper::money($balance));
+                }
                 $skip = (int) $crm->state === CrmClient::STATE_DISPUTED || isset($openPromise[$id]);
                 if (!$skip && static::autoTask($crm, $level, (string) $since)) {
                     $stats['tasks']++;
