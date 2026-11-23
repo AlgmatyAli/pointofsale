@@ -32,4 +32,14 @@ CSS);
             </li>
         <?php endif; ?>
     <?php endforeach; ?>
+    <?php if ($u->can('crmRunNow') || $u->can('crmSettings')): ?>
+        <li class="nav-item ms-auto d-flex align-items-center gap-2">
+            <small class="text-body-secondary">آخر تحديث: <?= Html::encode(\app\models\CrmSetting::find()->select('lastRunDate')->where(['id' => 1])->scalar() ?: '—') ?></small>
+            <?= Html::a('<i class="bi bi-arrow-clockwise"></i> تحديث الآن', ['run-now'], [
+                'class' => 'btn btn-sm btn-outline-secondary',
+                'title' => 'تحديث المهام والتحصيل والوعود فوراً بدل انتظار اليوم التالي',
+                'data' => ['method' => 'post'],
+            ]) ?>
+        </li>
+    <?php endif; ?>
 </ul>

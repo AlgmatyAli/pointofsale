@@ -41,9 +41,6 @@ $today = date('Y-m-d');
         <?php endif; ?>
         <button class="btn btn-sm btn-outline-primary">عرض</button>
         <small class="ms-auto text-body-secondary">آخر تحديث للأرصدة: <?= Html::encode($setting->lastRunDate ?? '—') ?></small>
-        <?php if ($u->can('crmSettings')): ?>
-            <?= Html::a('<i class="bi bi-arrow-clockwise"></i> تحديث الآن', ['run-now'], ['class' => 'btn btn-sm btn-outline-secondary', 'data' => ['method' => 'post']]) ?>
-        <?php endif; ?>
     <?= Html::endForm() ?>
 
     <div class="crm-board">

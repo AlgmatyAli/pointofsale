@@ -67,6 +67,7 @@ class CrmController extends Controller
                     $rule(['group-save', 'group-delete'], 'crmGroupEdit'),
                     $rule(['group-add', 'group-remove'], 'crmGroupMembers'),
                     $rule(['settings', 'level-save', 'level-delete', 'run-now'], 'crmSettings'),
+                    $rule(['run-now'], 'crmRunNow'),
                     ['allow' => true, 'actions' => ['client-list'], 'roles' => ['crmGroupMembers', 'crmTaskCreate', 'crmCardView']],
                 ],
             ],
@@ -666,12 +667,12 @@ class CrmController extends Controller
     {
         if (!CrmSetting::isEnabled()) {
             Yii::$app->session->setFlash('error', 'فعّل متابعة الزبائن أولاً.');
-            return $this->redirect(['settings']);
+            return $this->back(['settings']);
         }
         Yii::$app->db->createCommand('UPDATE crmSetting SET lastRunDate = :d WHERE id = 1', [':d' => date('Y-m-d')])->execute();
         $s = CrmService::runDaily();
         Yii::$app->session->setFlash('success', 'تم التحديث: ' . $s['customers'] . ' زبون عليه دين، ' . $s['tasks'] . ' مهمة جديدة، '
             . $s['paidOff'] . ' سدّد، ' . $s['kept'] . ' وعد نُفّذ، ' . $s['broken'] . ' وعد منكوث.');
-        return $this->back(['settings']);
+        return $this->back(['tasks']);
     }
 }

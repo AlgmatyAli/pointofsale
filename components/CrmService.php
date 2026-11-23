@@ -214,12 +214,21 @@ class CrmService
     {
         $today = date('Y-m-d');
         $stats = ['kept' => 0, 'broken' => 0];
-        $promises = CrmPromise::find()->where(['status' => CrmPromise::OPEN])->andFilterWhere(['clientId' => $clientId])->all();
+        // الوعود المنكوثة تدخل أيضاً حتى يبقى عمود «المقبوض منذ الوعد» محدَّثاً إذا دفع الزبون بعد النكث
+        $promises = CrmPromise::find()->where(['status' => [CrmPromise::OPEN, CrmPromise::BROKEN]])->andFilterWhere(['clientId' => $clientId])->all();
         foreach ($promises as $p) {
             $paid = (float) (new Query())->from('receipt')
                 ->where(['clinet' => $p->clientId, 'type' => 1])
                 ->andWhere(['>', 'id', (int) $p->afterReceiptId])
                 ->sum('value');
+            if ((int) $p->status === CrmPromise::BROKEN) {
+                // يبقى الوعد منكوثاً، ويُحدَّث المقبوض فقط
+                if (abs((float) $p->paidSince - round($paid, 3)) > self::EPS) {
+                    $p->paidSince = round($paid, 3);
+                    $p->save(false, ['paidSince']);
+                }
+                continue;
+            }
             $p->paidSince = round($paid, 3);
             $balance = static::balanceOf((int) $p->clientId);
 
