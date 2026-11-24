@@ -235,7 +235,7 @@ class PricesController extends Controller
     public function actionCompare()
     {
         $info = Prices::find()
-            ->select(['prices.id', 'prices.category', 'prices.maxPrice', 'prices.costPrice', 'category.name', 'stocks.quantity'])
+            ->select(['prices.id', 'prices.category', 'prices.maxPrice', 'prices.costPrice', 'category.name', 'category.company', 'stocks.quantity'])
             ->leftJoin('category', 'prices.category = category.id')
             ->leftJoin('stocks', 'prices.category = stocks.category')
             ->where('maxPrice <= costPrice')
@@ -260,7 +260,7 @@ class PricesController extends Controller
             foreach ($items as $value) {
                 $maxPrice = round($value->maxPrice + ($value->maxPrice * ($model->percentage / 100)));
                 $len = strlen($maxPrice);
-                $val = substr($maxPrice, $len-1, $len);
+                $val = substr($maxPrice, $len - 1, $len);
                 if ((int) $val < 5 && (int) $val != 0) {
                     $diff = 5 - (int) $val;
                     $maxPrice += $diff;
@@ -271,7 +271,7 @@ class PricesController extends Controller
                 }
                 $minPrice = round($value->minPrice + ($value->minPrice * ($model->percentage / 100)));
                 $len = strlen($minPrice);
-                $val = substr($minPrice, $len-1, $len);
+                $val = substr($minPrice, $len - 1, $len);
                 if ((int) $val < 5 && (int) $val != 0) {
                     $diff = 5 - (int) $val;
                     $minPrice += $diff;

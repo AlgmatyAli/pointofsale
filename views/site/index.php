@@ -38,7 +38,7 @@ $infoBoxes = [
     ['color' => 'danger',  'icon' => 'bi-bell',         'text' => 'اصناف كمياتها أقل من الصفر',          'value' => $zeroQ,                          'url' => ['/stocks/zero-q'],                                         'link' => 'لعرض الاصناف اضغط هنا...'],
 ];
 // تنبيه المدير: فواتير تحوّلت إلى آجل أو تغيّر مبلغها بعد الحفظ
-if (Yii::$app->user->can('companyInfo')) {
+if (Yii::$app->user->can('indexSales')) {
     array_unshift($infoBoxes, ['color' => 'danger', 'icon' => 'bi-exclamation-triangle', 'text' => 'فواتير عُدّلت بعد الحفظ', 'value' => \app\models\SalesAudit::pendingInvoices(), 'url' => ['/sales-audit/index'], 'link' => 'لمراجعة الفواتير اضغط هنا...']);
 }
 // متابعة الزبائن: مهامي اليوم، وتنبيه المدير بالوعود المنكوثة

@@ -21,16 +21,16 @@ class SalesAuditController extends Controller
                 'class' => VerbFilter::class,
                 'actions' => ['review' => ['POST'], 'review-all' => ['POST']],
             ],
-            // 'access' => [
-            //     'class' => AccessControl::class,
-            //     'rules' => [
-            //         [
-            //             'allow' => true,
-            //             'actions' => ['index', 'review', 'review-all'],
-            //             'roles' => ['indexSales'],
-            //         ],
-            //     ],
-            // ],
+            'access' => [
+                'class' => AccessControl::class,
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index', 'review', 'review-all'],
+                        'roles' => ['indexSales'],
+                    ],
+                ],
+            ],
         ];
     }
 

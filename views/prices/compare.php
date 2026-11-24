@@ -51,6 +51,9 @@ use app\models\CompanyInfo;
               <h5> اسم الصنف</h5>
             </th>
             <th>
+              <h5> الشركة</h5>
+            </th>
+            <th>
               <h5> الكمية الحالية </h5>
             </th>
             <th>
@@ -75,11 +78,12 @@ use app\models\CompanyInfo;
               <td><?= $coun++ ?></td>
               <td><?= \yii\helpers\Html::encode($model["category"]) ?></td>
               <td><?= \yii\helpers\Html::encode($model["name"]) ?></td>
+              <td><?= \yii\helpers\Html::encode($model["company"]) ?></td>
               <td><?= \yii\helpers\Html::encode($model["quantity"]) ?></td>
               <td style="color: red;"><?= number_format($model["costPrice"], 3) . "\n" ?></td>
               <td style="color: blue;"><?= number_format($model["maxPrice"], 3) . "\n" ?></td>
               <td><?= Html::a(
-                    '<i class="fa fa-folder-open"></i>',
+                    '<i class="bi bi-folder"></i>',
                     ['prices/update', 'id' => $model["id"]],
                     ['class' => 'btn btn-success']
                   ) ?></td>
