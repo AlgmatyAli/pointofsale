@@ -26,6 +26,10 @@ $row = function (string $label, $value, bool $raw = false) use ($none) {
         . '<span class="fw-semibold text-end">' . $v . '</span></div>';
 };
 $why = trim((string) $model->why);
+// زر واتساب لإيصالات القبض: يظهر معطّلاً إن لم يكن للزبون رقم هاتف صالح
+$waPhone = $isReceive
+    ? \app\components\WhatsappHelper::normalizePhone($model->c ? ($model->c->mobile ?: $model->c->phone) : '')
+    : null;
 $currency = $model->currancy0?->name;
 ?>
 <div class="receipt-view">
@@ -36,6 +40,13 @@ $currency = $model->currancy0?->name;
 
         <?php if ((int) $model->type === 1): ?>
             <?= Html::a('<i class="bi bi-printer"></i> ' . Yii::t('app', 'Print Reciept Receive'), ['print-reciept-reciver', 'id' => $model->id], ['class' => 'btn btn-success']) ?>
+            <?php if ($waPhone !== null): ?>
+                <?= Html::a('<i class="bi bi-whatsapp"></i> إرسال عبر واتساب', ['whatsapp', 'id' => $model->id], ['class' => 'btn btn-outline-success', 'target' => '_blank', 'rel' => 'noopener']) ?>
+            <?php else: ?>
+                <span class="d-inline-block" tabindex="0" title="لا يوجد رقم هاتف صالح للزبون، أضفه في بيانات الزبون">
+                    <button type="button" class="btn btn-outline-success" disabled><i class="bi bi-whatsapp"></i> إرسال عبر واتساب</button>
+                </span>
+            <?php endif; ?>
         <?php elseif ((int) $model->type === 2): ?>
             <?= Html::a('<i class="bi bi-printer"></i> ' . Yii::t('app', 'Print Reciept'), ['print-reciept', 'id' => $model->id], ['class' => 'btn btn-success']) ?>
         <?php endif; ?>

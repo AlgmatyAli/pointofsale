@@ -3,6 +3,7 @@
 namespace app\controllers;
 
 use app\models\Client;
+use app\components\WhatsappHelper;
 use Yii;
 use app\models\Receipt;
 use app\models\ReceiptSearch;
@@ -41,12 +42,12 @@ class ReceiptController extends Controller
                 'rules' => [
                     [
                         'allow' => true,
-                        'actions' => ['create', 'view', 'print-reciept', 'print-reciept-reciver', 'get-balance', 'transfer-to-safe'],
+                        'actions' => ['create', 'view', 'print-reciept', 'print-reciept-reciver', 'get-balance', 'transfer-to-safe', 'whatsapp'],
                         'roles' => ['createReciept'],
                     ],
                     [
                         'allow' => true,
-                        'actions' => ['update', 'view', 'print-reciept', 'print-reciept-reciver'],
+                        'actions' => ['update', 'view', 'print-reciept', 'print-reciept-reciver', 'whatsapp'],
                         'roles' => ['updateReciept'],
                     ],
                     [
@@ -279,6 +280,49 @@ class ReceiptController extends Controller
             'model' => $model,
             'balance' => $this->clientBalance($model),
         ]);
+    }
+
+    /**
+     * يفتح محادثة واتساب مع الزبون برسالة شكر على السداد: قيمة إيصال القبض والرصيد المتبقي.
+     * لإيصالات القبض فقط (type=1). الرصيد هو نفس الرقم المطبوع على الإيصال (رصيد الحساب الحالي).
+     */
+    public function actionWhatsapp($id)
+    {
+        $model = $this->findModel($id);
+        $back = Yii::$app->request->referrer ?: ['view', 'id' => $model->id];
+
+        if ((int) $model->type !== 1) {
+            Yii::$app->session->setFlash('error', 'الإرسال عبر واتساب متاح لإيصالات القبض فقط.');
+            return $this->redirect($back);
+        }
+
+        $client = $model->c;
+        $phone = WhatsappHelper::normalizePhone($client ? ($client->mobile ?: $client->phone) : '');
+        if ($phone === null) {
+            Yii::$app->session->setFlash('error', 'رقم هاتف الزبون غير موجود أو غير صالح. أدخل رقماً ليبياً مثل 0912345678 في بيانات الزبون.');
+            return $this->redirect($back);
+        }
+
+        $m = fn($v) => WhatsappHelper::money($v);
+        $currency = $model->currancy0 ? trim((string) $model->currancy0->name) : '';
+        $amount = $m($model->value) . ($currency !== '' ? ' ' . $currency : '');
+        $balance = round((float) $this->clientBalance($model), 3);
+
+        $lines = ['السلام عليكم ' . $client->name . '،'];
+        $lines[] = 'شكراً لسدادكم، تم استلام مبلغ ' . $amount . ' بموجب إيصال قبض رقم ' . $model->rId . ' بتاريخ ' . $model->at . '.';
+        if ($balance > 0) {
+            $lines[] = 'الرصيد المتبقي عليكم: ' . $m($balance);
+            $lines[] = 'نقدّر التزامكم بالسداد، وكل دفعة تقرّبكم من إغلاق الحساب بالكامل.';
+        } elseif ($balance < 0) {
+            $lines[] = 'رصيدكم لدينا: لكم ' . $m(-$balance);
+            $lines[] = 'نقدّر التزامكم الدائم وثقتكم بنا.';
+        } else {
+            $lines[] = 'تم سداد حسابكم بالكامل، والرصيد المتبقي: ' . $m(0);
+            $lines[] = 'نقدّر التزامكم الدائم، وأنتم من زبائننا المميزين.';
+        }
+        $lines = array_merge($lines, WhatsappHelper::footerLines(CompanyInfo::current()));
+
+        return $this->redirect(WhatsappHelper::waUrl($phone, implode("\n", $lines)));
     }
 
     private function clientBalance(Receipt $model)

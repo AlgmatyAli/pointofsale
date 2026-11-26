@@ -72,10 +72,28 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'class' => 'yii\grid\ActionColumn',
                 'options' => ['style' => 'width:120px;'],
-                'template' => '<div class="btn-group btn-group-sm" role="group" aria-label="...">{view}</div>',
+                'template' => '<div class="btn-group btn-group-sm" role="group" aria-label="...">{view}{whatsapp}</div>',
                 'buttons' => [
                     'view' => function ($url, $searchModel, $key) {
                         return Html::a('<i class="bi bi-eye"></i>', $url, ['class' => 'btn btn-default']);
+                    },
+                    // واتساب لإيصالات القبض فقط، وعند وجود رقم هاتف صالح للزبون
+                    'whatsapp' => function ($url, $data, $key) {
+                        if ((int) $data->type !== 1
+                            || !(Yii::$app->user->can('createReciept') || Yii::$app->user->can('updateReciept'))) {
+                            return '';
+                        }
+                        $phone = \app\components\WhatsappHelper::normalizePhone($data->c ? ($data->c->mobile ?: $data->c->phone) : '');
+                        if ($phone === null) {
+                            return '';
+                        }
+                        return Html::a('<i class="bi bi-whatsapp"></i>', ['whatsapp', 'id' => $data->id], [
+                            'class' => 'btn btn-default text-success',
+                            'title' => 'إرسال الإيصال عبر واتساب',
+                            'target' => '_blank',
+                            'rel' => 'noopener',
+                            'data-pjax' => '0',
+                        ]);
                     },
 
 
